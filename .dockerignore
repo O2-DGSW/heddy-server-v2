@@ -1,0 +1,13 @@
+.git
+.github
+.gradle
+.idea
+.vscode
+build/*
+!build/libs/
+!build/libs/*.jar
+build/libs/*plain.jar
+*.iml
+.DS_Store
+.env
+docker-compose.yml

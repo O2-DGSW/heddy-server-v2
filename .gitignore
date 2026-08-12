@@ -1,0 +1,21 @@
+HELP.md
+.gradle/
+build/
+out/
+bin/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Local configuration and OS files
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Keep the Gradle wrapper binary under version control
+!gradle/wrapper/gradle-wrapper.jar

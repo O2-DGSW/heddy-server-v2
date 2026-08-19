@@ -1,6 +1,6 @@
 package com.heddy.account.entity;
 
-import com.heddy.global.entity.BaseEntity;
+import com.heddy.global.entity.BaseCreatedEntity;
 import com.heddy.global.support.UuidV7;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,10 +17,11 @@ import java.util.UUID;
 /**
  * 동의 이력. append-only — 동의 상태가 바뀌면 기존 행을 수정하지 않고 새 행을 추가한다.
  * 현재 상태는 (user, consentType) 기준 created_at 이 가장 큰 행이다.
+ * 갱신이 없으므로 updated_at 을 두지 않는다 — {@link BaseCreatedEntity} 를 상속한다.
  */
 @Entity
 @Table(name = "consent_history")
-public class ConsentHistory extends BaseEntity {
+public class ConsentHistory extends BaseCreatedEntity {
 
     @Id
     @Column(name = "id", nullable = false, updatable = false)

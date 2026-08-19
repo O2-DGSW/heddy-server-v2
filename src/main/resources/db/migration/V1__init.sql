@@ -119,7 +119,6 @@ CREATE TABLE consent_history (
     policy_version VARCHAR(20) NOT NULL,
     source         VARCHAR(20) NOT NULL,
     created_at     TIMESTAMPTZ NOT NULL,
-    updated_at     TIMESTAMPTZ,
     CONSTRAINT pk_consent_history PRIMARY KEY (id),
     CONSTRAINT fk_consent_history_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     CONSTRAINT ck_consent_history_consent_type CHECK (consent_type IN (

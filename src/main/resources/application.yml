@@ -43,6 +43,10 @@ management:
       probes:
         enabled: true
 
+logging:
+  pattern:
+    level: "%5p [%X{requestId:-}]"
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

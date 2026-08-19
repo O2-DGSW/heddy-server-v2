@@ -1,6 +1,6 @@
 package com.heddy.global.config;
 
-import jakarta.servlet.http.HttpServletResponse;
+import com.heddy.global.error.SecurityErrorResponder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,9 +21,14 @@ import java.util.List;
 public class SecurityConfig {
 
     private final List<String> allowedOrigins;
+    private final SecurityErrorResponder securityErrorResponder;
 
-    public SecurityConfig(@Value("${app.cors.allowed-origins}") List<String> allowedOrigins) {
+    public SecurityConfig(
+            @Value("${app.cors.allowed-origins}") List<String> allowedOrigins,
+            SecurityErrorResponder securityErrorResponder
+    ) {
         this.allowedOrigins = allowedOrigins;
+        this.securityErrorResponder = securityErrorResponder;
     }
 
     @Bean
@@ -42,10 +47,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, exception) ->
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED))
-                        .accessDeniedHandler((request, response, exception) ->
-                                response.sendError(HttpServletResponse.SC_FORBIDDEN)))
+                        .authenticationEntryPoint(securityErrorResponder)
+                        .accessDeniedHandler(securityErrorResponder))
                 .build();
     }
 

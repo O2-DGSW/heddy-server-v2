@@ -1,5 +1,6 @@
 package com.heddy.health;
 
+import com.heddy.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,8 +12,8 @@ import java.time.Instant;
 public class HealthController {
 
     @GetMapping
-    HealthResponse health() {
-        return new HealthResponse("UP", Instant.now());
+    ApiResponse<HealthResponse> health() {
+        return ApiResponse.of(new HealthResponse("UP", Instant.now()));
     }
 
     record HealthResponse(String status, Instant timestamp) {

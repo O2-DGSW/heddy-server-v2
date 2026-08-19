@@ -1,29 +1,20 @@
 package com.heddy.global.entity;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 
+/**
+ * 생성·수정 시각을 갖는 상위 타입. 갱신되는 테이블은 이쪽을 상속한다.
+ */
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
-public abstract class BaseEntity {
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
+public abstract class BaseEntity extends BaseCreatedEntity {
 
     @LastModifiedDate
     @Column(name = "updated_at")
     private Instant updatedAt;
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 
     public Instant getUpdatedAt() {
         return updatedAt;

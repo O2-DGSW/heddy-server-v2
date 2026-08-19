@@ -97,11 +97,24 @@ class V1InitMigrationTest {
     }
 
     @Test
+    @DisplayName("변경되는 테이블만 updated_at 을 갖는다")
+    void onlyMutableTablesHaveUpdatedAt() {
+        for (String table : TABLES) {
+            if (table.equals("consent_history")) {
+                continue;
+            }
+            assertThat(TABLE_BODIES.get(table)).as("%s.updated_at", table)
+                    .containsPattern("updated_at\\s+TIMESTAMPTZ");
+        }
+    }
+
+    @Test
     @DisplayName("consent_history 는 policy_version·source 를 갖고 append-only 다")
     void consentHistoryIsAppendOnly() {
         String consent = TABLE_BODIES.get("consent_history");
         assertThat(consent).contains("policy_version").contains("source");
         assertThat(consent).contains("agreed");
+        assertThat(consent).as("append-only 테이블이라 updated_at 을 두지 않는다").doesNotContain("updated_at");
         assertThat(MIGRATION).contains("COMMENT ON TABLE consent_history IS '약관·동의 이력 (append-only)");
     }
 

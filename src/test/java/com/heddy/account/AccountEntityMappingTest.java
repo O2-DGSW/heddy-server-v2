@@ -6,11 +6,13 @@ import com.heddy.account.entity.StyleTag;
 import com.heddy.account.entity.User;
 import com.heddy.account.entity.UserProfile;
 import com.heddy.account.entity.UserStylePreference;
+import com.heddy.global.entity.BaseCreatedEntity;
 import com.heddy.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -50,9 +52,49 @@ class AccountEntityMappingTest {
     @ParameterizedTest
     @ValueSource(classes = {User.class, UserProfile.class, HairProfile.class,
             StyleTag.class, UserStylePreference.class, ConsentHistory.class})
-    @DisplayName("전 엔티티가 BaseEntity 를 상속한다")
-    void everyEntityExtendsBaseEntity(Class<?> entityType) {
+    @DisplayName("전 엔티티가 created_at 감사 상위 타입을 상속한다")
+    void everyEntityExtendsBaseCreatedEntity(Class<?> entityType) {
+        assertThat(BaseCreatedEntity.class).isAssignableFrom(entityType);
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {User.class, UserProfile.class, HairProfile.class,
+            StyleTag.class, UserStylePreference.class})
+    @DisplayName("갱신되는 엔티티는 updated_at 을 주는 BaseEntity 를 상속한다")
+    void mutableEntitiesExtendBaseEntity(Class<?> entityType) {
         assertThat(BaseEntity.class).isAssignableFrom(entityType);
+    }
+
+    @Test
+    @DisplayName("append-only 인 ConsentHistory 는 updated_at 을 갖지 않는다")
+    void consentHistoryHasNoUpdatedAt() {
+        assertThat(BaseEntity.class.isAssignableFrom(ConsentHistory.class)).isFalse();
+        assertThat(mappedColumns(ConsentHistory.class)).doesNotContain("updated_at");
+    }
+
+    @Test
+    @DisplayName("ConsentHistory 는 상태를 바꿀 수단을 노출하지 않는다")
+    void consentHistoryExposesNoMutator() {
+        assertThat(ConsentHistory.class.getMethods())
+                .noneMatch(method -> method.getDeclaringClass() != Object.class
+                        && method.getParameterCount() > 0
+                        && !method.getName().equals("equals"));
+
+        for (Field field : ConsentHistory.class.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers()) || field.getName().equals("id")) {
+                continue;
+            }
+            assertThat(columnUpdatable(field)).as("%s 는 updatable = false 여야 한다", field.getName()).isFalse();
+        }
+    }
+
+    private static boolean columnUpdatable(Field field) {
+        JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
+        if (joinColumn != null) {
+            return joinColumn.updatable();
+        }
+        Column column = field.getAnnotation(Column.class);
+        return column == null || column.updatable();
     }
 
     private static List<String> mappedColumns(Class<?> entityType) {

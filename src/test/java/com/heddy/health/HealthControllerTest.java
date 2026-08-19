@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,10 +21,19 @@ class HealthControllerTest {
     private MockMvc mockMvc;
 
     @Test
-    void returnsUp() throws Exception {
+    void returnsUpWrappedInApiResponse() throws Exception {
         mockMvc.perform(get("/api/v1/health"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.status").value("UP"));
+                .andExpect(jsonPath("$.data.status").value("UP"))
+                .andExpect(jsonPath("$.request_id").isNotEmpty());
+    }
+
+    @Test
+    void echoesClientRequestId() throws Exception {
+        mockMvc.perform(get("/api/v1/health").header("X-Request-Id", "req-1234"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Request-Id", "req-1234"))
+                .andExpect(jsonPath("$.request_id").value("req-1234"));
     }
 }

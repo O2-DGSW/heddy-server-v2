@@ -6,10 +6,41 @@ spring:
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
   flyway:
-    enabled: false
+    enabled: true
   data:
     redis:
       repositories:
+        enabled: false
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: test-kakao
+            client-secret: test-kakao-secret
+            authorization-grant-type: authorization_code
+          naver:
+            client-id: test-naver
+            client-secret: test-naver-secret
+            authorization-grant-type: authorization_code
+          google:
+            client-id: test-google
+            client-secret: test-google-secret
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+  auth:
+    jwt-secret: test-jwt-secret-must-have-at-least-32-bytes
+    access-token-seconds: 3600
+    refresh-token-seconds: 2592000
+    cookie:
+      secure: false
+      same-site: Lax
+    oauth2:
+      redirect-base-url: http://localhost:3000
+    sms:
+      solapi:
         enabled: false

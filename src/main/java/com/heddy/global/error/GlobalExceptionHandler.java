@@ -3,6 +3,7 @@ package com.heddy.global.error;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -22,6 +23,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 모든 에러 응답을 API 명세 §2 포맷 {@code {"error": {...}, "request_id"}}으로 통일한다.
@@ -93,10 +95,25 @@ public class GlobalExceptionHandler {
         return error(CommonErrorCode.INVALID_REQUEST);
     }
 
-    @ExceptionHandler({NoResourceFoundException.class, HttpRequestMethodNotSupportedException.class})
-    ResponseEntity<ApiErrorResponse> handleNotFound(Exception exception) {
+    @ExceptionHandler(NoResourceFoundException.class)
+    ResponseEntity<ApiErrorResponse> handleNotFound(NoResourceFoundException exception) {
         log.debug("No handler for request", exception);
         return error(CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    /**
+     * 존재하는 경로에 지원하지 않는 메서드를 보낸 경우. 404로 내리면 클라이언트가 경로를 의심하게 되므로
+     * 405를 유지하고 {@code Allow} 헤더도 그대로 실어 준다. 공통 9종에 405 코드가 없어 코드는 INVALID_REQUEST를 쓴다.
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    ResponseEntity<ApiErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException exception) {
+        log.debug("Method not supported", exception);
+        ResponseEntity.BodyBuilder builder = ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED);
+        Set<HttpMethod> supported = exception.getSupportedHttpMethods();
+        if (supported != null && !supported.isEmpty()) {
+            builder.allow(supported.toArray(HttpMethod[]::new));
+        }
+        return builder.body(ApiErrorResponse.of(CommonErrorCode.INVALID_REQUEST));
     }
 
     /**

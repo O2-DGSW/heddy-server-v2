@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -48,16 +49,25 @@ public class HairProfile extends BaseEntity {
     protected HairProfile() {
     }
 
+    /**
+     * 미입력 항목은 UNKNOWN 으로 채운다. DDL 의 DEFAULT 'UNKNOWN' 은 JPA 가 전 컬럼을
+     * 명시 INSERT 하는 탓에 발동하지 않으므로 기본값은 여기서 준다.
+     */
     public HairProfile(User user, HairType hairType, HairCondition hairCondition,
                        HairLength hairLength, HairThickness hairThickness,
                        Short availableCareTimeMinutes) {
         this.id = UuidV7.generate();
-        this.user = user;
-        this.hairType = hairType;
-        this.hairCondition = hairCondition;
-        this.hairLength = hairLength;
-        this.hairThickness = hairThickness;
+        this.user = Objects.requireNonNull(user, "user");
+        this.hairType = Objects.requireNonNullElse(hairType, HairType.UNKNOWN);
+        this.hairCondition = Objects.requireNonNullElse(hairCondition, HairCondition.UNKNOWN);
+        this.hairLength = Objects.requireNonNullElse(hairLength, HairLength.UNKNOWN);
+        this.hairThickness = Objects.requireNonNullElse(hairThickness, HairThickness.UNKNOWN);
         this.availableCareTimeMinutes = availableCareTimeMinutes;
+    }
+
+    /** 아직 아무것도 입력받지 않은 초기 모발 프로필. */
+    public static HairProfile unknownFor(User user) {
+        return new HairProfile(user, null, null, null, null, null);
     }
 
     public UUID getId() {

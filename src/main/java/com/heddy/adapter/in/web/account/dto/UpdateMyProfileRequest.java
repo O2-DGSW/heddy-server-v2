@@ -2,6 +2,7 @@ package com.heddy.adapter.in.web.account.dto;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.heddy.domain.account.port.in.UpdateMyProfileCommand;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
@@ -10,7 +11,7 @@ public class UpdateMyProfileRequest {
 
     @Size(max = 30)
     private String nickname;
-    @Size(max = 20)
+    @Pattern(regexp = "^01[016789]\\d{7,8}$")
     private String phone;
     @Size(max = 30)
     private String preferredDesigner;

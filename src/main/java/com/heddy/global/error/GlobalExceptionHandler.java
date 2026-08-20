@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
 import org.springframework.security.core.Authentication;
@@ -67,6 +68,18 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiErrorResponse> handleAuthentication(AuthenticationException exception) {
         log.debug("Authentication failed", exception);
         return error(CommonErrorCode.AUTHENTICATION_REQUIRED);
+    }
+
+    /**
+     * 자격 증명이 틀린 게 아니라 인증 처리 자체가 실패한 경우 — DB·Redis 장애로 사용자 조회가 터지면
+     * {@code ProviderManager}가 이를 {@link org.springframework.security.authentication.InternalAuthenticationServiceException}
+     * 으로 감싸 던진다. {@link AuthenticationException} 핸들러에 묻히면 서버 장애가 401로 나가고
+     * 운영 로그에도 흔적이 남지 않으므로 별도로 500으로 올린다.
+     */
+    @ExceptionHandler(AuthenticationServiceException.class)
+    ResponseEntity<ApiErrorResponse> handleAuthenticationServiceFailure(AuthenticationServiceException exception) {
+        log.error("Authentication service failure", exception);
+        return error(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

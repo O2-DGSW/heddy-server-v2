@@ -21,12 +21,15 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 엔티티 매핑이 V1__init.sql 과 어긋나지 않는지 검증한다.
- * 운영 프로파일은 {@code ddl-auto: validate} 라 여기서 어긋나면 부팅이 깨진다.
+ * 엔티티 매핑과 V1__init.sql 을 컬럼 이름 단위로 대조한다. 타입·길이·제약까지의 실제 검증은
+ * 실 DB 를 쓰는 {@link AccountSchemaIntegrationTest} 가 맡고, 여기서는 그쪽이 잡지 못하는
+ * 역방향(DDL 에만 있고 엔티티가 매핑하지 않는 NOT NULL 컬럼)과 상속 구조를 본다.
  */
 class AccountEntityMappingTest {
 
@@ -46,6 +49,21 @@ class AccountEntityMappingTest {
 
         for (String column : mappedColumns(entityType)) {
             assertThat(body).as("%s.%s", table.name(), column).containsPattern("\\n\\s+" + column + "\\s");
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {User.class, UserProfile.class, HairProfile.class,
+            StyleTag.class, UserStylePreference.class, ConsentHistory.class})
+    @DisplayName("DDL 의 NOT NULL 컬럼이 전부 엔티티에 매핑돼 있다")
+    void everyNotNullColumnIsMapped(Class<?> entityType) {
+        String table = entityType.getAnnotation(Table.class).name();
+        List<String> mapped = mappedColumns(entityType);
+
+        Matcher matcher = Pattern.compile("\\n\\s+(\\w+)\\s+[A-Z].*?NOT NULL").matcher(TABLE_BODIES.get(table));
+        while (matcher.find()) {
+            assertThat(mapped).as("%s.%s 가 매핑되지 않으면 INSERT 가 런타임에 깨진다", table, matcher.group(1))
+                    .contains(matcher.group(1));
         }
     }
 

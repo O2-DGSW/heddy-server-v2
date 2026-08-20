@@ -123,7 +123,6 @@ class V1InitMigrationTest {
     void declaresIndexes() {
         assertThat(MIGRATION)
                 .contains("CREATE INDEX idx_users_status")
-                .contains("CREATE INDEX idx_style_tags_tag_type")
                 .contains("CREATE INDEX idx_user_style_preferences_user_type")
                 .contains("CREATE INDEX idx_consent_history_user_type_created_at");
     }

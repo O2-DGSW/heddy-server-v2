@@ -1,6 +1,5 @@
 package com.heddy.infrastructure.security.jwt;
 
-import com.heddy.domain.account.model.AccountRole;
 import com.heddy.domain.account.model.AuthPrincipal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,54 +7,41 @@ import org.junit.jupiter.api.Test;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class JwtProviderTest {
 
     private static final String SECRET = "test-jwt-secret-must-have-at-least-32-bytes";
-    private static final Instant NOW = Instant.parse("2026-08-20T00:00:00Z");
-
-    private JwtProvider jwtProvider;
+    private static final UUID USER_ID = UUID.randomUUID();
+    private JwtProvider provider;
 
     @BeforeEach
     void setUp() {
-        jwtProvider = new JwtProvider(
-                SECRET, 3600, 2592000, Clock.fixed(NOW, ZoneOffset.UTC));
-        jwtProvider.initialize();
+        provider = new JwtProvider(SECRET, 900, 300,
+                Clock.fixed(Instant.parse("2026-08-20T00:00:00Z"), ZoneOffset.UTC));
+        provider.initialize();
     }
 
     @Test
-    void accessTokenContainsAccountPrincipal() {
-        String token = jwtProvider.createAccessToken(7L, AccountRole.USER);
-
-        assertThat(jwtProvider.parseAccessToken(token))
-                .contains(new AuthPrincipal(7L, AccountRole.USER));
+    void parsesValidAccessTokenWithUuidSubject() {
+        String token = provider.createAccessToken(USER_ID);
+        assertThat(provider.parseAccessToken(token)).contains(new AuthPrincipal(USER_ID));
     }
 
     @Test
-    void refreshTokenCannotBeUsedAsAccessToken() {
-        String token = jwtProvider.createRefreshToken(7L, AccountRole.USER);
-
-        assertThat(jwtProvider.parseAccessToken(token)).isEmpty();
+    void reauthenticationTokenCannotAuthenticateApiRequest() {
+        String token = provider.createReauthenticationToken(USER_ID);
+        assertThat(provider.parseAccessToken(token)).isEmpty();
     }
 
     @Test
-    void separatelyIssuedRefreshTokensAreUnique() {
-        String first = jwtProvider.createRefreshToken(7L, AccountRole.USER);
-        String second = jwtProvider.createRefreshToken(7L, AccountRole.USER);
-
-        assertThat(first).isNotEqualTo(second);
-    }
-
-    @Test
-    void tokenWithDifferentSignatureIsRejected() {
-        JwtProvider otherProvider = new JwtProvider(
-                "another-test-secret-must-have-at-least-32-bytes", 3600, 2592000,
-                Clock.fixed(NOW, ZoneOffset.UTC));
-        otherProvider.initialize();
-        String token = otherProvider.createAccessToken(7L, AccountRole.USER);
-
-        assertThat(jwtProvider.parseAccessToken(token)).isEmpty();
+    void tokenSignedByDifferentKeyIsRejected() {
+        JwtProvider other = new JwtProvider(
+                "another-test-jwt-secret-with-at-least-32-bytes", 900, 300,
+                Clock.fixed(Instant.parse("2026-08-20T00:00:00Z"), ZoneOffset.UTC));
+        other.initialize();
+        assertThat(provider.parseAccessToken(other.createAccessToken(USER_ID))).isEmpty();
     }
 }

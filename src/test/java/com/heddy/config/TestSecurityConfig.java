@@ -21,13 +21,15 @@ public class TestSecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/api/v1/health",
-                                "/api/v1/auth/signup",
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/token/refresh",
-                                "/api/v1/auth/social/signup",
-                                "/api/v1/auth/sms/send",
-                                "/api/v1/auth/sms/verify",
-                                "/api/v1/auth/password/reset").permitAll()
+                                "/auth/email-availability",
+                                "/auth/signup/email",
+                                "/auth/signup/social",
+                                "/auth/login/email",
+                                "/auth/login/social",
+                                "/auth/token/refresh",
+                                "/auth/sms/send",
+                                "/auth/sms/verify",
+                                "/auth/password/reset").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, exception) ->

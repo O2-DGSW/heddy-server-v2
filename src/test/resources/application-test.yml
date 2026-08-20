@@ -13,22 +13,6 @@ spring:
     redis:
       repositories:
         enabled: false
-  security:
-    oauth2:
-      client:
-        registration:
-          kakao:
-            client-id: test-kakao
-            client-secret: test-kakao-secret
-            authorization-grant-type: authorization_code
-          naver:
-            client-id: test-naver
-            client-secret: test-naver-secret
-            authorization-grant-type: authorization_code
-          google:
-            client-id: test-google
-            client-secret: test-google-secret
-
 app:
   cors:
     allowed-origins: http://localhost:3000
@@ -36,11 +20,15 @@ app:
     jwt-secret: test-jwt-secret-must-have-at-least-32-bytes
     access-token-seconds: 3600
     refresh-token-seconds: 2592000
-    cookie:
-      secure: false
-      same-site: Lax
-    oauth2:
-      redirect-base-url: http://localhost:3000
+    reauthentication-token-seconds: 300
+    consent-policy-version: 2026-08-01
+    login:
+      maximum-attempts: 5
+      lock-seconds: 1800
+    social:
+      google-client-id: test-google
+      kakao-app-id: test-kakao-app-id
+      apple-client-id: test-apple
     sms:
       solapi:
         enabled: false

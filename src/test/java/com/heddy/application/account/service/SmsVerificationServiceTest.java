@@ -47,7 +47,10 @@ class SmsVerificationServiceTest {
                 new SendSmsCodeCommand(PHONE, "SKT", SmsVerificationPurpose.SIGNUP));
 
         ArgumentCaptor<SmsVerification> verification = ArgumentCaptor.forClass(SmsVerification.class);
-        verify(smsVerificationStorePort).save(org.mockito.ArgumentMatchers.eq(PHONE), verification.capture());
+        verify(smsVerificationStorePort).save(
+                org.mockito.ArgumentMatchers.eq(PHONE),
+                org.mockito.ArgumentMatchers.eq(SmsVerificationPurpose.SIGNUP),
+                verification.capture());
         assertThat(verification.getValue().code()).matches("\\d{6}");
         verify(smsSenderPort).send(PHONE, "SKT", verification.getValue().code());
         verify(smsVerificationStorePort).startCooldown(PHONE);
@@ -79,32 +82,32 @@ class SmsVerificationServiceTest {
                 () -> smsVerificationService.send(
                         new SendSmsCodeCommand(PHONE, "SKT", SmsVerificationPurpose.SIGNUP)),
                 AccountError.SMS_SEND_FAILED);
-        verify(smsVerificationStorePort).delete(PHONE);
+        verify(smsVerificationStorePort).delete(PHONE, SmsVerificationPurpose.SIGNUP);
         verify(smsVerificationStorePort, never()).startCooldown(PHONE);
     }
 
     @Test
     void correctCodeMarksPurposeAsVerified() {
-        given(smsVerificationStorePort.find(PHONE))
+        given(smsVerificationStorePort.find(PHONE, SmsVerificationPurpose.SIGNUP))
                 .willReturn(Optional.of(new SmsVerification("123456", 0, Instant.now())));
 
         smsVerificationService.verify(
                 new VerifySmsCodeCommand(PHONE, "123456", SmsVerificationPurpose.SIGNUP));
 
-        verify(smsVerificationStorePort).delete(PHONE);
+        verify(smsVerificationStorePort).delete(PHONE, SmsVerificationPurpose.SIGNUP);
         verify(smsVerificationStorePort).markVerified(PHONE, SmsVerificationPurpose.SIGNUP);
     }
 
     @Test
     void fifthWrongAttemptDeletesCodeAndLocksVerification() {
-        given(smsVerificationStorePort.find(PHONE))
+        given(smsVerificationStorePort.find(PHONE, SmsVerificationPurpose.SIGNUP))
                 .willReturn(Optional.of(new SmsVerification("123456", 4, Instant.now())));
 
         assertError(
                 () -> smsVerificationService.verify(
                         new VerifySmsCodeCommand(PHONE, "000000", SmsVerificationPurpose.SIGNUP)),
                 AccountError.SMS_CODE_MAX_ATTEMPTS);
-        verify(smsVerificationStorePort).delete(PHONE);
+        verify(smsVerificationStorePort).delete(PHONE, SmsVerificationPurpose.SIGNUP);
     }
 
     private void assertError(Runnable action, AccountError expected) {

@@ -5,8 +5,6 @@ import com.heddy.config.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
-import org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -19,12 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
-@WebMvcTest(
-        controllers = HealthController.class,
-        excludeAutoConfiguration = {
-                OAuth2ClientAutoConfiguration.class,
-                OAuth2ClientWebSecurityAutoConfiguration.class
-        })
+@WebMvcTest(controllers = HealthController.class)
 @Import(TestSecurityConfig.class)
 class HealthControllerTest {
 

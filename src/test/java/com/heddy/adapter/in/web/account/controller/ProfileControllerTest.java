@@ -88,6 +88,16 @@ class ProfileControllerTest {
     }
 
     @Test
+    void rejectsNonCanonicalPhoneFormat() throws Exception {
+        mockMvc.perform(patch("/me")
+                        .with(authentication(userAuthentication()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phone\":\"010-1111-2222\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"));
+    }
+
+    @Test
     void savesHairProfileUsingSnakeCaseContract() throws Exception {
         given(profileUseCase.saveHairProfile(any())).willReturn(hairProfile());
 

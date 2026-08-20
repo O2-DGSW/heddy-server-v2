@@ -10,11 +10,13 @@ import com.heddy.domain.account.model.HairProfile.HairCondition;
 import com.heddy.domain.account.model.HairProfile.HairLength;
 import com.heddy.domain.account.model.HairProfile.HairThickness;
 import com.heddy.domain.account.model.HairProfile.HairType;
+import com.heddy.domain.account.model.SmsVerificationPurpose;
 import com.heddy.domain.account.model.UserProfile;
 import com.heddy.domain.account.port.in.SaveHairProfileCommand;
 import com.heddy.domain.account.port.in.UpdateMyProfileCommand;
 import com.heddy.domain.account.port.out.AccountRepositoryPort;
 import com.heddy.domain.account.port.out.HairProfileRepositoryPort;
+import com.heddy.domain.account.port.out.SmsVerificationStorePort;
 import com.heddy.domain.account.port.out.UserProfileRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,13 +46,14 @@ class ProfileServiceTest {
     @Mock AccountRepositoryPort accountRepositoryPort;
     @Mock UserProfileRepositoryPort userProfileRepositoryPort;
     @Mock HairProfileRepositoryPort hairProfileRepositoryPort;
+    @Mock SmsVerificationStorePort smsVerificationStorePort;
 
     private ProfileService service;
 
     @BeforeEach
     void setUp() {
         service = new ProfileService(accountRepositoryPort, userProfileRepositoryPort,
-                hairProfileRepositoryPort);
+                hairProfileRepositoryPort, smsVerificationStorePort);
     }
 
     @Test
@@ -106,6 +109,33 @@ class ProfileServiceTest {
         assertError(() -> service.updateProfile(new UpdateMyProfileCommand(
                 USER_ID, false, null, true, "01099998888",
                 false, null, false, null)), AccountError.PHONE_ALREADY_EXISTS);
+    }
+
+    @Test
+    void rejectsUnverifiedPhoneChange() {
+        given(accountRepositoryPort.findById(USER_ID)).willReturn(Optional.of(account()));
+        given(userProfileRepositoryPort.findByUserId(USER_ID)).willReturn(Optional.of(profile()));
+
+        assertError(() -> service.updateProfile(new UpdateMyProfileCommand(
+                USER_ID, false, null, true, "01099998888",
+                false, null, false, null)), AccountError.PHONE_NOT_VERIFIED);
+        verify(userProfileRepositoryPort, never()).save(any());
+    }
+
+    @Test
+    void consumesVerificationAfterPhoneChange() {
+        given(accountRepositoryPort.findById(USER_ID)).willReturn(Optional.of(account()));
+        given(userProfileRepositoryPort.findByUserId(USER_ID)).willReturn(Optional.of(profile()));
+        given(smsVerificationStorePort.isVerified(
+                "01099998888", SmsVerificationPurpose.PHONE_CHANGE)).willReturn(true);
+        given(userProfileRepositoryPort.save(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+        service.updateProfile(new UpdateMyProfileCommand(
+                USER_ID, false, null, true, "01099998888",
+                false, null, false, null));
+
+        verify(smsVerificationStorePort).deleteVerified(
+                "01099998888", SmsVerificationPurpose.PHONE_CHANGE);
     }
 
     @Test

@@ -20,7 +20,14 @@ CREATE TABLE users (
     CONSTRAINT uq_users_provider_subject UNIQUE (auth_provider, provider_subject),
     CONSTRAINT ck_users_status CHECK (status IN ('ACTIVE', 'LOCKED', 'DELETION_PENDING', 'DELETED')),
     CONSTRAINT ck_users_auth_provider CHECK (auth_provider IN ('EMAIL', 'KAKAO', 'APPLE', 'GOOGLE')),
-    CONSTRAINT ck_users_login_fail_count CHECK (login_fail_count >= 0)
+    CONSTRAINT ck_users_login_fail_count CHECK (login_fail_count >= 0),
+    -- 자격증명 정합성. 이 CHECK 가 provider_subject 의 NULL 을 막아
+    -- uq_users_provider_subject 가 소셜 계정 중복을 실제로 차단하게 한다
+    -- (PostgreSQL 의 UNIQUE 는 NULL 을 서로 distinct 로 본다).
+    CONSTRAINT ck_users_credential CHECK (
+        (auth_provider = 'EMAIL' AND password_hash IS NOT NULL AND provider_subject IS NULL)
+        OR (auth_provider <> 'EMAIL' AND provider_subject IS NOT NULL)
+    )
 );
 
 CREATE INDEX idx_users_status ON users (status);

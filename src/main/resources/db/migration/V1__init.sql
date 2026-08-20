@@ -81,13 +81,14 @@ CREATE TABLE style_tags (
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT pk_style_tags PRIMARY KEY (id),
-    CONSTRAINT uq_style_tags_type_name UNIQUE (tag_type, tag_name)
+    CONSTRAINT uq_style_tags_type_name UNIQUE (tag_type, tag_name),
+    CONSTRAINT ck_style_tags_tag_type CHECK (tag_type IN ('TREATMENT', 'COLOR', 'MOOD'))
 );
 
 CREATE INDEX idx_style_tags_tag_type ON style_tags (tag_type);
 
 COMMENT ON TABLE style_tags IS '스타일 태그 마스터';
-COMMENT ON COLUMN style_tags.tag_type IS 'TREATMENT / COLOR / MOOD 등';
+COMMENT ON COLUMN style_tags.tag_type IS 'TREATMENT / COLOR / MOOD';
 
 -- 회원별 선호·제외 태그. 태그당 1행.
 CREATE TABLE user_style_preferences (

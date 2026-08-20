@@ -13,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * 요청마다 추적 ID를 확정해 MDC와 응답 헤더에 싣는다.
@@ -29,8 +30,11 @@ public class RequestIdFilter extends OncePerRequestFilter {
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
     public static final String MDC_KEY = "requestId";
 
-    /** 외부에서 주입된 값을 그대로 로그·응답에 싣지 않도록 길이와 문자 집합을 제한한다. */
-    private static final int MAX_LENGTH = 64;
+    /**
+     * 외부에서 주입된 값을 그대로 로그·응답에 싣지 않도록 길이와 문자 집합을 제한한다.
+     * 비-ASCII 를 허용하면 Tomcat 이 응답 헤더를 ISO-8859-1 로 인코딩해 본문의 request_id 와 값이 갈린다.
+     */
+    private static final Pattern SAFE_REQUEST_ID = Pattern.compile("[A-Za-z0-9._-]{1,64}");
 
     @Override
     protected void doFilterInternal(
@@ -54,20 +58,9 @@ public class RequestIdFilter extends OncePerRequestFilter {
     }
 
     private static String resolve(String header) {
-        if (!StringUtils.hasText(header) || header.length() > MAX_LENGTH || !isSafe(header)) {
+        if (!StringUtils.hasText(header) || !SAFE_REQUEST_ID.matcher(header).matches()) {
             return UUID.randomUUID().toString();
         }
         return header;
-    }
-
-    private static boolean isSafe(String value) {
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            boolean allowed = Character.isLetterOrDigit(c) || c == '-' || c == '_' || c == '.';
-            if (!allowed) {
-                return false;
-            }
-        }
-        return true;
     }
 }

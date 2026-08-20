@@ -10,8 +10,17 @@ import java.util.List;
  */
 public record ApiErrorResponse(Error error, String requestId) {
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public record Error(String code, String message, List<FieldError> fieldErrors) {
+    /**
+     * {@code code}·{@code message}는 명세상 필수라 비어 있어도 키를 남긴다.
+     * 클래스 레벨에 NON_EMPTY를 걸면 이 둘까지 대상이 되므로 생략 규칙은 {@code fieldErrors}에만 건다.
+     * {@code message}에 ALWAYS를 명시한 건 전역 설정({@code default-property-inclusion: non_null})이
+     * null 메시지에서 키를 지우는 것까지 막기 위해서다.
+     */
+    public record Error(
+            String code,
+            @JsonInclude(JsonInclude.Include.ALWAYS) String message,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<FieldError> fieldErrors
+    ) {
     }
 
     public record FieldError(String field, String reason) {

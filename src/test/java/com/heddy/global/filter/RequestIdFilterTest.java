@@ -42,6 +42,22 @@ class RequestIdFilterTest {
     }
 
     @Test
+    void rejectsNonAsciiHeaderValue() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(RequestIdFilter.REQUEST_ID_HEADER, "요청-1");
+
+        assertThat(doFilter(request).getHeader(RequestIdFilter.REQUEST_ID_HEADER)).doesNotContain("요청");
+    }
+
+    @Test
+    void rejectsOverlongHeaderValue() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(RequestIdFilter.REQUEST_ID_HEADER, "a".repeat(65));
+
+        assertThat(doFilter(request).getHeader(RequestIdFilter.REQUEST_ID_HEADER)).hasSizeLessThan(65);
+    }
+
+    @Test
     void clearsMdcAfterRequest() throws Exception {
         doFilter(new MockHttpServletRequest());
 

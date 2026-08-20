@@ -6,16 +6,13 @@ import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 
-import tools.jackson.databind.PropertyNamingStrategies;
-import tools.jackson.databind.json.JsonMapper;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 페이지 메타 계산만 검증한다. 실제 응답의 snake_case 직렬화는 전역 Jackson 설정에 달려 있어
+ * {@code ApiContractIntegrationTest} 가 애플리케이션 컨텍스트로 확인한다.
+ */
 class PageResponseTest {
-
-    private final JsonMapper objectMapper = JsonMapper.builder()
-            .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
-            .build();
 
     @Test
     void exposesSpecPageMeta() {
@@ -35,11 +32,4 @@ class PageResponseTest {
         assertThat(response.page().hasNext()).isFalse();
     }
 
-    @Test
-    void serializesPageMetaInSnakeCase() {
-        String json = objectMapper.writeValueAsString(
-                PageResponse.of(new PageImpl<>(List.of("a"), PageRequest.of(0, 20), 43)));
-
-        assertThat(json).contains("\"total_elements\":43", "\"total_pages\":3", "\"has_next\":true");
-    }
 }

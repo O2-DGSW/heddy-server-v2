@@ -2,6 +2,7 @@ package com.heddy.domain.account.model;
 
 public enum AccountStatus {
     ACTIVE,
-    INACTIVE,
-    SUSPENDED
+    LOCKED,
+    DELETION_PENDING,
+    DELETED
 }

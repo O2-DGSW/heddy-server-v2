@@ -1,4 +1,6 @@
 package com.heddy.domain.account.model;
 
-public record AuthPrincipal(Long accountId, AccountRole role) {
+import java.util.UUID;
+
+public record AuthPrincipal(UUID userId) {
 }

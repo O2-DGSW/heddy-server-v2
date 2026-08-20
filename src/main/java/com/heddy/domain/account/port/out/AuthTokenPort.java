@@ -1,13 +1,12 @@
 package com.heddy.domain.account.port.out;
 
-import com.heddy.domain.account.model.AccountRole;
 import com.heddy.domain.account.model.AuthPrincipal;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public interface AuthTokenPort {
-    String createAccessToken(Long accountId, AccountRole role);
-    String createRefreshToken(Long accountId, AccountRole role);
+    String createAccessToken(UUID userId);
+    String createReauthenticationToken(UUID userId);
     Optional<AuthPrincipal> parseAccessToken(String token);
-    Optional<AuthPrincipal> parseRefreshToken(String token);
 }

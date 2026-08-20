@@ -1,5 +1,7 @@
 package com.heddy.domain.account.port.in;
 
+import java.util.UUID;
+
 public interface LogoutUseCase {
-    void logout(Long accountId);
+    void logout(UUID userId, String refreshToken);
 }

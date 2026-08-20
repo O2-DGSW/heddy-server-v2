@@ -53,6 +53,9 @@ com.heddy
 - 조회 전용 서비스 메서드에는 `@Transactional(readOnly = true)` 를 붙인다.
 - 소유권 검증은 **service 계층**이 한다. 본인 리소스가 아니면 `FORBIDDEN_RESOURCE`,
   애초에 존재를 숨겨야 하는 경우에만 `RESOURCE_NOT_FOUND` 를 쓴다.
+- Spring 의 `AccessDeniedException`(`@PreAuthorize` 거부 포함)도 공통 핸들러가 받아
+  익명이면 401 `AUTHENTICATION_REQUIRED`, 인증된 사용자면 403 `FORBIDDEN_RESOURCE` 로 내린다.
+  둘 중 어느 쪽을 던져도 응답 포맷은 같다.
 
 ## 4. API 공통 규약
 

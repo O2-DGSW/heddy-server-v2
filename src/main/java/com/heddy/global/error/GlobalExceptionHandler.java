@@ -11,6 +11,12 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationTrustResolver;
+import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -28,11 +34,37 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    private final AuthenticationTrustResolver trustResolver = new AuthenticationTrustResolverImpl();
+
     @ExceptionHandler(ApplicationException.class)
     ResponseEntity<ApiErrorResponse> handleApplicationException(ApplicationException exception) {
         ErrorCode errorCode = exception.getErrorCode();
         return ResponseEntity.status(errorCode.status())
                 .body(ApiErrorResponse.of(errorCode, exception.getMessage(), exception.getFieldErrors()));
+    }
+
+    /**
+     * 메서드 단위 인가({@code @PreAuthorize}) 실패와 서비스가 던진 {@link AccessDeniedException}.
+     *
+     * <p>이 예외들은 {@code ExceptionTranslationFilter}에 닿기 전에 {@code ExceptionHandlerExceptionResolver}가
+     * 먼저 처리하므로 {@link SecurityErrorResponder}가 호출되지 않는다. 필터가 하던 판단을 여기서 그대로 한다 —
+     * 익명 사용자면 아직 인증할 기회가 있으니 401, 인증된 사용자면 권한이 없는 것이므로 403.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException exception) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || trustResolver.isAnonymous(authentication)) {
+            log.debug("Access denied for anonymous request", exception);
+            return error(CommonErrorCode.AUTHENTICATION_REQUIRED);
+        }
+        log.debug("Access denied", exception);
+        return error(CommonErrorCode.FORBIDDEN_RESOURCE);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    ResponseEntity<ApiErrorResponse> handleAuthentication(AuthenticationException exception) {
+        log.debug("Authentication failed", exception);
+        return error(CommonErrorCode.AUTHENTICATION_REQUIRED);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

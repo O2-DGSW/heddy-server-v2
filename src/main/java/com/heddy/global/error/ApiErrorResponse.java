@@ -17,6 +17,10 @@ public record ApiErrorResponse(
         return new ApiErrorResponse(errorCode.code(), message, path, Instant.now(), List.of());
     }
 
+    public static ApiErrorResponse of(String code, String message, String path) {
+        return new ApiErrorResponse(code, message, path, Instant.now(), List.of());
+    }
+
     public static ApiErrorResponse validation(String path, List<FieldError> errors) {
         return new ApiErrorResponse(
                 ErrorCode.INVALID_INPUT.code(),

@@ -1,8 +1,12 @@
 HELP.md
-.gradle/
-build/
-out/
-bin/
+
+# Build output — 루트 기준으로만 무시한다.
+# 앵커(/) 가 없으면 경로 어디에 있든 같은 이름의 디렉터리를 전부 무시한다.
+# 헥사고날 구조는 adapter/out, port/out 을 쓰므로 out/ 이 앵커되지 않으면 소스가 통째로 사라진다.
+/.gradle/
+/build/
+/out/
+/bin/
 
 # IDE
 .idea/

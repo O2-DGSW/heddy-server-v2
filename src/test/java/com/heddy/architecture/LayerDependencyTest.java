@@ -54,7 +54,6 @@ class LayerDependencyTest {
         // global 도 금지한다. global.error.ErrorCode 가 HttpStatus 를 들고 있어,
         // 도메인이 공통 예외를 쓰는 순간 스프링 웹이 도메인에 전이 의존으로 딸려 들어온다.
         // 도메인 예외는 domain 안에 자체 타입으로 두고 ErrorCode 번역은 application·adapter 가 한다.
-        // 대상 0개 — 도메인 클래스가 들어오는 #11 이 머지되면 아래 allowEmptyShould 를 지운다.
         noClasses()
                 .that().resideInAPackage(DOMAIN)
                 .should().dependOnClassesThat().resideInAnyPackage(
@@ -69,19 +68,16 @@ class LayerDependencyTest {
                         "org.hibernate..",
                         "com.fasterxml.jackson..")
                 .because("도메인은 순수해야 한다. 기술 의존은 포트 뒤에 둔다")
-                .allowEmptyShould(true)
                 .check(classes);
     }
 
     @Test
     @DisplayName("application 은 adapter 에 의존하지 않는다")
     void applicationDoesNotDependOnAdapter() {
-        // 대상 0개 — application 에 첫 유스케이스 구현이 들어오면 allowEmptyShould 를 지운다.
         noClasses()
                 .that().resideInAPackage(APPLICATION)
                 .should().dependOnClassesThat().resideInAPackage(ADAPTER)
                 .because("유스케이스는 아웃바운드 포트만 알아야 한다")
-                .allowEmptyShould(true)
                 .check(classes);
     }
 
@@ -144,12 +140,10 @@ class LayerDependencyTest {
     @Test
     @DisplayName("아웃바운드 포트는 전부 인터페이스다")
     void outboundPortsAreInterfaces() {
-        // 대상 0개 — 포트가 들어오는 #11 이 머지되면 allowEmptyShould 를 지운다.
         classes()
                 .that().resideInAPackage(DOMAIN_PORT_OUT)
                 .should().beInterfaces()
                 .because("구현을 바깥에 두고 의존을 뒤집는 것이 포트의 전부다")
-                .allowEmptyShould(true)
                 .check(classes);
     }
 
@@ -157,13 +151,11 @@ class LayerDependencyTest {
     @DisplayName("인바운드 포트의 UseCase 타입은 인터페이스다")
     void useCasePortsAreInterfaces() {
         // port.in 에는 Command·Result 를 record 로 두므로 UseCase 로 끝나는 타입만 검사한다.
-        // 대상 0개 — 포트가 들어오는 #11 이 머지되면 allowEmptyShould 를 지운다.
         classes()
                 .that().resideInAPackage(DOMAIN_PORT_IN)
                 .and().haveSimpleNameEndingWith("UseCase")
                 .should().beInterfaces()
                 .because("유스케이스 계약은 구현과 분리돼야 한다")
-                .allowEmptyShould(true)
                 .check(classes);
     }
 
@@ -172,12 +164,10 @@ class LayerDependencyTest {
     @Test
     @DisplayName("도메인 사이에 순환 의존이 없다")
     void domainsAreFreeOfCycles() {
-        // 대상 0개 — 도메인 클래스가 들어오는 #11 이 머지되면 allowEmptyShould 를 지운다.
         slices()
                 .matching(BASE + ".domain.(*)..")
                 .should().beFreeOfCycles()
                 .because("도메인끼리 서로를 물면 어느 쪽도 따로 이해할 수 없다")
-                .allowEmptyShould(true)
                 .check(classes);
     }
 

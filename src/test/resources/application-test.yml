@@ -6,10 +6,29 @@ spring:
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
   flyway:
-    enabled: false
+    enabled: true
   data:
     redis:
       repositories:
+        enabled: false
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+  auth:
+    jwt-secret: test-jwt-secret-must-have-at-least-32-bytes
+    access-token-seconds: 3600
+    refresh-token-seconds: 2592000
+    reauthentication-token-seconds: 300
+    consent-policy-version: 2026-08-01
+    login:
+      maximum-attempts: 5
+      lock-seconds: 1800
+    social:
+      google-client-id: test-google
+      kakao-app-id: test-kakao-app-id
+      apple-client-id: test-apple
+    sms:
+      solapi:
         enabled: false

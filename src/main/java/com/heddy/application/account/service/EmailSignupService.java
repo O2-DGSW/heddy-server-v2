@@ -6,11 +6,11 @@ import com.heddy.domain.account.model.Account;
 import com.heddy.domain.account.model.ConsentSource;
 import com.heddy.domain.account.model.UserProfile;
 import com.heddy.domain.account.port.in.AuthResult;
-import com.heddy.domain.account.port.in.SocialSignupCommand;
-import com.heddy.domain.account.port.in.SocialSignupUseCase;
+import com.heddy.domain.account.port.in.EmailSignupCommand;
+import com.heddy.domain.account.port.in.EmailSignupUseCase;
 import com.heddy.domain.account.port.out.AccountRepositoryPort;
 import com.heddy.domain.account.port.out.ConsentHistoryRepositoryPort;
-import com.heddy.domain.account.port.out.SocialTokenVerifierPort;
+import com.heddy.domain.account.port.out.PasswordEncoderPort;
 import com.heddy.domain.account.port.out.UserProfileRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,30 +21,28 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class SocialSignupService implements SocialSignupUseCase {
+public class EmailSignupService implements EmailSignupUseCase {
 
-    private final SocialTokenVerifierPort socialTokenVerifierPort;
     private final AccountRepositoryPort accountRepositoryPort;
     private final UserProfileRepositoryPort userProfileRepositoryPort;
     private final ConsentHistoryRepositoryPort consentHistoryRepositoryPort;
+    private final PasswordEncoderPort passwordEncoderPort;
     private final SessionTokenService sessionTokenService;
     private final SignupPhoneVerificationService signupPhoneVerificationService;
 
     @Override
     @Transactional
-    public AuthResult signup(SocialSignupCommand command) {
+    public AuthResult signup(EmailSignupCommand command) {
+        PasswordPolicy.validate(command.password());
         ConsentValidator.requireSignupConsents(command.agreements());
         signupPhoneVerificationService.validate(command.phone());
-        SocialTokenVerifierPort.VerifiedSocialIdentity identity = socialTokenVerifierPort
-                .verify(command.provider(), command.providerToken())
-                .orElseThrow(() -> new AccountException(AccountError.SOCIAL_TOKEN_INVALID));
-        if (accountRepositoryPort.findByProvider(command.provider(), identity.subject()).isPresent()) {
-            throw new AccountException(AccountError.SOCIAL_ACCOUNT_ALREADY_LINKED);
+        if (accountRepositoryPort.existsByEmail(command.email())) {
+            throw new AccountException(AccountError.EMAIL_ALREADY_EXISTS);
         }
 
         UUID userId = UUID.randomUUID();
-        Account account = accountRepositoryPort.save(
-                Account.social(userId, command.provider(), identity.subject()));
+        Account account = accountRepositoryPort.save(Account.email(
+                userId, command.email(), passwordEncoderPort.encode(command.password())));
         UserProfile profile = userProfileRepositoryPort.save(
                 UserProfile.signup(userId, command.nickname(), command.phone()));
         consentHistoryRepositoryPort.append(

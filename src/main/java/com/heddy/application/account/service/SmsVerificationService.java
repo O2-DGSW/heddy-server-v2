@@ -31,12 +31,12 @@ public class SmsVerificationService implements SendSmsCodeUseCase, VerifySmsCode
             throw new AccountException(AccountError.SMS_SEND_TOO_SOON);
         }
         String code = "%06d".formatted(RANDOM.nextInt(1_000_000));
-        smsVerificationStorePort.save(
-                command.phoneNumber(), new SmsVerification(code, 0, Instant.now()));
+        smsVerificationStorePort.save(command.phoneNumber(), command.purpose(),
+                new SmsVerification(code, 0, Instant.now()));
         try {
             smsSenderPort.send(command.phoneNumber(), command.carrier(), code);
         } catch (RuntimeException exception) {
-            smsVerificationStorePort.delete(command.phoneNumber());
+            smsVerificationStorePort.delete(command.phoneNumber(), command.purpose());
             throw exception;
         }
         smsVerificationStorePort.startCooldown(command.phoneNumber());
@@ -44,19 +44,20 @@ public class SmsVerificationService implements SendSmsCodeUseCase, VerifySmsCode
 
     @Override
     public void verify(VerifySmsCodeCommand command) {
-        SmsVerification verification = smsVerificationStorePort.find(command.phoneNumber())
+        SmsVerification verification = smsVerificationStorePort
+                .find(command.phoneNumber(), command.purpose())
                 .orElseThrow(() -> new AccountException(AccountError.SMS_CODE_NOT_FOUND));
         if (!verification.code().equals(command.code())) {
             SmsVerification updated = verification.incrementAttempts();
             if (updated.attempts() >= MAX_ATTEMPTS) {
-                smsVerificationStorePort.delete(command.phoneNumber());
+                smsVerificationStorePort.delete(command.phoneNumber(), command.purpose());
                 throw new AccountException(AccountError.SMS_CODE_MAX_ATTEMPTS);
             }
-            smsVerificationStorePort.save(command.phoneNumber(), updated);
+            smsVerificationStorePort.save(command.phoneNumber(), command.purpose(), updated);
             throw new AccountException(AccountError.SMS_CODE_INVALID);
         }
 
-        smsVerificationStorePort.delete(command.phoneNumber());
+        smsVerificationStorePort.delete(command.phoneNumber(), command.purpose());
         smsVerificationStorePort.markVerified(command.phoneNumber(), command.purpose());
     }
 }

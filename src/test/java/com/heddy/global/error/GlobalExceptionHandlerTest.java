@@ -9,6 +9,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -80,6 +83,38 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void authenticationFailureIs401() throws Exception {
+        mockMvc.perform(get("/probe/bad-credentials"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("AUTHENTICATION_REQUIRED"));
+    }
+
+    /** 인증 인프라 장애(DB·Redis)는 자격 증명 실패가 아니라 서버 오류다. 401로 삼키면 안 된다. */
+    @Test
+    void authenticationInfrastructureFailureIs500() throws Exception {
+        mockMvc.perform(get("/probe/auth-infra-down"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error.code").value("INTERNAL_SERVER_ERROR"));
+    }
+
+    @Test
+    void keepsMessageKeyWhenMessageIsBlank() throws Exception {
+        mockMvc.perform(get("/probe/blank-message"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").exists())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void keepsMessageKeyWhenMessageIsNull() throws Exception {
+        mockMvc.perform(get("/probe/null-message"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").exists())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.hasKey("message")));
+    }
+
+    @Test
     void unexpectedExceptionIs500() throws Exception {
         mockMvc.perform(get("/probe/boom"))
                 .andExpect(status().isInternalServerError())
@@ -111,6 +146,28 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/search")
         ApiResponse<String> search(@RequestParam String keyword) {
             return ApiResponse.of(keyword);
+        }
+
+        @GetMapping("/bad-credentials")
+        void badCredentials() {
+            throw new BadCredentialsException("자격 증명이 올바르지 않습니다.");
+        }
+
+        @GetMapping("/auth-infra-down")
+        void authInfraDown() {
+            throw new InternalAuthenticationServiceException(
+                    "user lookup failed", new IllegalStateException("db down"));
+        }
+
+        @GetMapping("/blank-message")
+        void blankMessage() {
+            throw new ApplicationException(CommonErrorCode.INVALID_REQUEST, "");
+        }
+
+        @GetMapping("/null-message")
+        ResponseEntity<ApiErrorResponse> nullMessage() {
+            return ResponseEntity.badRequest()
+                    .body(ApiErrorResponse.of(CommonErrorCode.INVALID_REQUEST, null));
         }
 
         @GetMapping("/boom")

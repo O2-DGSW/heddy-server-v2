@@ -75,7 +75,7 @@ public class AccountEntity extends BaseEntity {
 
     Account toDomain() {
         return new Account(userId, email, passwordHash, authProvider, providerSubject,
-                status, loginFailCount, lockedUntil);
+                status, loginFailCount, lockedUntil, getCreatedAt(), getUpdatedAt());
     }
 
     UUID userId() {

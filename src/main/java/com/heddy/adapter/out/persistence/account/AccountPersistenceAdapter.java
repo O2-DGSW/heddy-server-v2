@@ -69,7 +69,10 @@ public class AccountPersistenceAdapter implements
 
     @Override
     public UserProfile save(UserProfile profile) {
-        return userProfileJpaRepository.save(new UserProfileEntity(profile)).toDomain();
+        UserProfileEntity entity = userProfileJpaRepository.findById(profile.userId())
+                .orElseGet(() -> new UserProfileEntity(profile));
+        entity.update(profile);
+        return userProfileJpaRepository.saveAndFlush(entity).toDomain();
     }
 
     @Override

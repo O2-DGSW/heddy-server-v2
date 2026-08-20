@@ -14,6 +14,8 @@ public enum AccountError {
     CONSENT_REQUIRED_NOT_GRANTED("CONSENT_REQUIRED_NOT_GRANTED", "필수 약관에 동의해야 합니다."),
     ACCOUNT_NOT_FOUND("RESOURCE_NOT_FOUND", "계정을 찾을 수 없습니다."),
     PHONE_ALREADY_EXISTS("AUTH_PHONE_ALREADY_EXISTS", "이미 사용 중인 전화번호입니다."),
+    PROFILE_INVALID_NICKNAME("VALIDATION_FAILED", "닉네임은 비어 있을 수 없습니다."),
+    HAIR_PROFILE_NOT_FOUND("HAIR_PROFILE_NOT_FOUND", "모발 프로필을 찾을 수 없습니다."),
     PHONE_NOT_VERIFIED("AUTH_PHONE_NOT_VERIFIED", "전화번호 인증이 완료되지 않았습니다."),
     SMS_CODE_NOT_FOUND("AUTH_SMS_CODE_NOT_FOUND", "인증 코드를 찾을 수 없습니다."),
     SMS_CODE_INVALID("AUTH_SMS_CODE_INVALID", "인증 코드가 올바르지 않습니다."),

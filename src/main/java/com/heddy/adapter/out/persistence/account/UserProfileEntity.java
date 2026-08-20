@@ -34,6 +34,10 @@ class UserProfileEntity extends BaseEntity {
 
     UserProfileEntity(UserProfile profile) {
         userId = profile.userId();
+        update(profile);
+    }
+
+    void update(UserProfile profile) {
         nickname = profile.nickname();
         phone = profile.phone();
         preferredDesigner = profile.preferredDesigner();
@@ -41,6 +45,7 @@ class UserProfileEntity extends BaseEntity {
     }
 
     UserProfile toDomain() {
-        return new UserProfile(userId, nickname, phone, preferredDesigner, hairCautions);
+        return new UserProfile(userId, nickname, phone, preferredDesigner, hairCautions,
+                getCreatedAt(), getUpdatedAt());
     }
 }

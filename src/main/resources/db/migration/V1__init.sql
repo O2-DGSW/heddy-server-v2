@@ -92,7 +92,7 @@ CREATE TABLE style_tags (
     CONSTRAINT ck_style_tags_tag_type CHECK (tag_type IN ('TREATMENT', 'COLOR', 'MOOD'))
 );
 
-CREATE INDEX idx_style_tags_tag_type ON style_tags (tag_type);
+-- tag_type 단독 인덱스는 두지 않는다. uq_style_tags_type_name 의 leftmost prefix 가 같은 역할을 한다.
 
 COMMENT ON TABLE style_tags IS '스타일 태그 마스터';
 COMMENT ON COLUMN style_tags.tag_type IS 'TREATMENT / COLOR / MOOD';

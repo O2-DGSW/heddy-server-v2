@@ -1,102 +1,84 @@
 package com.heddy.adapter.out.persistence.account;
 
 import com.heddy.adapter.out.persistence.BaseEntity;
-import com.heddy.domain.account.model.AccountRole;
+import com.heddy.domain.account.model.Account;
 import com.heddy.domain.account.model.AccountStatus;
+import com.heddy.domain.account.model.AuthProvider;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
-@Table(name = "accounts")
+@Table(
+        name = "users",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_users_provider_subject",
+                columnNames = {"auth_provider", "provider_subject"})
+)
 public class AccountEntity extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
-    @Column(name = "login_id", unique = true, length = 20)
-    private String loginId;
+    @Column(unique = true, length = 255)
+    private String email;
 
-    @Column(name = "password", length = 100)
-    private String encodedPassword;
-
-    @Column(nullable = false, length = 100)
-    private String name;
-
-    @Column(name = "phone_number", nullable = false, unique = true, length = 13)
-    private String phoneNumber;
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private AccountRole role;
+    @Column(name = "auth_provider", nullable = false, length = 20)
+    private AuthProvider authProvider;
+
+    @Column(name = "provider_subject", length = 255)
+    private String providerSubject;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AccountStatus status;
 
-    @Column(name = "phone_verified", nullable = false)
-    private boolean phoneVerified;
+    @Column(name = "login_fail_count", nullable = false)
+    private short loginFailCount;
+
+    @Column(name = "locked_until")
+    private Instant lockedUntil;
 
     protected AccountEntity() {
     }
 
-    AccountEntity(
-            String loginId,
-            String encodedPassword,
-            String name,
-            String phoneNumber,
-            AccountRole role,
-            AccountStatus status,
-            boolean phoneVerified
-    ) {
-        this.loginId = loginId;
-        this.encodedPassword = encodedPassword;
-        this.name = name;
-        this.phoneNumber = phoneNumber;
-        this.role = role;
-        this.status = status;
-        this.phoneVerified = phoneVerified;
+    AccountEntity(Account account) {
+        update(account);
     }
 
-    void updatePassword(String encodedPassword) {
-        this.encodedPassword = encodedPassword;
+    void update(Account account) {
+        userId = account.userId();
+        email = account.email();
+        passwordHash = account.passwordHash();
+        authProvider = account.authProvider();
+        providerSubject = account.providerSubject();
+        status = account.status();
+        loginFailCount = (short) account.loginFailCount();
+        lockedUntil = account.lockedUntil();
     }
 
-    Long id() {
-        return id;
+    void updatePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
-    String loginId() {
-        return loginId;
+    Account toDomain() {
+        return new Account(userId, email, passwordHash, authProvider, providerSubject,
+                status, loginFailCount, lockedUntil);
     }
 
-    String encodedPassword() {
-        return encodedPassword;
-    }
-
-    String name() {
-        return name;
-    }
-
-    String phoneNumber() {
-        return phoneNumber;
-    }
-
-    AccountRole role() {
-        return role;
-    }
-
-    AccountStatus status() {
-        return status;
-    }
-
-    boolean phoneVerified() {
-        return phoneVerified;
+    UUID userId() {
+        return userId;
     }
 }

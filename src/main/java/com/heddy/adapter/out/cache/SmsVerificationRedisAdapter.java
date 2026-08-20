@@ -25,15 +25,19 @@ public class SmsVerificationRedisAdapter implements SmsVerificationStorePort {
     private final StringRedisTemplate redisTemplate;
 
     @Override
-    public void save(String phoneNumber, SmsVerification verification) {
+    public void save(
+            String phoneNumber,
+            SmsVerificationPurpose purpose,
+            SmsVerification verification
+    ) {
         String value = "%s:%d:%d".formatted(
                 verification.code(), verification.attempts(), verification.createdAt().toEpochMilli());
-        redisTemplate.opsForValue().set(codeKey(phoneNumber), value, CODE_TTL);
+        redisTemplate.opsForValue().set(codeKey(phoneNumber, purpose), value, CODE_TTL);
     }
 
     @Override
-    public Optional<SmsVerification> find(String phoneNumber) {
-        String value = redisTemplate.opsForValue().get(codeKey(phoneNumber));
+    public Optional<SmsVerification> find(String phoneNumber, SmsVerificationPurpose purpose) {
+        String value = redisTemplate.opsForValue().get(codeKey(phoneNumber, purpose));
         if (value == null) {
             return Optional.empty();
         }
@@ -42,14 +46,14 @@ public class SmsVerificationRedisAdapter implements SmsVerificationStorePort {
             return Optional.of(new SmsVerification(
                     parts[0], Integer.parseInt(parts[1]), Instant.ofEpochMilli(Long.parseLong(parts[2]))));
         } catch (RuntimeException exception) {
-            redisTemplate.delete(codeKey(phoneNumber));
+            redisTemplate.delete(codeKey(phoneNumber, purpose));
             return Optional.empty();
         }
     }
 
     @Override
-    public void delete(String phoneNumber) {
-        redisTemplate.delete(codeKey(phoneNumber));
+    public void delete(String phoneNumber, SmsVerificationPurpose purpose) {
+        redisTemplate.delete(codeKey(phoneNumber, purpose));
     }
 
     @Override
@@ -77,8 +81,8 @@ public class SmsVerificationRedisAdapter implements SmsVerificationStorePort {
         redisTemplate.delete(verifiedKey(phoneNumber, purpose));
     }
 
-    private String codeKey(String phoneNumber) {
-        return CODE_KEY_PREFIX + phoneNumber;
+    private String codeKey(String phoneNumber, SmsVerificationPurpose purpose) {
+        return CODE_KEY_PREFIX + purpose.name() + ":" + phoneNumber;
     }
 
     private String verifiedKey(String phoneNumber, SmsVerificationPurpose purpose) {

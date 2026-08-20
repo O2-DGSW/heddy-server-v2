@@ -1,89 +1,130 @@
 package com.heddy.adapter.out.persistence.account;
 
 import com.heddy.domain.account.model.Account;
-import com.heddy.domain.account.model.SocialProvider;
+import com.heddy.domain.account.model.AuthProvider;
+import com.heddy.domain.account.model.ConsentDecision;
+import com.heddy.domain.account.model.ConsentSource;
+import com.heddy.domain.account.model.RefreshSession;
+import com.heddy.domain.account.model.UserProfile;
 import com.heddy.domain.account.port.out.AccountRepositoryPort;
-import com.heddy.domain.account.port.out.SocialAccountRepositoryPort;
+import com.heddy.domain.account.port.out.ConsentHistoryRepositoryPort;
+import com.heddy.domain.account.port.out.RefreshSessionRepositoryPort;
+import com.heddy.domain.account.port.out.UserProfileRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class AccountPersistenceAdapter implements AccountRepositoryPort, SocialAccountRepositoryPort {
+public class AccountPersistenceAdapter implements
+        AccountRepositoryPort,
+        UserProfileRepositoryPort,
+        ConsentHistoryRepositoryPort,
+        RefreshSessionRepositoryPort {
 
     private final AccountJpaRepository accountJpaRepository;
-    private final SocialAccountJpaRepository socialAccountJpaRepository;
+    private final UserProfileJpaRepository userProfileJpaRepository;
+    private final ConsentHistoryJpaRepository consentHistoryJpaRepository;
+    private final RefreshTokenJpaRepository refreshTokenJpaRepository;
 
     @Override
     public Account save(Account account) {
-        AccountEntity entity = new AccountEntity(
-                account.loginId(),
-                account.encodedPassword(),
-                account.name(),
-                account.phoneNumber(),
-                account.role(),
-                account.status(),
-                account.phoneVerified());
-        return toDomain(accountJpaRepository.save(entity));
+        AccountEntity entity = accountJpaRepository.findById(account.userId())
+                .orElseGet(() -> new AccountEntity(account));
+        entity.update(account);
+        return accountJpaRepository.save(entity).toDomain();
     }
 
     @Override
-    public Optional<Account> findById(Long accountId) {
-        return accountJpaRepository.findById(accountId).map(this::toDomain);
+    public Optional<Account> findById(UUID userId) {
+        return accountJpaRepository.findById(userId).map(AccountEntity::toDomain);
     }
 
     @Override
-    public Optional<Account> findByLoginId(String loginId) {
-        return accountJpaRepository.findByLoginId(loginId).map(this::toDomain);
+    public Optional<Account> findByEmail(String email) {
+        return accountJpaRepository.findByEmail(email).map(AccountEntity::toDomain);
     }
 
     @Override
-    public Optional<Account> findByPhoneNumber(String phoneNumber) {
-        return accountJpaRepository.findByPhoneNumber(phoneNumber).map(this::toDomain);
+    public Optional<Account> findByProvider(AuthProvider provider, String providerSubject) {
+        return accountJpaRepository.findByAuthProviderAndProviderSubject(provider, providerSubject)
+                .map(AccountEntity::toDomain);
     }
 
     @Override
-    public boolean existsByLoginId(String loginId) {
-        return accountJpaRepository.existsByLoginId(loginId);
+    public boolean existsByEmail(String email) {
+        return accountJpaRepository.existsByEmail(email);
     }
 
     @Override
-    public boolean existsByPhoneNumber(String phoneNumber) {
-        return accountJpaRepository.existsByPhoneNumber(phoneNumber);
+    public void updatePassword(UUID userId, String passwordHash) {
+        AccountEntity entity = accountJpaRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("AccountEntity not found: " + userId));
+        entity.updatePassword(passwordHash);
     }
 
     @Override
-    public void updatePassword(Long accountId, String encodedPassword) {
-        AccountEntity entity = accountJpaRepository.findById(accountId)
-                .orElseThrow(() -> new IllegalStateException("AccountEntity not found: " + accountId));
-        entity.updatePassword(encodedPassword);
+    public UserProfile save(UserProfile profile) {
+        return userProfileJpaRepository.save(new UserProfileEntity(profile)).toDomain();
     }
 
     @Override
-    public Optional<Account> findByProvider(SocialProvider provider, String providerId) {
-        return socialAccountJpaRepository.findByProviderAndProviderId(provider, providerId)
-                .map(SocialAccountEntity::account)
-                .map(this::toDomain);
+    public Optional<UserProfile> findByUserId(UUID userId) {
+        return userProfileJpaRepository.findById(userId).map(UserProfileEntity::toDomain);
     }
 
     @Override
-    public void link(Long accountId, SocialProvider provider, String providerId) {
-        AccountEntity account = accountJpaRepository.findById(accountId)
-                .orElseThrow(() -> new IllegalStateException("AccountEntity not found: " + accountId));
-        socialAccountJpaRepository.save(new SocialAccountEntity(account, provider, providerId));
+    public Optional<UUID> findUserIdByPhone(String phone) {
+        return userProfileJpaRepository.findByPhone(phone).map(UserProfileEntity::toDomain)
+                .map(UserProfile::userId);
     }
 
-    private Account toDomain(AccountEntity entity) {
-        return new Account(
-                entity.id(),
-                entity.loginId(),
-                entity.encodedPassword(),
-                entity.name(),
-                entity.phoneNumber(),
-                entity.role(),
-                entity.status(),
-                entity.phoneVerified());
+    @Override
+    public boolean existsByPhone(String phone) {
+        return userProfileJpaRepository.existsByPhone(phone);
+    }
+
+    @Override
+    public void append(
+            UUID userId,
+            List<ConsentDecision> decisions,
+            ConsentSource source,
+            Instant changedAt
+    ) {
+        consentHistoryJpaRepository.saveAll(decisions.stream()
+                .map(decision -> new ConsentHistoryEntity(userId, decision, source, changedAt))
+                .toList());
+    }
+
+    @Override
+    public RefreshSession save(RefreshSession session) {
+        return refreshTokenJpaRepository.save(new RefreshTokenEntity(session)).toDomain();
+    }
+
+    @Override
+    public Optional<RefreshSession> findByTokenHashForUpdate(String tokenHash) {
+        return refreshTokenJpaRepository.findByTokenHash(tokenHash).map(RefreshTokenEntity::toDomain);
+    }
+
+    @Override
+    public void rotate(UUID currentId, UUID nextId, Instant revokedAt) {
+        refreshTokenJpaRepository.findById(currentId)
+                .orElseThrow(() -> new IllegalStateException("RefreshTokenEntity not found: " + currentId))
+                .rotate(nextId, revokedAt);
+    }
+
+    @Override
+    public void revoke(UUID refreshTokenId, Instant revokedAt) {
+        refreshTokenJpaRepository.findById(refreshTokenId).ifPresent(entity -> entity.revoke(revokedAt));
+    }
+
+    @Override
+    public void revokeAll(UUID userId, Instant revokedAt) {
+        refreshTokenJpaRepository.findAllByUserIdAndRevokedAtIsNull(userId)
+                .forEach(entity -> entity.revoke(revokedAt));
     }
 }

@@ -18,7 +18,7 @@ public abstract class BaseEntity {
     private Instant createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     public Instant getCreatedAt() {

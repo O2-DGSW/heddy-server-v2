@@ -6,7 +6,7 @@ import com.heddy.global.filter.RequestIdFilter;
 import java.util.List;
 
 /**
- * API 명세 §2 공통 에러 응답. {@code {"error": {"code", "message", "field_errors"}, "request_id"}} 형태다.
+ * API 명세 2절 공통 에러 응답. {@code {"error": {"code", "message", "field_errors"}, "request_id"}} 형태다.
  */
 public record ApiErrorResponse(Error error, String requestId) {
 

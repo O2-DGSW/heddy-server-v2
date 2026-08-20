@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * API 명세 §2.5 공통 페이지네이션 응답. {@code {"items": [...], "page": {...}}} 형태로 직렬화된다.
+ * API 명세 2.5절 공통 페이지네이션 응답. {@code {"items": [...], "page": {...}}} 형태로 직렬화된다.
  */
 public record PageResponse<T>(List<T> items, PageMeta page) {
 

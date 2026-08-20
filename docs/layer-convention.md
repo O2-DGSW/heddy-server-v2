@@ -113,7 +113,7 @@ ApiResponse<TreatmentRecordResponse> get(@PathVariable UUID recordId) {
 
 #### 오류 코드 추가 규칙
 
-`ErrorCode` 는 **인터페이스**다. 공통 코드(명세 §18.1) 9종만 `global/error/CommonErrorCode` 에 있고,
+`ErrorCode` 는 **인터페이스**다. 공통 코드(명세 18.1절) 9종만 `global/error/CommonErrorCode` 에 있고,
 도메인 코드는 각 도메인이 자기 패키지에 enum 을 만들어 추가한다. 공통 enum 에 도메인 코드를 넣지 않는다.
 
 ```java
@@ -137,15 +137,15 @@ public enum TreatmentErrorCode implements ErrorCode {
 
 **명명 규칙**
 
-- `SCREAMING_SNAKE_CASE`, 영문만. **명세 §18 에 적힌 문자열을 글자 그대로 쓴다.**
-- 명세에 없는 코드가 필요하면 **API 명세 §18 을 먼저 갱신**하고 enum 에 반영한다. 코드부터 만들지 않는다.
+- `SCREAMING_SNAKE_CASE`, 영문만. **명세 18절에 적힌 문자열을 글자 그대로 쓴다.**
+- 명세에 없는 코드가 필요하면 **API 명세 18절을 먼저 갱신**하고 enum 에 반영한다. 코드부터 만들지 않는다.
 - 앞부분은 리소스·도메인(`AUTH_` `UPLOAD_` `RECORD_` `PHOTO_` `ANALYSIS_` `SHARE_` …),
   뒷부분은 상태·사유(`_NOT_FOUND` `_EXPIRED` `_LIMIT_EXCEEDED` `_INVALID` `_ALREADY_EXISTS`).
 - 같은 뜻을 공통 코드가 이미 갖고 있으면 도메인 코드를 새로 만들지 않는다.
   단순 "없음"·"권한 없음"은 `RESOURCE_NOT_FOUND` · `FORBIDDEN_RESOURCE` 를 쓴다.
   클라이언트가 화면 분기를 해야 할 때만 도메인 코드로 쪼갠다.
 
-**HTTP status 매핑 기준** (명세 §2.4)
+**HTTP status 매핑 기준** (명세 2.4절)
 
 | 상태 | 언제 | 예 |
 |---|---|---|

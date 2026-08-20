@@ -241,7 +241,7 @@ refactor · chore · docs · test · enhancement 를 포괄한다.
 - 성공 응답은 `ApiResponse<T>` → `{data, request_id}`, 목록은 `ApiResponse<PageResponse<T>>`.
 - 에러는 `throw new ApplicationException(ErrorCode.XXX)` 로만. 응답은 `{error:{code,message,field_errors}, request_id}`.
 - `ErrorCode` 는 인터페이스다. 공통 9종만 `CommonErrorCode`, 도메인 코드는 `com.heddy.<도메인>.error.<도메인>ErrorCode` enum 으로 각자 추가한다.
-- enum 이름이 곧 `error.code` 문자열이다. 새 코드는 API 명세 §18 에 먼저 추가하고, HTTP status 는 명세 §2.4 매핑표를 따른다.
+- enum 이름이 곧 `error.code` 문자열이다. 새 코드는 API 명세 18절에 먼저 추가하고, HTTP status 는 명세 2.4절 매핑표를 따른다.
 - 추적 ID 는 `RequestIdFilter` 가 MDC(`requestId`)·응답 헤더·응답 본문에 자동으로 싣는다.
 
 ---

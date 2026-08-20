@@ -3,7 +3,7 @@ package com.heddy.global.error;
 import org.springframework.http.HttpStatus;
 
 /**
- * API 명세 §18.1 공통 오류 코드 9종. 도메인에 종속되지 않는 코드만 여기에 둔다.
+ * API 명세 18.1절 공통 오류 코드 9종. 도메인에 종속되지 않는 코드만 여기에 둔다.
  */
 public enum CommonErrorCode implements ErrorCode {
 

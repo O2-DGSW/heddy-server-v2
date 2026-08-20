@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 모든 에러 응답을 API 명세 §2 포맷 {@code {"error": {...}, "request_id"}}으로 통일한다.
+ * 모든 에러 응답을 API 명세 2절 포맷 {@code {"error": {...}, "request_id"}}으로 통일한다.
  *
  * <p>파싱·바인딩 실패는 {@code INVALID_REQUEST}(400), 필드 검증 실패는 {@code VALIDATION_FAILED}(422)로 구분한다.
  * 도메인 예외는 {@link ApplicationException}으로 던지면 {@link ErrorCode}가 상태와 코드를 모두 결정한다.

@@ -21,6 +21,11 @@ import java.util.UUID;
  * (id == null 이면 신규)이 항상 "기존 행"으로 나와 {@code save()} 가 SELECT 를 한 번
  * 더 태우는 {@code merge()} 경로를 타고, 반환된 복사본이 아닌 원본은 detached 로 남아
  * 감사 필드가 채워지지 않는다. {@link Persistable} 로 신규 여부를 직접 알려 이를 막는다.
+ *
+ * <p><b>id 를 외부에서 주입받는 생성자나 setter 를 만들지 말 것.</b> isNew 는 JPA 로드 경로
+ * ({@code @PostLoad})에서만 false 로 바뀌므로, 기존 행의 id 를 가진 인스턴스를 새로 만들면
+ * isNew 가 true 인 채로 persist 를 타 PK 중복으로 터진다. DTO → 엔티티 재구성이나 고정 id
+ * 테스트 픽스처가 필요해지면 이 판정 방식부터 다시 봐야 한다.
  */
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)

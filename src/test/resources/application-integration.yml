@@ -1,0 +1,12 @@
+# 통합 테스트 프로파일. 데이터소스는 Testcontainers 가 @ServiceConnection 으로 주입한다.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      repositories:
+        enabled: false

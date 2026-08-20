@@ -12,13 +12,18 @@ import com.heddy.account.entity.User;
 import com.heddy.account.entity.UserProfile;
 import com.heddy.account.entity.UserStylePreference;
 import com.heddy.global.config.JpaConfig;
+import jakarta.persistence.Column;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Table;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
@@ -30,6 +35,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +45,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 실제 PostgreSQL 16 에 Flyway 로 V1__init.sql 을 적용하고 {@code ddl-auto=validate} 로
- * 엔티티 매핑을 대조한다. 정적 텍스트 검사와 달리 DDL 실행·타입·길이·제약이 전부 진짜로 검증된다.
+ * 엔티티 매핑을 대조한다.
+ *
+ * <p>무엇이 어디까지 검증되는지: {@code validate} 는 <b>컬럼 존재와 타입</b>만 본다. 길이와
+ * nullable 은 {@code validate} 범위 밖이라 {@link #columnLengthAndNullabilityMatch} 가
+ * information_schema 를 직접 조회해 대조하고, CHECK 제약은 위반 케이스 테스트로 개별 확인한다.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -65,27 +77,74 @@ class AccountSchemaIntegrationTest {
         users = new SimpleJpaRepository<>(User.class, em);
     }
 
-    @Test
-    @DisplayName("V1 적용 후 엔티티 매핑 검증(validate)이 통과한다")
-    void migrationMatchesEntityMappings() {
-        assertThat(em.getEntityManagerFactory()).isNotNull();
+    /**
+     * {@code validate} 가 보지 않는 길이·nullable 을 information_schema 로 직접 대조한다.
+     * (컬럼 존재·타입 검증은 컨텍스트 로딩 시점의 {@code validate} 가 이미 끝낸 상태다.)
+     */
+    @ParameterizedTest
+    @ValueSource(classes = {User.class, UserProfile.class, HairProfile.class,
+            StyleTag.class, UserStylePreference.class, ConsentHistory.class})
+    @DisplayName("엔티티의 길이·nullable 이 DDL 과 일치한다")
+    void columnLengthAndNullabilityMatch(Class<?> entityType) {
+        String table = entityType.getAnnotation(Table.class).name();
+
+        Map<String, Object[]> ddl = new HashMap<>();
+        for (Object row : em.createNativeQuery("""
+                SELECT column_name, character_maximum_length, is_nullable
+                FROM information_schema.columns WHERE table_name = ?1
+                """).setParameter(1, table).getResultList()) {
+            Object[] columns = (Object[]) row;
+            ddl.put((String) columns[0], new Object[]{columns[1], columns[2]});
+        }
+        assertThat(ddl).as("%s 의 컬럼 메타데이터", table).isNotEmpty();
+
+        for (Class<?> type = entityType; type != null && type != Object.class; type = type.getSuperclass()) {
+            for (Field field : type.getDeclaredFields()) {
+                Column column = field.getAnnotation(Column.class);
+                JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
+                if (column == null && joinColumn == null) {
+                    continue;
+                }
+                String name = column != null ? column.name() : joinColumn.name();
+                Object[] actual = ddl.get(name);
+                assertThat(actual).as("%s.%s 가 DDL 에 없다", table, name).isNotNull();
+
+                boolean entityNullable = column != null ? column.nullable() : joinColumn.nullable();
+                assertThat("YES".equals(actual[1])).as("%s.%s 의 nullable", table, name).isEqualTo(entityNullable);
+
+                if (column != null && actual[0] != null) {
+                    assertThat(((Number) actual[0]).intValue()).as("%s.%s 의 길이", table, name)
+                            .isEqualTo(column.length());
+                }
+            }
+        }
     }
 
     @Test
     @DisplayName("계정 그래프 전체가 저장된다")
     void persistsWholeAccountGraph() {
         User user = users.save(User.ofEmail("a@heddy.test", "hashed", "헤디"));
-        em.persist(new UserProfile(user, "01012345678", "김디자이너", "두피가 예민함"));
-        em.persist(HairProfile.unknownFor(user));
+        UserProfile profile = new UserProfile(user, "01012345678", "김디자이너", "두피가 예민함");
+        em.persist(profile);
+        HairProfile hairProfile = HairProfile.unknownFor(user);
+        em.persist(hairProfile);
         StyleTag tag = new StyleTag("레이어드컷", StyleTagType.TREATMENT);
         em.persist(tag);
-        em.persist(new UserStylePreference(user, tag, PreferenceType.PREFER));
-        em.persist(new ConsentHistory(user, ConsentType.TERMS_OF_SERVICE, true, "1.0", ConsentSource.SIGNUP));
+        UserStylePreference preference = new UserStylePreference(user, tag, PreferenceType.PREFER);
+        em.persist(preference);
+        ConsentHistory consent =
+                new ConsentHistory(user, ConsentType.TERMS_OF_SERVICE, true, "1.0", ConsentSource.SIGNUP);
+        em.persist(consent);
 
         em.flush();
+        em.clear();
 
         assertThat(user.getCreatedAt()).isNotNull();
-        assertThat(HairProfile.unknownFor(user).getHairType()).isEqualTo(HairType.UNKNOWN);
+        assertThat(em.find(UserProfile.class, profile.getId()).getHairCautions()).isEqualTo("두피가 예민함");
+        assertThat(em.find(HairProfile.class, hairProfile.getId()).getHairType()).isEqualTo(HairType.UNKNOWN);
+        assertThat(em.find(ConsentHistory.class, consent.getId()).getPolicyVersion()).isEqualTo("1.0");
+        assertThat(em.find(UserStylePreference.class, preference.getId()).getPreferenceType())
+                .isEqualTo(PreferenceType.PREFER);
     }
 
     @Test

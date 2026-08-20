@@ -2,7 +2,7 @@ package com.heddy.infrastructure.security.jwt;
 
 enum JwtTokenType {
     ACCESS("access"),
-    REFRESH("refresh");
+    REAUTHENTICATION("reauthentication");
 
     private final String value;
 

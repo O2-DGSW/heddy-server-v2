@@ -1,4 +1,4 @@
-package com.heddy.global.config;
+package com.heddy.infrastructure.security.config;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;

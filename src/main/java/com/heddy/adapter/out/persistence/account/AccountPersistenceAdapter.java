@@ -45,6 +45,11 @@ public class AccountPersistenceAdapter implements
     }
 
     @Override
+    public Optional<Account> findByIdForUpdate(UUID userId) {
+        return accountJpaRepository.findByIdForUpdate(userId).map(AccountEntity::toDomain);
+    }
+
+    @Override
     public Optional<Account> findByEmail(String email) {
         return accountJpaRepository.findByEmail(email).map(AccountEntity::toDomain);
     }

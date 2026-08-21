@@ -32,9 +32,11 @@ public class AccountExceptionHandler {
                     REFRESH_TOKEN_REUSED, REAUTHENTICATION_REQUIRED -> HttpStatus.UNAUTHORIZED;
             case ACCOUNT_LOCKED, SMS_CODE_MAX_ATTEMPTS -> HttpStatus.LOCKED;
             case ACCOUNT_DELETED -> HttpStatus.FORBIDDEN;
-            case WEAK_PASSWORD, CONSENT_REQUIRED_NOT_GRANTED, PHONE_NOT_VERIFIED,
+            case WEAK_PASSWORD, CONSENT_REQUIRED_NOT_GRANTED, PROFILE_INVALID_NICKNAME,
+                    PROFILE_PHONE_REQUIRED,
+                    PHONE_NOT_VERIFIED,
                     SMS_CODE_INVALID -> HttpStatus.UNPROCESSABLE_ENTITY;
-            case ACCOUNT_NOT_FOUND, SMS_CODE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case ACCOUNT_NOT_FOUND, HAIR_PROFILE_NOT_FOUND, SMS_CODE_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case SMS_SEND_TOO_SOON -> HttpStatus.TOO_MANY_REQUESTS;
             case SMS_SEND_FAILED -> HttpStatus.SERVICE_UNAVAILABLE;
         };

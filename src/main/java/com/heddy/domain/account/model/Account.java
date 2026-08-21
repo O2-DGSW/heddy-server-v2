@@ -12,8 +12,24 @@ public record Account(
         String providerSubject,
         AccountStatus status,
         int loginFailCount,
-        Instant lockedUntil
+        Instant lockedUntil,
+        Instant createdAt,
+        Instant updatedAt
 ) {
+    public Account(
+            UUID userId,
+            String email,
+            String passwordHash,
+            AuthProvider authProvider,
+            String providerSubject,
+            AccountStatus status,
+            int loginFailCount,
+            Instant lockedUntil
+    ) {
+        this(userId, email, passwordHash, authProvider, providerSubject, status,
+                loginFailCount, lockedUntil, null, null);
+    }
+
     public static Account email(UUID userId, String email, String passwordHash) {
         return new Account(userId, email, passwordHash, AuthProvider.EMAIL, null,
                 AccountStatus.ACTIVE, 0, null);
@@ -35,7 +51,7 @@ public record Account(
     public Account unlockIfExpired(Instant now) {
         if (status == AccountStatus.LOCKED && (lockedUntil == null || !now.isBefore(lockedUntil))) {
             return new Account(userId, email, passwordHash, authProvider, providerSubject,
-                    AccountStatus.ACTIVE, 0, null);
+                    AccountStatus.ACTIVE, 0, null, createdAt, updatedAt);
         }
         return this;
     }
@@ -44,14 +60,14 @@ public record Account(
         int failures = loginFailCount + 1;
         if (failures >= maximumAttempts) {
             return new Account(userId, email, passwordHash, authProvider, providerSubject,
-                    AccountStatus.LOCKED, failures, now.plus(lockDuration));
+                    AccountStatus.LOCKED, failures, now.plus(lockDuration), createdAt, updatedAt);
         }
         return new Account(userId, email, passwordHash, authProvider, providerSubject,
-                status, failures, lockedUntil);
+                status, failures, lockedUntil, createdAt, updatedAt);
     }
 
     public Account recordLoginSuccess() {
         return new Account(userId, email, passwordHash, authProvider, providerSubject,
-                AccountStatus.ACTIVE, 0, null);
+                AccountStatus.ACTIVE, 0, null, createdAt, updatedAt);
     }
 }

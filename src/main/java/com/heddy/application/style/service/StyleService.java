@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -51,7 +52,7 @@ public class StyleService implements StyleUseCase {
     @Override
     @Transactional
     public StylePreferencesResult saveStylePreferences(SaveStylePreferencesCommand command) {
-        validateNonDeletedAccount(command.userId());
+        lockAndValidateNonDeletedAccount(command.userId());
         Set<UUID> preferredTagIds = new LinkedHashSet<>(command.preferredTagIds());
         Set<UUID> excludedTagIds = new LinkedHashSet<>(command.excludedTagIds());
         validateLimits(preferredTagIds, excludedTagIds);
@@ -105,7 +106,15 @@ public class StyleService implements StyleUseCase {
     }
 
     private void validateNonDeletedAccount(UUID userId) {
-        Account account = accountRepositoryPort.findById(userId)
+        validateAccount(accountRepositoryPort.findById(userId));
+    }
+
+    private void lockAndValidateNonDeletedAccount(UUID userId) {
+        validateAccount(accountRepositoryPort.findByIdForUpdate(userId));
+    }
+
+    private void validateAccount(Optional<Account> accountResult) {
+        Account account = accountResult
                 .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND));
         if (account.isDeleted()) {
             throw new AccountException(AccountError.ACCOUNT_DELETED);

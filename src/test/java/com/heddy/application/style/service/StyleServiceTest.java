@@ -86,7 +86,7 @@ class StyleServiceTest {
 
     @Test
     void replacesAllPreferencesAndRemovesDuplicateIdsWithinAList() {
-        givenActiveAccount();
+        givenActiveAccountForUpdate();
         UUID preferredTagId = UUID.randomUUID();
         UUID excludedTagId = UUID.randomUUID();
         given(styleTagRepositoryPort.findAllByIds(any())).willReturn(List.of(
@@ -103,6 +103,7 @@ class StyleServiceTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<UserStylePreference>> captor = ArgumentCaptor.forClass(List.class);
         verify(preferenceRepositoryPort).replace(eq(USER_ID), captor.capture());
+        verify(accountRepositoryPort).findByIdForUpdate(USER_ID);
         assertThat(captor.getValue()).hasSize(2);
         assertThat(result.preferredTagIds()).containsExactly(preferredTagId);
         assertThat(result.excludedTagIds()).containsExactly(excludedTagId);
@@ -110,7 +111,7 @@ class StyleServiceTest {
 
     @Test
     void rejectsMoreThanTenTagsForEitherType() {
-        givenActiveAccount();
+        givenActiveAccountForUpdate();
         List<UUID> elevenTagIds = new ArrayList<>();
         for (int i = 0; i < 11; i++) {
             elevenTagIds.add(UUID.randomUUID());
@@ -124,7 +125,7 @@ class StyleServiceTest {
 
     @Test
     void rejectsTagIncludedInBothLists() {
-        givenActiveAccount();
+        givenActiveAccountForUpdate();
         UUID tagId = UUID.randomUUID();
 
         assertError(() -> service.saveStylePreferences(new SaveStylePreferencesCommand(
@@ -135,7 +136,7 @@ class StyleServiceTest {
 
     @Test
     void rejectsUnknownTagBeforeReplacingExistingPreferences() {
-        givenActiveAccount();
+        givenActiveAccountForUpdate();
         UUID unknownTagId = UUID.randomUUID();
         given(styleTagRepositoryPort.findAllByIds(any())).willReturn(List.of());
 
@@ -163,7 +164,7 @@ class StyleServiceTest {
 
     @Test
     void rejectsDeletionPendingAccountsBeforeSavingPreferences() {
-        given(accountRepositoryPort.findById(USER_ID))
+        given(accountRepositoryPort.findByIdForUpdate(USER_ID))
                 .willReturn(Optional.of(account(AccountStatus.DELETION_PENDING)));
 
         assertAccountError(() -> service.saveStylePreferences(
@@ -185,6 +186,11 @@ class StyleServiceTest {
 
     private void givenActiveAccount() {
         given(accountRepositoryPort.findById(USER_ID))
+                .willReturn(Optional.of(account(AccountStatus.ACTIVE)));
+    }
+
+    private void givenActiveAccountForUpdate() {
+        given(accountRepositoryPort.findByIdForUpdate(USER_ID))
                 .willReturn(Optional.of(account(AccountStatus.ACTIVE)));
     }
 

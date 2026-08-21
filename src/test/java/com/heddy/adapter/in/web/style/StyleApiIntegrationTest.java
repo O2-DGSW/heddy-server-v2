@@ -13,7 +13,11 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,8 +38,12 @@ class StyleApiIntegrationTest extends PostgresIntegrationTest {
             "70000000-0000-4000-8000-000000000002");
     private static final UUID BANG_TAG_ID = UUID.fromString(
             "10000000-0000-4000-8000-000000000001");
+    private static final UUID SECOND_BANG_TAG_ID = UUID.fromString(
+            "10000000-0000-4000-8000-000000000002");
     private static final UUID LONG_TAG_ID = UUID.fromString(
             "50000000-0000-4000-8000-000000000001");
+    private static final UUID SECOND_LONG_TAG_ID = UUID.fromString(
+            "50000000-0000-4000-8000-000000000002");
     private static final UUID UPDO_TAG_ID = UUID.fromString(
             "60000000-0000-4000-8000-000000000001");
 
@@ -61,6 +69,14 @@ class StyleApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.items[*].category", containsInAnyOrder(
                         "BANG", "BANG", "BANG", "BANG")))
                 .andExpect(jsonPath("$.request_id").value("request-21"));
+    }
+
+    @Test
+    void getsAllSeededStyleTagsWhenCategoryIsNotSpecified() throws Exception {
+        mockMvc.perform(get("/style-tags")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(24));
     }
 
     @Test
@@ -110,39 +126,106 @@ class StyleApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
-    void rejectsConflictingAndUnknownTagsWithoutChangingExistingSettings() throws Exception {
+    void returnsPutAndGetPreferencesInTheSameDeterministicOrder() throws Exception {
+        String requestBody = preferenceBody(
+                List.of(SECOND_BANG_TAG_ID, BANG_TAG_ID),
+                List.of(SECOND_LONG_TAG_ID, LONG_TAG_ID));
+
+        mockMvc.perform(put("/me/style-preferences")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.preferred_tag_ids[0]")
+                        .value(BANG_TAG_ID.toString()))
+                .andExpect(jsonPath("$.data.preferred_tag_ids[1]")
+                        .value(SECOND_BANG_TAG_ID.toString()))
+                .andExpect(jsonPath("$.data.excluded_tag_ids[0]")
+                        .value(LONG_TAG_ID.toString()))
+                .andExpect(jsonPath("$.data.excluded_tag_ids[1]")
+                        .value(SECOND_LONG_TAG_ID.toString()));
+
+        mockMvc.perform(get("/me/style-preferences")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.preferred_tag_ids[0]")
+                        .value(BANG_TAG_ID.toString()))
+                .andExpect(jsonPath("$.data.preferred_tag_ids[1]")
+                        .value(SECOND_BANG_TAG_ID.toString()))
+                .andExpect(jsonPath("$.data.excluded_tag_ids[0]")
+                        .value(LONG_TAG_ID.toString()))
+                .andExpect(jsonPath("$.data.excluded_tag_ids[1]")
+                        .value(SECOND_LONG_TAG_ID.toString()));
+    }
+
+    @Test
+    void returnsDocumentedErrorWhenMoreThanTenUniqueTagsAreRequested() throws Exception {
+        List<UUID> elevenTagIds = IntStream.range(0, 11)
+                .mapToObj(index -> UUID.randomUUID())
+                .toList();
+
+        mockMvc.perform(put("/me/style-preferences")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(preferenceBody(elevenTagIds, List.of())))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code")
+                        .value("STYLE_PREFERENCE_LIMIT_EXCEEDED"));
+    }
+
+    @Test
+    void countsUniqueTagIdsWhenEnforcingTheLimit() throws Exception {
+        List<UUID> tenTagIds = jdbcTemplate.queryForList(
+                "SELECT style_tag_id FROM style_tags ORDER BY style_tag_id LIMIT 10",
+                UUID.class);
+        List<UUID> elevenEntriesWithDuplicate = new ArrayList<>(tenTagIds);
+        elevenEntriesWithDuplicate.add(tenTagIds.getFirst());
+
+        mockMvc.perform(put("/me/style-preferences")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(preferenceBody(
+                                elevenEntriesWithDuplicate, List.of())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.preferred_tag_ids.length()").value(10));
+    }
+
+    @Test
+    void rejectsConflictingTagsWithoutChangingExistingSettings() throws Exception {
         savePreferences(USER_ID, BANG_TAG_ID, LONG_TAG_ID);
 
         mockMvc.perform(put("/me/style-preferences")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "preferred_tag_ids":["10000000-0000-4000-8000-000000000001"],
-                                  "excluded_tag_ids":["10000000-0000-4000-8000-000000000001"]
-                                }
-                                """))
+                        .content(preferenceBody(
+                                List.of(BANG_TAG_ID), List.of(BANG_TAG_ID))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.code").value("STYLE_PREFERENCE_CONFLICT"))
                 .andExpect(jsonPath("$.error.field_errors[0].reason")
                         .value("DUPLICATED_WITH_EXCLUDED_TAGS"));
 
+        assertSavedPreferenceCount(2);
+    }
+
+    @Test
+    void rejectsUnknownTagsAsFieldValidationWithoutChangingExistingSettings()
+            throws Exception {
+        UUID unknownTagId = UUID.fromString(
+                "99999999-9999-4999-8999-999999999999");
+        savePreferences(USER_ID, BANG_TAG_ID, LONG_TAG_ID);
+
         mockMvc.perform(put("/me/style-preferences")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "preferred_tag_ids":["99999999-9999-4999-8999-999999999999"],
-                                  "excluded_tag_ids":[]
-                                }
-                                """))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error.code").value("STYLE_TAG_NOT_FOUND"));
+                        .content(preferenceBody(List.of(unknownTagId), List.of())))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.error.field_errors[0].field")
+                        .value("preferred_tag_ids"))
+                .andExpect(jsonPath("$.error.field_errors[0].reason")
+                        .value("STYLE_TAG_NOT_FOUND:" + unknownTagId));
 
-        Integer savedCount = jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM user_style_preferences WHERE user_id = ?",
-                Integer.class, USER_ID);
-        assertThat(savedCount).isEqualTo(2);
+        assertSavedPreferenceCount(2);
     }
 
     @Test
@@ -156,17 +239,35 @@ class StyleApiIntegrationTest extends PostgresIntegrationTest {
         mockMvc.perform(put("/me/style-preferences")
                         .with(authentication(userAuthentication(userId)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "preferred_tag_ids":["%s"],
-                                  "excluded_tag_ids":["%s"]
-                                }
-                                """.formatted(preferredTagId, excludedTagId)))
+                        .content(preferenceBody(
+                                List.of(preferredTagId), List.of(excludedTagId))))
                 .andExpect(status().isOk());
     }
 
     private UsernamePasswordAuthenticationToken userAuthentication(UUID userId) {
-        return new UsernamePasswordAuthenticationToken(userId, null, java.util.List.of());
+        return new UsernamePasswordAuthenticationToken(userId, null, List.of());
+    }
+
+    private String preferenceBody(List<UUID> preferredTagIds, List<UUID> excludedTagIds) {
+        return """
+                {
+                  "preferred_tag_ids":[%s],
+                  "excluded_tag_ids":[%s]
+                }
+                """.formatted(uuidJson(preferredTagIds), uuidJson(excludedTagIds));
+    }
+
+    private String uuidJson(List<UUID> tagIds) {
+        return tagIds.stream()
+                .map(tagId -> "\"" + tagId + "\"")
+                .collect(Collectors.joining(","));
+    }
+
+    private void assertSavedPreferenceCount(int expectedCount) {
+        Integer savedCount = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM user_style_preferences WHERE user_id = ?",
+                Integer.class, USER_ID);
+        assertThat(savedCount).isEqualTo(expectedCount);
     }
 
     private void insertUser(UUID userId, String email) {

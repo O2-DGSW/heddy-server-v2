@@ -22,6 +22,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,6 +49,14 @@ class StyleServiceTest {
                 .willReturn(List.of(tag));
 
         assertThat(service.getStyleTags(StyleTagCategory.BANG)).containsExactly(tag);
+    }
+
+    @Test
+    void getsAllStyleTagsWhenCategoryIsNotSpecified() {
+        StyleTag tag = tag(UUID.randomUUID(), StyleTagCategory.LONG);
+        given(styleTagRepositoryPort.findAll(null)).willReturn(List.of(tag));
+
+        assertThat(service.getStyleTags(null)).containsExactly(tag);
     }
 
     @Test
@@ -81,8 +90,7 @@ class StyleServiceTest {
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<UserStylePreference>> captor = ArgumentCaptor.forClass(List.class);
-        verify(preferenceRepositoryPort).replace(org.mockito.ArgumentMatchers.eq(USER_ID),
-                captor.capture());
+        verify(preferenceRepositoryPort).replace(eq(USER_ID), captor.capture());
         assertThat(captor.getValue()).hasSize(2);
         assertThat(result.preferredTagIds()).containsExactly(preferredTagId);
         assertThat(result.excludedTagIds()).containsExactly(excludedTagId);
@@ -116,9 +124,15 @@ class StyleServiceTest {
         UUID unknownTagId = UUID.randomUUID();
         given(styleTagRepositoryPort.findAllByIds(any())).willReturn(List.of());
 
-        assertError(() -> service.saveStylePreferences(new SaveStylePreferencesCommand(
-                        USER_ID, List.of(unknownTagId), List.of())),
-                StyleError.TAG_NOT_FOUND);
+        assertThatThrownBy(() -> service.saveStylePreferences(
+                new SaveStylePreferencesCommand(
+                        USER_ID, List.of(unknownTagId), List.of())))
+                .isInstanceOfSatisfying(StyleException.class, exception -> {
+                    assertThat(exception.error()).isEqualTo(StyleError.INVALID_TAG_IDS);
+                    assertThat(exception.invalidPreferredTagIds())
+                            .containsExactly(unknownTagId);
+                    assertThat(exception.invalidExcludedTagIds()).isEmpty();
+                });
         verify(preferenceRepositoryPort, never()).replace(any(), any());
     }
 

@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -77,6 +78,22 @@ class StyleApiIntegrationTest extends PostgresIntegrationTest {
                         .with(authentication(userAuthentication(USER_ID))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items.length()").value(24));
+    }
+
+    @Test
+    void documentsStylePreferenceLimitsAndBearerAuthentication() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.type")
+                        .value("http"))
+                .andExpect(jsonPath("$['paths']['/me/style-preferences']['put']"
+                        + "['security'][0]['bearerAuth']").isArray())
+                .andExpect(jsonPath("$.components.schemas.StylePreferencesRequest.properties"
+                        + ".preferred_tag_ids.description")
+                        .value(containsString("최대 10개")))
+                .andExpect(jsonPath("$.components.schemas.StylePreferencesRequest.properties"
+                        + ".excluded_tag_ids.description")
+                        .value(containsString("최대 10개")));
     }
 
     @Test
@@ -234,6 +251,28 @@ class StyleApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void rejectsDeletedAccountWhenGettingPreferences() throws Exception {
+        updateAccountStatus(USER_ID, "DELETED");
+
+        mockMvc.perform(get("/me/style-preferences")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("AUTH_ACCOUNT_DELETED"));
+    }
+
+    @Test
+    void rejectsDeletionPendingAccountWhenSavingPreferences() throws Exception {
+        updateAccountStatus(USER_ID, "DELETION_PENDING");
+
+        mockMvc.perform(put("/me/style-preferences")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(preferenceBody(List.of(), List.of())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("AUTH_ACCOUNT_DELETED"));
+    }
+
     private void savePreferences(UUID userId, UUID preferredTagId, UUID excludedTagId)
             throws Exception {
         mockMvc.perform(put("/me/style-preferences")
@@ -276,5 +315,10 @@ class StyleApiIntegrationTest extends PostgresIntegrationTest {
                     user_id, email, password_hash, auth_provider, status, login_fail_count
                 ) VALUES (?, ?, ?, 'EMAIL', 'ACTIVE', 0)
                 """, userId, email, "hash");
+    }
+
+    private void updateAccountStatus(UUID userId, String status) {
+        jdbcTemplate.update(
+                "UPDATE users SET status = ? WHERE user_id = ?", status, userId);
     }
 }

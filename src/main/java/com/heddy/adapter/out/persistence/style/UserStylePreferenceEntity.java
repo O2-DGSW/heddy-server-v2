@@ -8,8 +8,12 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
@@ -18,7 +22,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "user_style_preferences")
 @EntityListeners(AuditingEntityListener.class)
-class UserStylePreferenceEntity {
+class UserStylePreferenceEntity implements Persistable<UUID> {
 
     @Id
     @Column(name = "preference_id", nullable = false)
@@ -38,6 +42,9 @@ class UserStylePreferenceEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Transient
+    private boolean newEntity = true;
+
     protected UserStylePreferenceEntity() {
     }
 
@@ -51,5 +58,21 @@ class UserStylePreferenceEntity {
     UserStylePreference toDomain() {
         return new UserStylePreference(
                 preferenceId, userId, styleTagId, preferenceType, createdAt);
+    }
+
+    @Override
+    public UUID getId() {
+        return preferenceId;
+    }
+
+    @Override
+    public boolean isNew() {
+        return newEntity;
+    }
+
+    @PostPersist
+    @PostLoad
+    void markNotNew() {
+        newEntity = false;
     }
 }

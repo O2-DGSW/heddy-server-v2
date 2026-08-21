@@ -33,8 +33,7 @@ public class ProfileService implements ProfileUseCase {
 
     @Override
     public MyProfileResult getProfile(UUID userId) {
-        Account account = accountRepositoryPort.findById(userId)
-                .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND));
+        Account account = getNonDeletedAccount(userId);
         UserProfile profile = userProfileRepositoryPort.findByUserId(userId)
                 .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND));
         return result(account, profile);
@@ -43,8 +42,7 @@ public class ProfileService implements ProfileUseCase {
     @Override
     @Transactional
     public MyProfileResult updateProfile(UpdateMyProfileCommand command) {
-        Account account = accountRepositoryPort.findById(command.userId())
-                .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND));
+        Account account = getNonDeletedAccount(command.userId());
         UserProfile current = userProfileRepositoryPort.findByUserId(command.userId())
                 .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND));
         validateNickname(command);
@@ -62,6 +60,7 @@ public class ProfileService implements ProfileUseCase {
 
     @Override
     public HairProfile getHairProfile(UUID userId) {
+        getNonDeletedAccount(userId);
         return hairProfileRepositoryPort.findByUserId(userId)
                 .orElseThrow(() -> new AccountException(AccountError.HAIR_PROFILE_NOT_FOUND));
     }
@@ -69,8 +68,7 @@ public class ProfileService implements ProfileUseCase {
     @Override
     @Transactional
     public HairProfile saveHairProfile(SaveHairProfileCommand command) {
-        accountRepositoryPort.findById(command.userId())
-                .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND));
+        getNonDeletedAccount(command.userId());
         HairProfile profile = hairProfileRepositoryPort.findByUserId(command.userId())
                 .map(current -> current.replace(command.hairType(), command.hairCondition(),
                         command.hairLength(), command.hairThickness(),
@@ -89,10 +87,13 @@ public class ProfileService implements ProfileUseCase {
     }
 
     private void validatePhoneChange(UpdateMyProfileCommand command, UserProfile current) {
-        if (!command.phonePresent() || Objects.equals(command.phone(), current.phone())) {
+        if (!command.phonePresent()) {
             return;
         }
         if (command.phone() == null) {
+            throw new AccountException(AccountError.PROFILE_PHONE_REQUIRED);
+        }
+        if (Objects.equals(command.phone(), current.phone())) {
             return;
         }
         userProfileRepositoryPort.findUserIdByPhone(command.phone())
@@ -118,5 +119,14 @@ public class ProfileService implements ProfileUseCase {
         return new MyProfileResult(account.userId(), account.email(), profile.nickname(),
                 profile.phone(), profile.preferredDesigner(), profile.hairCautions(),
                 account.status(), account.createdAt(), profile.updatedAt());
+    }
+
+    private Account getNonDeletedAccount(UUID userId) {
+        Account account = accountRepositoryPort.findById(userId)
+                .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND));
+        if (account.isDeleted()) {
+            throw new AccountException(AccountError.ACCOUNT_DELETED);
+        }
+        return account;
     }
 }

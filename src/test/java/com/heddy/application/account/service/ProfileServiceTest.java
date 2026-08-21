@@ -21,6 +21,8 @@ import com.heddy.domain.account.port.out.UserProfileRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -71,20 +73,20 @@ class ProfileServiceTest {
     }
 
     @Test
-    void partialUpdateKeepsOmittedFieldsAndClearsExplicitNull() {
+    void partialUpdateKeepsOmittedFieldsAndClearsNullableFields() {
         given(accountRepositoryPort.findById(USER_ID)).willReturn(Optional.of(account()));
         given(userProfileRepositoryPort.findByUserId(USER_ID)).willReturn(Optional.of(profile()));
         given(userProfileRepositoryPort.save(any())).willAnswer(invocation -> invocation.getArgument(0));
 
         service.updateProfile(new UpdateMyProfileCommand(
-                USER_ID, true, "새 닉네임", true, null,
-                false, null, false, null));
+                USER_ID, true, "새 닉네임", false, null,
+                true, null, false, null));
 
         ArgumentCaptor<UserProfile> captor = ArgumentCaptor.forClass(UserProfile.class);
         verify(userProfileRepositoryPort).save(captor.capture());
         assertThat(captor.getValue().nickname()).isEqualTo("새 닉네임");
-        assertThat(captor.getValue().phone()).isNull();
-        assertThat(captor.getValue().preferredDesigner()).isEqualTo("김디자이너");
+        assertThat(captor.getValue().phone()).isEqualTo("01012345678");
+        assertThat(captor.getValue().preferredDesigner()).isNull();
         assertThat(captor.getValue().hairCautions()).isEqualTo("두피 자극 주의");
     }
 
@@ -123,6 +125,19 @@ class ProfileServiceTest {
     }
 
     @Test
+    void rejectsClearingPhoneNumber() {
+        given(accountRepositoryPort.findById(USER_ID)).willReturn(Optional.of(account()));
+        given(userProfileRepositoryPort.findByUserId(USER_ID)).willReturn(Optional.of(profile()));
+
+        assertError(() -> service.updateProfile(new UpdateMyProfileCommand(
+                        USER_ID, false, null, true, null,
+                        false, null, false, null)),
+                AccountError.PROFILE_PHONE_REQUIRED);
+        verify(userProfileRepositoryPort, never()).save(any());
+        verify(smsVerificationStorePort, never()).isVerified(any(), any());
+    }
+
+    @Test
     void consumesVerificationAfterPhoneChange() {
         given(accountRepositoryPort.findById(USER_ID)).willReturn(Optional.of(account()));
         given(userProfileRepositoryPort.findByUserId(USER_ID)).willReturn(Optional.of(profile()));
@@ -140,6 +155,7 @@ class ProfileServiceTest {
 
     @Test
     void returnsDocumentedErrorWhenHairProfileDoesNotExist() {
+        given(accountRepositoryPort.findById(USER_ID)).willReturn(Optional.of(account()));
         given(hairProfileRepositoryPort.findByUserId(USER_ID)).willReturn(Optional.empty());
 
         assertError(() -> service.getHairProfile(USER_ID), AccountError.HAIR_PROFILE_NOT_FOUND);
@@ -175,9 +191,31 @@ class ProfileServiceTest {
         assertThat(result.hairCondition()).isEqualTo(HairCondition.NORMAL);
     }
 
+    @ParameterizedTest
+    @EnumSource(value = AccountStatus.class, names = {"DELETION_PENDING", "DELETED"})
+    void rejectsAllProfileOperationsForDeletedAccount(AccountStatus status) {
+        given(accountRepositoryPort.findById(USER_ID))
+                .willReturn(Optional.of(account(status)));
+
+        assertError(() -> service.getProfile(USER_ID), AccountError.ACCOUNT_DELETED);
+        assertError(() -> service.updateProfile(new UpdateMyProfileCommand(
+                        USER_ID, false, null, false, null,
+                        false, null, false, null)),
+                AccountError.ACCOUNT_DELETED);
+        assertError(() -> service.getHairProfile(USER_ID), AccountError.ACCOUNT_DELETED);
+        assertError(() -> service.saveHairProfile(hairCommand()), AccountError.ACCOUNT_DELETED);
+
+        verify(userProfileRepositoryPort, never()).findByUserId(any());
+        verify(hairProfileRepositoryPort, never()).findByUserId(any());
+    }
+
     private Account account() {
+        return account(AccountStatus.ACTIVE);
+    }
+
+    private Account account(AccountStatus status) {
         return new Account(USER_ID, "user@example.com", "hash", AuthProvider.EMAIL, null,
-                AccountStatus.ACTIVE, 0, null, CREATED_AT, UPDATED_AT);
+                status, 0, null, CREATED_AT, UPDATED_AT);
     }
 
     private UserProfile profile() {

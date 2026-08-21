@@ -71,20 +71,33 @@ class ProfileControllerTest {
     }
 
     @Test
-    void patchDistinguishesExplicitNullFromOmittedFields() throws Exception {
-        given(profileUseCase.updateProfile(any())).willReturn(profileResult());
+    void rejectsClearingPhoneNumber() throws Exception {
+        given(profileUseCase.updateProfile(any()))
+                .willThrow(new AccountException(AccountError.PROFILE_PHONE_REQUIRED));
 
         mockMvc.perform(patch("/me")
                         .with(authentication(userAuthentication()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"phone\":null}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"));
 
         verify(profileUseCase).updateProfile(org.mockito.ArgumentMatchers.argThat(command ->
                 command.userId().equals(USER_ID)
                         && command.phonePresent()
                         && command.phone() == null
                         && !command.nicknamePresent()));
+    }
+
+    @Test
+    void returnsForbiddenForDeletedAccount() throws Exception {
+        given(profileUseCase.getProfile(USER_ID))
+                .willThrow(new AccountException(AccountError.ACCOUNT_DELETED));
+
+        mockMvc.perform(get("/me")
+                        .with(authentication(userAuthentication())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("AUTH_ACCOUNT_DELETED"));
     }
 
     @Test

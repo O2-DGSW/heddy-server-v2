@@ -8,6 +8,7 @@ import com.heddy.domain.style.port.in.StyleUseCase;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "스타일", description = "스타일 태그와 내 선호·제외 스타일 관리")
+@SecurityRequirement(name = "bearerAuth")
 public class StyleController {
 
     private final StyleUseCase styleUseCase;

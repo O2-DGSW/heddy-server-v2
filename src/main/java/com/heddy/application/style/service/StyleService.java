@@ -1,5 +1,9 @@
 package com.heddy.application.style.service;
 
+import com.heddy.domain.account.exception.AccountError;
+import com.heddy.domain.account.exception.AccountException;
+import com.heddy.domain.account.model.Account;
+import com.heddy.domain.account.port.out.AccountRepositoryPort;
 import com.heddy.domain.style.exception.StyleError;
 import com.heddy.domain.style.exception.StyleException;
 import com.heddy.domain.style.model.StyleTag;
@@ -29,6 +33,7 @@ public class StyleService implements StyleUseCase {
 
     private static final int MAX_TAGS_PER_TYPE = 10;
 
+    private final AccountRepositoryPort accountRepositoryPort;
     private final StyleTagRepositoryPort styleTagRepositoryPort;
     private final UserStylePreferenceRepositoryPort preferenceRepositoryPort;
 
@@ -39,12 +44,14 @@ public class StyleService implements StyleUseCase {
 
     @Override
     public StylePreferencesResult getStylePreferences(UUID userId) {
+        validateNonDeletedAccount(userId);
         return StylePreferencesResult.from(preferenceRepositoryPort.findAllByUserId(userId));
     }
 
     @Override
     @Transactional
     public StylePreferencesResult saveStylePreferences(SaveStylePreferencesCommand command) {
+        validateNonDeletedAccount(command.userId());
         Set<UUID> preferredTagIds = new LinkedHashSet<>(command.preferredTagIds());
         Set<UUID> excludedTagIds = new LinkedHashSet<>(command.excludedTagIds());
         validateLimits(preferredTagIds, excludedTagIds);
@@ -94,6 +101,14 @@ public class StyleService implements StyleUseCase {
         if (!invalidPreferredTagIds.isEmpty() || !invalidExcludedTagIds.isEmpty()) {
             throw StyleException.invalidTagIds(
                     invalidPreferredTagIds, invalidExcludedTagIds);
+        }
+    }
+
+    private void validateNonDeletedAccount(UUID userId) {
+        Account account = accountRepositoryPort.findById(userId)
+                .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND));
+        if (account.isDeleted()) {
+            throw new AccountException(AccountError.ACCOUNT_DELETED);
         }
     }
 }

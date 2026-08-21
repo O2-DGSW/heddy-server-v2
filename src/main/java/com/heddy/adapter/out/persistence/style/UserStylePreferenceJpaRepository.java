@@ -7,7 +7,8 @@ import java.util.UUID;
 
 interface UserStylePreferenceJpaRepository
         extends JpaRepository<UserStylePreferenceEntity, UUID> {
-    List<UserStylePreferenceEntity> findAllByUserIdOrderByCreatedAtAsc(UUID userId);
+    List<UserStylePreferenceEntity> findAllByUserIdOrderByPreferenceTypeAscStyleTagIdAsc(
+            UUID userId);
 
     void deleteAllByUserId(UUID userId);
 }

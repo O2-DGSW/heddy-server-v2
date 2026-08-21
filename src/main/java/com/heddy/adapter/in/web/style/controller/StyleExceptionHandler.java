@@ -10,7 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RestControllerAdvice
 public class StyleExceptionHandler {
@@ -21,10 +23,13 @@ public class StyleExceptionHandler {
             HttpServletRequest request
     ) {
         StyleError error = exception.error();
-        ApiErrorResponse response = error == StyleError.PREFERENCE_CONFLICT
-                ? conflictResponse(error, RequestIdFilter.get(request))
-                : ApiErrorResponse.of(
-                        error.code(), error.message(), RequestIdFilter.get(request));
+        String requestId = RequestIdFilter.get(request);
+        ApiErrorResponse response = switch (error) {
+            case PREFERENCE_CONFLICT -> conflictResponse(error, requestId);
+            case INVALID_TAG_IDS -> invalidTagIdsResponse(exception, requestId);
+            case PREFERENCE_LIMIT_EXCEEDED ->
+                    ApiErrorResponse.of(error.code(), error.message(), requestId);
+        };
         return ResponseEntity.status(status(error)).body(response);
     }
 
@@ -36,11 +41,33 @@ public class StyleExceptionHandler {
                 requestId);
     }
 
+    private ApiErrorResponse invalidTagIdsResponse(
+            StyleException exception,
+            String requestId
+    ) {
+        List<ApiErrorResponse.FieldError> fieldErrors = new ArrayList<>();
+        addInvalidTagErrors(
+                fieldErrors, "preferred_tag_ids", exception.invalidPreferredTagIds());
+        addInvalidTagErrors(
+                fieldErrors, "excluded_tag_ids", exception.invalidExcludedTagIds());
+        return ApiErrorResponse.validation(requestId, fieldErrors);
+    }
+
+    private void addInvalidTagErrors(
+            List<ApiErrorResponse.FieldError> fieldErrors,
+            String field,
+            List<UUID> invalidTagIds
+    ) {
+        invalidTagIds.forEach(tagId -> fieldErrors.add(
+                new ApiErrorResponse.FieldError(
+                        field, "STYLE_TAG_NOT_FOUND:" + tagId)));
+    }
+
     private HttpStatus status(StyleError error) {
         return switch (error) {
-            case PREFERENCE_LIMIT_EXCEEDED -> HttpStatus.UNPROCESSABLE_CONTENT;
+            case PREFERENCE_LIMIT_EXCEEDED, INVALID_TAG_IDS ->
+                    HttpStatus.UNPROCESSABLE_CONTENT;
             case PREFERENCE_CONFLICT -> HttpStatus.CONFLICT;
-            case TAG_NOT_FOUND -> HttpStatus.NOT_FOUND;
         };
     }
 }

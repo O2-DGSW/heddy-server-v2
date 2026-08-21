@@ -17,7 +17,7 @@ public class UserStylePreferencePersistenceAdapter
 
     @Override
     public List<UserStylePreference> findAllByUserId(UUID userId) {
-        return repository.findAllByUserIdOrderByCreatedAtAsc(userId).stream()
+        return repository.findAllByUserIdOrderByPreferenceTypeAscStyleTagIdAsc(userId).stream()
                 .map(UserStylePreferenceEntity::toDomain)
                 .toList();
     }

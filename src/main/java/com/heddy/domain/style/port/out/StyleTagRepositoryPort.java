@@ -5,9 +5,10 @@ import com.heddy.domain.style.model.StyleTagCategory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 public interface StyleTagRepositoryPort {
     List<StyleTag> findAll(StyleTagCategory category);
 
-    List<StyleTag> findAllByIds(Collection<java.util.UUID> styleTagIds);
+    List<StyleTag> findAllByIds(Collection<UUID> styleTagIds);
 }

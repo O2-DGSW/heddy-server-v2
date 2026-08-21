@@ -19,11 +19,13 @@ public record StylePreferencesResult(
                 .filter(preference -> preference.preferenceType()
                         == UserStylePreference.PreferenceType.PREFERRED)
                 .map(UserStylePreference::styleTagId)
+                .sorted()
                 .toList();
         List<UUID> excluded = preferences.stream()
                 .filter(preference -> preference.preferenceType()
                         == UserStylePreference.PreferenceType.EXCLUDED)
                 .map(UserStylePreference::styleTagId)
+                .sorted()
                 .toList();
         return new StylePreferencesResult(preferred, excluded);
     }

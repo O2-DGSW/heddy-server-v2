@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -51,9 +52,9 @@ public class StyleService implements StyleUseCase {
         validateTagsExist(preferredTagIds, excludedTagIds);
 
         List<UserStylePreference> preferences = Stream.concat(
-                        preferredTagIds.stream().map(tagId -> preference(
+                        preferredTagIds.stream().map(tagId -> UserStylePreference.create(
                                 command.userId(), tagId, PreferenceType.PREFERRED)),
-                        excludedTagIds.stream().map(tagId -> preference(
+                        excludedTagIds.stream().map(tagId -> UserStylePreference.create(
                                 command.userId(), tagId, PreferenceType.EXCLUDED)))
                 .toList();
         return StylePreferencesResult.from(
@@ -83,13 +84,16 @@ public class StyleService implements StyleUseCase {
 
         Set<UUID> existingTagIds = styleTagRepositoryPort.findAllByIds(requestedTagIds).stream()
                 .map(StyleTag::styleTagId)
-                .collect(java.util.stream.Collectors.toSet());
-        if (!existingTagIds.containsAll(requestedTagIds)) {
-            throw new StyleException(StyleError.TAG_NOT_FOUND);
+                .collect(Collectors.toSet());
+        List<UUID> invalidPreferredTagIds = preferredTagIds.stream()
+                .filter(tagId -> !existingTagIds.contains(tagId))
+                .toList();
+        List<UUID> invalidExcludedTagIds = excludedTagIds.stream()
+                .filter(tagId -> !existingTagIds.contains(tagId))
+                .toList();
+        if (!invalidPreferredTagIds.isEmpty() || !invalidExcludedTagIds.isEmpty()) {
+            throw StyleException.invalidTagIds(
+                    invalidPreferredTagIds, invalidExcludedTagIds);
         }
-    }
-
-    private UserStylePreference preference(UUID userId, UUID tagId, PreferenceType type) {
-        return UserStylePreference.create(userId, tagId, type);
     }
 }

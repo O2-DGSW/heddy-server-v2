@@ -2,6 +2,7 @@ package com.heddy.adapter.out.persistence.account;
 
 import com.heddy.domain.account.model.ConsentDecision;
 import com.heddy.domain.account.model.ConsentSource;
+import com.heddy.domain.account.model.ConsentStatus;
 import com.heddy.domain.account.model.ConsentType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -57,5 +58,10 @@ class ConsentHistoryEntity {
         policyVersion = decision.policyVersion();
         this.source = source;
         this.changedAt = changedAt;
+    }
+
+    ConsentStatus toDomain() {
+        return new ConsentStatus(
+                userId, consentType, granted, policyVersion, source, changedAt);
     }
 }

@@ -38,6 +38,7 @@ class ConsentServiceTest {
 
     private static final UUID USER_ID = UUID.fromString(
             "80000000-0000-4000-8000-000000000001");
+    private static final String CURRENT_POLICY_VERSION = "2026-08-01";
 
     @Mock AccountRepositoryPort accountRepositoryPort;
     @Mock ConsentHistoryRepositoryPort consentHistoryRepositoryPort;
@@ -46,7 +47,9 @@ class ConsentServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ConsentService(accountRepositoryPort, consentHistoryRepositoryPort);
+        service = new ConsentService(
+                accountRepositoryPort, consentHistoryRepositoryPort,
+                CURRENT_POLICY_VERSION);
     }
 
     @Test
@@ -60,64 +63,68 @@ class ConsentServiceTest {
         List<ConsentStatus> result = service.getConsents(USER_ID);
 
         assertThat(result).extracting(ConsentStatus::type)
-                .containsExactly(ConsentType.PRIVACY_POLICY, ConsentType.AI_TRAINING);
+                .containsExactly(ConsentType.values());
+        assertThat(result.get(0).granted()).isFalse();
+        assertThat(result.get(0).policyVersion()).isNull();
+        assertThat(result.get(1).granted()).isTrue();
+        assertThat(result.get(2).granted()).isTrue();
     }
 
     @Test
-    void appendsSettingsHistoryWithRequestedPolicyVersion() {
-        givenActiveAccountForUpdate();
-        given(consentHistoryRepositoryPort.findLatestByUserIdAndType(
-                USER_ID, ConsentType.AI_TRAINING)).willReturn(Optional.empty());
+    void appendsHistoryWithCommandSourceAndCurrentPolicyVersion() {
+        givenActiveAccount();
 
         ConsentStatus result = service.changeConsent(new ChangeConsentCommand(
-                USER_ID, ConsentType.AI_TRAINING, true, " 2026-08-23 "));
+                USER_ID, ConsentType.AI_TRAINING, true,
+                CURRENT_POLICY_VERSION, ConsentSource.WITHDRAWAL));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ConsentDecision>> decisions = ArgumentCaptor.forClass(List.class);
         verify(consentHistoryRepositoryPort).append(
-                eq(USER_ID), decisions.capture(), eq(ConsentSource.SETTINGS), any());
+                eq(USER_ID), decisions.capture(), eq(ConsentSource.WITHDRAWAL), any());
         assertThat(decisions.getValue()).containsExactly(new ConsentDecision(
-                ConsentType.AI_TRAINING, true, "2026-08-23"));
+                ConsentType.AI_TRAINING, true, CURRENT_POLICY_VERSION));
         assertThat(result.type()).isEqualTo(ConsentType.AI_TRAINING);
-        assertThat(result.source()).isEqualTo(ConsentSource.SETTINGS);
+        assertThat(result.source()).isEqualTo(ConsentSource.WITHDRAWAL);
     }
 
     @Test
-    void advancesTimestampBeyondLatestHistoryAtPostgresPrecision() {
-        givenActiveAccountForUpdate();
-        Instant previous = Instant.parse("2099-08-23T00:00:00Z");
-        given(consentHistoryRepositoryPort.findLatestByUserIdAndType(
-                USER_ID, ConsentType.SERVICE_ANALYTICS))
-                .willReturn(Optional.of(status(
-                        ConsentType.SERVICE_ANALYTICS, false, previous)));
+    void recordsActualCurrentTimeWithoutLockingAccountOrReadingPriorHistory() {
+        givenActiveAccount();
+        Instant before = Instant.now();
 
         service.changeConsent(new ChangeConsentCommand(
-                USER_ID, ConsentType.SERVICE_ANALYTICS, true, "2026-08-23"));
+                USER_ID, ConsentType.SERVICE_ANALYTICS, true,
+                CURRENT_POLICY_VERSION, ConsentSource.SETTINGS));
+        Instant after = Instant.now();
 
         ArgumentCaptor<Instant> changedAt = ArgumentCaptor.forClass(Instant.class);
         verify(consentHistoryRepositoryPort).append(
                 eq(USER_ID), any(), eq(ConsentSource.SETTINGS), changedAt.capture());
-        assertThat(changedAt.getValue()).isEqualTo(previous.plusNanos(1_000));
+        assertThat(changedAt.getValue()).isBetween(before, after);
+        verify(accountRepositoryPort, never()).findByIdForUpdate(any());
     }
 
     @Test
     void rejectsRequiredConsentWithdrawalAndGuidesAccountDeletion() {
-        givenActiveAccountForUpdate();
+        givenActiveAccount();
 
         assertAccountError(() -> service.changeConsent(new ChangeConsentCommand(
-                        USER_ID, ConsentType.TERMS_OF_SERVICE, false, "2026-08-23")),
+                        USER_ID, ConsentType.TERMS_OF_SERVICE, false,
+                        CURRENT_POLICY_VERSION, ConsentSource.SETTINGS)),
                 AccountError.REQUIRED_CONSENT_WITHDRAWAL);
 
         verifyNoInteractions(consentHistoryRepositoryPort);
     }
 
     @Test
-    void rejectsBlankPolicyVersion() {
-        givenActiveAccountForUpdate();
+    void rejectsPolicyVersionThatDiffersFromServerConfiguration() {
+        givenActiveAccount();
 
         assertAccountError(() -> service.changeConsent(new ChangeConsentCommand(
-                        USER_ID, ConsentType.AI_TRAINING, true, " ")),
-                AccountError.CONSENT_POLICY_VERSION_REQUIRED);
+                        USER_ID, ConsentType.AI_TRAINING, true,
+                        "2026-07-01", ConsentSource.SETTINGS)),
+                AccountError.CONSENT_POLICY_VERSION_INVALID);
 
         verifyNoInteractions(consentHistoryRepositoryPort);
     }
@@ -132,8 +139,8 @@ class ConsentServiceTest {
         verify(consentHistoryRepositoryPort, never()).findLatestByUserId(any());
     }
 
-    private void givenActiveAccountForUpdate() {
-        given(accountRepositoryPort.findByIdForUpdate(USER_ID))
+    private void givenActiveAccount() {
+        given(accountRepositoryPort.findById(USER_ID))
                 .willReturn(Optional.of(account(AccountStatus.ACTIVE)));
     }
 

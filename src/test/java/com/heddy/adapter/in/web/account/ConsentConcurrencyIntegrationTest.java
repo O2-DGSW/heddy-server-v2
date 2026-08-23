@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,7 +51,7 @@ class ConsentConcurrencyIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
-    void serializesConcurrentChangesIntoStrictlyOrderedAppendOnlyHistory() throws Exception {
+    void appendsConcurrentChangesWithDistinctDatabaseSequence() throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(REQUEST_COUNT);
         CountDownLatch ready = new CountDownLatch(REQUEST_COUNT);
         CountDownLatch start = new CountDownLatch(1);
@@ -76,12 +77,18 @@ class ConsentConcurrencyIntegrationTest extends PostgresIntegrationTest {
                 SELECT count(*) FROM consent_history
                 WHERE user_id = ? AND consent_type = 'AI_TRAINING'
                 """, Integer.class, USER_ID);
-        Integer distinctChangedAtCount = jdbcTemplate.queryForObject("""
-                SELECT count(DISTINCT changed_at) FROM consent_history
+        Integer distinctSequenceCount = jdbcTemplate.queryForObject("""
+                SELECT count(DISTINCT change_sequence) FROM consent_history
                 WHERE user_id = ? AND consent_type = 'AI_TRAINING'
                 """, Integer.class, USER_ID);
+        Instant latestChangedAt = jdbcTemplate.queryForObject("""
+                SELECT changed_at FROM consent_history
+                WHERE user_id = ? AND consent_type = 'AI_TRAINING'
+                ORDER BY change_sequence DESC LIMIT 1
+                """, Instant.class, USER_ID);
         assertThat(historyCount).isEqualTo(REQUEST_COUNT);
-        assertThat(distinctChangedAtCount).isEqualTo(REQUEST_COUNT);
+        assertThat(distinctSequenceCount).isEqualTo(REQUEST_COUNT);
+        assertThat(latestChangedAt).isBeforeOrEqualTo(Instant.now());
     }
 
     private int performPutWhenStarted(
@@ -100,7 +107,7 @@ class ConsentConcurrencyIntegrationTest extends PostgresIntegrationTest {
                         .content("""
                                 {
                                   "granted":%s,
-                                  "policy_version":"2026-08-23"
+                                  "policy_version":"2026-08-01"
                                 }
                                 """.formatted(granted)))
                 .andReturn()
@@ -109,6 +116,7 @@ class ConsentConcurrencyIntegrationTest extends PostgresIntegrationTest {
     }
 
     private void deleteUser() {
+        jdbcTemplate.update("DELETE FROM consent_history WHERE user_id = ?", USER_ID);
         jdbcTemplate.update("DELETE FROM users WHERE user_id = ?", USER_ID);
     }
 }

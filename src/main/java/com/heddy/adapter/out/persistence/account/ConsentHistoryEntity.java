@@ -42,6 +42,9 @@ class ConsentHistoryEntity {
     @Column(name = "changed_at", nullable = false)
     private Instant changedAt;
 
+    @Column(name = "change_sequence", nullable = false, insertable = false, updatable = false)
+    private long changeSequence;
+
     protected ConsentHistoryEntity() {
     }
 

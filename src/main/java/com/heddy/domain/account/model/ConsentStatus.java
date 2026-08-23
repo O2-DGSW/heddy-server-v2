@@ -11,4 +11,7 @@ public record ConsentStatus(
         ConsentSource source,
         Instant changedAt
 ) {
+    public static ConsentStatus unrecorded(UUID userId, ConsentType type) {
+        return new ConsentStatus(userId, type, false, null, null, null);
+    }
 }

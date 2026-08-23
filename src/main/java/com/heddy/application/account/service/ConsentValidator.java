@@ -5,6 +5,7 @@ import com.heddy.domain.account.exception.AccountException;
 import com.heddy.domain.account.model.ConsentDecision;
 import com.heddy.domain.account.model.ConsentType;
 
+import java.util.Arrays;
 import java.util.List;
 
 final class ConsentValidator {
@@ -13,8 +14,10 @@ final class ConsentValidator {
     }
 
     static void requireSignupConsents(List<ConsentDecision> agreements) {
-        if (!isGranted(agreements, ConsentType.TERMS_OF_SERVICE)
-                || !isGranted(agreements, ConsentType.PRIVACY_POLICY)) {
+        boolean allRequiredGranted = Arrays.stream(ConsentType.values())
+                .filter(ConsentType::isRequired)
+                .allMatch(type -> isGranted(agreements, type));
+        if (!allRequiredGranted) {
             throw new AccountException(AccountError.CONSENT_REQUIRED_NOT_GRANTED);
         }
     }

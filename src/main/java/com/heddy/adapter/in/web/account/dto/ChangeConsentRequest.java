@@ -1,6 +1,7 @@
 package com.heddy.adapter.in.web.account.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.heddy.domain.account.model.ConsentSource;
 import com.heddy.domain.account.model.ConsentType;
 import com.heddy.domain.account.port.in.ChangeConsentCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,6 +21,7 @@ public record ChangeConsentRequest(
         @JsonProperty("policy_version") String policyVersion
 ) {
     public ChangeConsentCommand toCommand(UUID userId, ConsentType type) {
-        return new ChangeConsentCommand(userId, type, granted, policyVersion);
+        return new ChangeConsentCommand(
+                userId, type, granted, policyVersion, ConsentSource.SETTINGS);
     }
 }

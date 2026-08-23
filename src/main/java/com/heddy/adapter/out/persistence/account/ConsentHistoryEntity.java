@@ -2,6 +2,7 @@ package com.heddy.adapter.out.persistence.account;
 
 import com.heddy.domain.account.model.ConsentDecision;
 import com.heddy.domain.account.model.ConsentSource;
+import com.heddy.domain.account.model.ConsentStatus;
 import com.heddy.domain.account.model.ConsentType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,6 +42,9 @@ class ConsentHistoryEntity {
     @Column(name = "changed_at", nullable = false)
     private Instant changedAt;
 
+    @Column(name = "change_sequence", nullable = false, insertable = false, updatable = false)
+    private long changeSequence;
+
     protected ConsentHistoryEntity() {
     }
 
@@ -57,5 +61,10 @@ class ConsentHistoryEntity {
         policyVersion = decision.policyVersion();
         this.source = source;
         this.changedAt = changedAt;
+    }
+
+    ConsentStatus toDomain() {
+        return new ConsentStatus(
+                userId, consentType, granted, policyVersion, source, changedAt);
     }
 }

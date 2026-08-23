@@ -12,6 +12,11 @@ public enum AccountError {
     REAUTHENTICATION_REQUIRED("AUTH_REAUTHENTICATION_REQUIRED", "민감 작업을 위한 재인증이 필요합니다."),
     WEAK_PASSWORD("AUTH_WEAK_PASSWORD", "비밀번호 형식이 올바르지 않습니다."),
     CONSENT_REQUIRED_NOT_GRANTED("CONSENT_REQUIRED_NOT_GRANTED", "필수 약관에 동의해야 합니다."),
+    CONSENT_POLICY_VERSION_INVALID(
+            "CONSENT_POLICY_VERSION_INVALID", "현재 정책 버전과 일치하지 않습니다."),
+    REQUIRED_CONSENT_WITHDRAWAL(
+            "CONSENT_WITHDRAWAL_REQUIRES_ACCOUNT_DELETION",
+            "필수 약관 철회는 회원 탈퇴를 통해 진행해주세요."),
     ACCOUNT_NOT_FOUND("RESOURCE_NOT_FOUND", "계정을 찾을 수 없습니다."),
     PHONE_ALREADY_EXISTS("AUTH_PHONE_ALREADY_EXISTS", "이미 사용 중인 전화번호입니다."),
     PROFILE_INVALID_NICKNAME("VALIDATION_FAILED", "닉네임은 비어 있을 수 없습니다."),

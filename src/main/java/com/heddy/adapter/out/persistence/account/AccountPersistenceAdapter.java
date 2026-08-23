@@ -4,6 +4,7 @@ import com.heddy.domain.account.model.Account;
 import com.heddy.domain.account.model.AuthProvider;
 import com.heddy.domain.account.model.ConsentDecision;
 import com.heddy.domain.account.model.ConsentSource;
+import com.heddy.domain.account.model.ConsentStatus;
 import com.heddy.domain.account.model.RefreshSession;
 import com.heddy.domain.account.model.UserProfile;
 import com.heddy.domain.account.port.out.AccountRepositoryPort;
@@ -94,6 +95,13 @@ public class AccountPersistenceAdapter implements
     @Override
     public boolean existsByPhone(String phone) {
         return userProfileJpaRepository.existsByPhone(phone);
+    }
+
+    @Override
+    public List<ConsentStatus> findLatestByUserId(UUID userId) {
+        return consentHistoryJpaRepository.findLatestByUserId(userId).stream()
+                .map(ConsentHistoryEntity::toDomain)
+                .toList();
     }
 
     @Override

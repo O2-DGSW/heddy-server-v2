@@ -59,3 +59,19 @@ app:
     jwt-secret: ${JWT_SECRET}
     access-token-seconds: 3600
     refresh-token-seconds: 2592000
+    reauthentication-token-seconds: 300
+    consent-policy-version: ${CONSENT_POLICY_VERSION:2026-08-01}
+    login:
+      maximum-attempts: 5
+      lock-seconds: 1800
+    social:
+      google-client-id: ${GOOGLE_CLIENT_ID:}
+      kakao-app-id: ${KAKAO_APP_ID:}
+      apple-client-id: ${APPLE_CLIENT_ID:}
+    sms:
+      development-webhook-url: ${SMS_DEVELOPMENT_WEBHOOK_URL:}
+      solapi:
+        enabled: ${SOLAPI_ENABLED:false}
+        api-key: ${SOLAPI_API_KEY:}
+        api-secret: ${SOLAPI_API_SECRET:}
+        from: ${SOLAPI_FROM:}

@@ -19,5 +19,37 @@ jobs:
           java-version: '21'
           cache: gradle
       - uses: gradle/actions/setup-gradle@v4
+      - name: 소스가 gitignore 에 걸리지 않는지 확인
+        run: |
+          set -eu
+          fail=0
+
+          # 1. 이미 추적 중인 소스가 무시 규칙에 걸리면 다음 add 부터 조용히 빠진다.
+          tracked=$(git ls-files --cached --ignored --exclude-standard -- src/)
+          if [ -n "$tracked" ]; then
+            echo "::error::추적 중인 소스가 .gitignore 에 걸린다:"; echo "$tracked"; fail=1
+          fi
+
+          # 2. 작업 트리에 있는데 무시돼서 커밋되지 않는 소스.
+          untracked=$(git ls-files --others --ignored --exclude-standard -- src/)
+          if [ -n "$untracked" ]; then
+            echo "::error::커밋되지 않는 소스가 있다:"; echo "$untracked"; fail=1
+          fi
+
+          # 3. 아직 파일이 없는 경로도 미리 막는다. 레이어 컨벤션이 쓰는 디렉터리 이름들.
+          for path in \
+            src/main/java/com/heddy/adapter/out/persistence/Probe.java \
+            src/main/java/com/heddy/adapter/in/web/Probe.java \
+            src/main/java/com/heddy/domain/account/port/out/Probe.java \
+            src/main/java/com/heddy/domain/account/port/in/Probe.java \
+            src/test/java/com/heddy/adapter/out/Probe.java; do
+            if git check-ignore -q "$path"; then
+              echo "::error::.gitignore 가 컨벤션 경로를 무시한다: $path"
+              git check-ignore -v "$path"; fail=1
+            fi
+          done
+
+          exit $fail
+
       - name: Test
         run: ./gradlew test

@@ -24,4 +24,10 @@ public interface FileStoragePort {
 
     /** 객체의 실제 상태. 올라온 적이 없으면 비어 있다. */
     Optional<StorageObject> findObject(String objectKey);
+
+    /**
+     * 객체를 삭제한다. 대상이 이미 없어도 오류로 보지 않는다 — 삭제는 원래 멱등 동작이고,
+     * 취소·정리 경로에서 "없는 것을 지우려 시도"는 흔한 정상이다.
+     */
+    void deleteObject(String objectKey);
 }

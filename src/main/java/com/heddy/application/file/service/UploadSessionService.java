@@ -5,6 +5,8 @@ import com.heddy.domain.file.exception.FileException;
 import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.model.StorageObject;
 import com.heddy.domain.file.model.StoredFile;
+import com.heddy.domain.file.port.in.CancelUploadCommand;
+import com.heddy.domain.file.port.in.CancelUploadUseCase;
 import com.heddy.domain.file.port.in.CompleteUploadCommand;
 import com.heddy.domain.file.port.in.CompleteUploadResult;
 import com.heddy.domain.file.port.in.CompleteUploadUseCase;
@@ -37,7 +39,8 @@ import java.time.Instant;
  */
 @Service
 @Transactional(readOnly = true)
-public class UploadSessionService implements PresignUploadUseCase, CompleteUploadUseCase {
+public class UploadSessionService implements PresignUploadUseCase, CompleteUploadUseCase,
+        CancelUploadUseCase {
 
     private final FileRepositoryPort fileRepositoryPort;
     private final FileStoragePort fileStoragePort;
@@ -129,5 +132,43 @@ public class UploadSessionService implements PresignUploadUseCase, CompleteUploa
         // 최종 문턱은 도메인이 지난다. markReady 가 실측값으로 허용 형식·최대 크기를 재검증한다.
         StoredFile ready = pending.markReady(object);
         return CompleteUploadResult.from(fileRepositoryPort.transition(ready, FileStatus.PENDING));
+    }
+
+    /**
+     * 취소 규칙 — PENDING 만 실제로 취소하고, DELETED 는 멱등 성공으로 답한다.
+     *
+     * <p>PENDING 은 사용자가 업로드를 그만둔 상태다. 사용자 사진이라 스토리지에 두면 저장 비용과
+     * 개인정보 보관 리스크가 남으므로 객체를 지우고 행을 DELETED 로 전이한다. 세션 만료 여부는
+     * 보지 않는다 — 만료된 세션일수록 이미 버려진 업로드라 취소 대상에 더 적합하다.
+     *
+     * <p>READY 는 거부한다(FILE_INVALID_STATE). READY 는 완료 검증을 통과해 다른 도메인이
+     * 참조할 수 있는 파일이고, 그 삭제는 업로드 취소가 아니라 파일 삭제 기능의 몫이다. 반대로
+     * 이미 DELETED 인 세션에 대한 재요청은 DELETE 의 멱등성에 따라 성공으로 답한다 — 취소 응답을
+     * 잃고 재시도한 클라이언트까지 거부하면 이미 끝난 취소가 실패로 기록된다.
+     */
+    @Override
+    @Transactional
+    public void cancel(CancelUploadCommand command) {
+        // complete 과 같은 순서다. 존재를 먼저 알려주면 남의 uploadId 로 세션을 훑을 수 있다.
+        StoredFile file = fileRepositoryPort.findByUploadId(command.uploadId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+        if (!file.userId().equals(command.userId())) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+        switch (file.status()) {
+            case PENDING -> cancelPending(file);
+            case READY -> throw new FileException(FileError.INVALID_STATE_TRANSITION);
+            case DELETED -> {
+                // 정리는 이미 끝났다. 다시 지울 것이 없어도 멱등하게 성공이다.
+            }
+        }
+    }
+
+    private void cancelPending(StoredFile pending) {
+        // 객체를 먼저 지운다. 행부터 DELETED 로 바꾸면 그 뒤 객체 삭제가 실패했을 때 어떤 기록도
+        // 객체를 가리키지 않아, 지워야 할 개인정보가 영영 회수되지 않는 고아가 된다. 객체 삭제가
+        // 실패하면 예외가 그대로 올라가 행 전이도 일어나지 않으므로 클라이언트가 재시도할 수 있다.
+        fileStoragePort.deleteObject(pending.objectKey());
+        fileRepositoryPort.transition(pending.markDeleted(), FileStatus.PENDING);
     }
 }

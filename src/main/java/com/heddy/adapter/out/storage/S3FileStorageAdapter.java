@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
@@ -113,6 +114,31 @@ public class S3FileStorageAdapter implements FileStoragePort {
             return Optional.empty();
         } catch (S3Exception exception) {
             return emptyIfObjectAbsent(objectKey, exception);
+        }
+    }
+
+    /**
+     * S3 DeleteObject 는 대상이 없어도 성공으로 답하므로 멱등 삭제가 기본이다. 그래도
+     * NoSuchKey·404 를 삼키는 건 호환 스토리지가 이를 오류로 표현하는 경우를 위한 방어다.
+     *
+     * <p>{@link #findObject} 와 달리 403 을 "없음"으로 보지 않는다. HEAD 의 403 은 ListBucket 권한이
+     * 없어 존재 여부를 알 수 없다는 뜻이지만, DELETE 의 403 은 지울 권한이 없어 <em>못 지웠다</em>는
+     * 확정 신호다. 이를 성공으로 삼키면 정리 대상 객체가 조용히 남는다 — 취소가 막으려는 고아
+     * 객체 그 자체라서, 권한 설정 오류는 500 으로 드러내야 고칠 동기가 생긴다.
+     */
+    @Override
+    public void deleteObject(String objectKey) {
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(objectKey)
+                    .build());
+        } catch (NoSuchKeyException exception) {
+            // 이미 없는 대상이다. 없던 것을 없애는 데 성공한 것과 같다.
+        } catch (S3Exception exception) {
+            if (exception.statusCode() != 404) {
+                throw exception;
+            }
         }
     }
 

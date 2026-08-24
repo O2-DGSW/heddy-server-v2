@@ -15,6 +15,10 @@ HELP.md
 *.ipr
 *.iws
 
+# Agent instruction files — 각자 로컬에만 둔다
+CLAUDE.md
+AGENTS.md
+
 # Local configuration and OS files
 .env
 .env.*

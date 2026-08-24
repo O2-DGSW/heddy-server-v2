@@ -191,6 +191,13 @@ class TreatmentRecordTest {
     }
 
     @Test
+    void acceptsExactlyTenPhotosAsTheBoundary() {
+        TreatmentRecord full = fullTenPhotos();
+
+        assertThat(full.photos()).hasSize(TreatmentRecord.MAX_PHOTOS);
+    }
+
+    @Test
     void refusesEleventhPhoto() {
         TreatmentRecord full = fullTenPhotos();
 

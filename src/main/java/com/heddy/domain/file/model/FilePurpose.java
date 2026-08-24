@@ -36,7 +36,9 @@ public enum FilePurpose {
     }
 
     public boolean allows(String contentType) {
-        return allowedContentTypes.contains(contentType);
+        // Set.of(...) 는 null 조회에 NPE 를 던진다. Content-Type 이 비어 온 요청은
+        // 500 이 아니라 "허용되지 않는 형식"으로 떨어져야 한다.
+        return contentType != null && allowedContentTypes.contains(contentType);
     }
 
     public boolean exceedsMaximum(long byteSize) {

@@ -39,9 +39,10 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
 
     @Test
     void savesRecordAndReadsItBackWithEveryField() {
+        UUID appointmentId = UUID.randomUUID();
         TreatmentRecord record = TreatmentRecord.create(
                 USER_ID, Set.of(ServiceType.COLOR, ServiceType.PERM), "준헤어", "김실장",
-                PERFORMED_AT, 4, 120_000L, "KRW", UUID.randomUUID());
+                PERFORMED_AT, 4, 120_000L, "KRW", appointmentId);
 
         UUID recordId = adapter.insert(record).recordId();
 
@@ -55,6 +56,8 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
         assertThat(found.satisfaction()).isEqualTo(4);
         assertThat(found.priceAmount()).isEqualTo(120_000L);
         assertThat(found.priceCurrency()).isEqualTo("KRW");
+        // appointment_id 는 FK 없는 일반 컬럼이다. 값이 그대로 왕복되는지만 확인한다.
+        assertThat(found.appointmentId()).isEqualTo(appointmentId);
         assertThat(found.photos()).isEmpty();
         assertThat(found.createdAt()).isNotNull();
     }

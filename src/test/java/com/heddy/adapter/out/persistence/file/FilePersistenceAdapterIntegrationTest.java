@@ -55,6 +55,21 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
+    void findsFilesByUploadSessionId() {
+        StoredFile saved = adapter.insert(pendingPhoto("by-upload-id.jpg"));
+
+        StoredFile found = adapter.findByUploadId(saved.uploadId()).orElseThrow();
+
+        assertThat(found.fileId()).isEqualTo(saved.fileId());
+        assertThat(found.uploadId()).isEqualTo(saved.uploadId());
+    }
+
+    @Test
+    void reportsEmptyForUnknownUploadSessionIds() {
+        assertThat(adapter.findByUploadId(UUID.randomUUID())).isEmpty();
+    }
+
+    @Test
     void storesVerifiedContentFactsOnTransitionToReady() {
         StoredFile pending = adapter.insert(pendingPhoto("photo-2.jpg"));
 

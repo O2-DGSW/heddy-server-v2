@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,14 +37,15 @@ public class UploadController {
     @Operation(summary = "업로드 세션 발급",
             description = "purpose 별 최대 크기와 허용 Content-Type 을 검증해 PENDING 업로드 세션을 만들고 "
                     + "Presigned PUT URL 을 돌려준다. 클라이언트는 이 URL 로 스토리지에 직접 올린다.")
-    public ApiResponse<PresignUploadResponse> presign(
+    public ResponseEntity<ApiResponse<PresignUploadResponse>> presign(
             @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody PresignUploadRequest request,
             HttpServletRequest servletRequest
     ) {
-        return ApiResponse.success(
+        // PENDING 세션 행을 새로 만드는 생성 API 라 201 로 답한다.
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
                 PresignUploadResponse.from(presignUploadUseCase.presign(request.toCommand(userId))),
-                RequestIdFilter.get(servletRequest));
+                RequestIdFilter.get(servletRequest)));
     }
 
     @PostMapping("/uploads/{uploadId}/complete")

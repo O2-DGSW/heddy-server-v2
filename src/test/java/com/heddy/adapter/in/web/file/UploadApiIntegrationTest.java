@@ -131,9 +131,9 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
         String responseBody = mockMvc.perform(post("/uploads/presign")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(presignBody)
+                        .content(presignBody("TREATMENT_PHOTO", "image/jpeg", 1024))
                         .header("X-Request-Id", "request-31"))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.upload_id").isNotEmpty())
                 .andExpect(jsonPath("$.data.file_id").isNotEmpty())
                 .andExpect(jsonPath("$.data.expires_at").isNotEmpty())
@@ -365,7 +365,7 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
                         .with(authentication(userAuthentication(userId)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(presignBody(purpose, contentType, fileSize)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
     }
 

@@ -16,8 +16,8 @@ class FileEntityTest {
     void carriesEveryDomainFieldThroughTheEntity() {
         StoredFile pending = StoredFile.pending(
                 UUID.randomUUID(), FilePurpose.TREATMENT_PHOTO,
-                "TREATMENT_PHOTO/user/photo.jpg", "image/jpeg", 1_024,
-                Instant.parse("2026-08-23T12:00:00Z"));
+                "TREATMENT_PHOTO/user/photo.jpg", "image/jpeg", "photo.jpg", 1_024,
+                "b".repeat(64), Instant.parse("2026-08-23T12:00:00Z"));
 
         StoredFile roundTripped = new FileEntity(pending).toDomain();
 
@@ -27,7 +27,9 @@ class FileEntityTest {
         assertThat(roundTripped.purpose()).isEqualTo(FilePurpose.TREATMENT_PHOTO);
         assertThat(roundTripped.status()).isEqualTo(FileStatus.PENDING);
         assertThat(roundTripped.objectKey()).isEqualTo(pending.objectKey());
+        assertThat(roundTripped.fileName()).isEqualTo("photo.jpg");
         assertThat(roundTripped.fileSize()).isEqualTo(1_024);
+        assertThat(roundTripped.sha256()).isEqualTo("b".repeat(64));
         assertThat(roundTripped.expiresAt()).isEqualTo(pending.expiresAt());
     }
 }

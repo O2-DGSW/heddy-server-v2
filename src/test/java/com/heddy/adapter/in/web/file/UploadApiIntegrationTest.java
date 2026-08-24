@@ -63,6 +63,8 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
             "90000000-0000-4000-8000-000000000001");
     private static final UUID OTHER_USER_ID = UUID.fromString(
             "90000000-0000-4000-8000-000000000002");
+    private static final String DECLARED_SHA256 = "b".repeat(64);
+    private static final byte[] UPLOAD_BYTES = "heddy".getBytes(StandardCharsets.UTF_8);
 
     static final LocalStackContainer LOCALSTACK =
             new LocalStackContainer("localstack/localstack:3.8").withServices("s3");
@@ -126,16 +128,18 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
 
     @Test
     void issuesPresignedUrlUploadsDirectlyAndCompletesToReady() throws Exception {
-        String presignBody = presignBody("TREATMENT_PHOTO", "image/jpeg", 1024);
-
         String responseBody = mockMvc.perform(post("/uploads/presign")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(presignBody("TREATMENT_PHOTO", "image/jpeg", 1024))
+                        .content(presignBody("TREATMENT_PHOTO", "image/jpeg", 5))
                         .header("X-Request-Id", "request-31"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.upload_id").isNotEmpty())
                 .andExpect(jsonPath("$.data.file_id").isNotEmpty())
+                .andExpect(jsonPath("$.data.method").value("PUT"))
+                .andExpect(jsonPath("$.data.required_headers['If-None-Match']").value("*"))
+                .andExpect(jsonPath("$.data.required_headers['Content-Type']")
+                        .value("image/jpeg"))
                 .andExpect(jsonPath("$.data.expires_at").isNotEmpty())
                 .andExpect(jsonPath("$.request_id").value("request-31"))
                 .andReturn().getResponse().getContentAsString();
@@ -143,8 +147,7 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
         String uploadUrl = jsonField(responseBody, "upload_url");
         String uploadId = jsonField(responseBody, "upload_id");
 
-        int putStatus = put(uploadUrl, "image/jpeg", "heddy".getBytes(StandardCharsets.UTF_8));
-        assertThat(putStatus).isEqualTo(200);
+        assertThat(put(uploadUrl, "image/jpeg", UPLOAD_BYTES)).isEqualTo(200);
 
         mockMvc.perform(post("/uploads/" + uploadId + "/complete")
                         .with(authentication(userAuthentication(USER_ID))))
@@ -152,15 +155,18 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.status").value("READY"))
                 .andExpect(jsonPath("$.data.content_type").value("image/jpeg"))
                 .andExpect(jsonPath("$.data.file_size").value(5))
+                .andExpect(jsonPath("$.data.width").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.data.height").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.request_id").isNotEmpty());
 
-        // READY 로 전이됐고 HEAD 로 알 수 없는 해시·이미지 치수는 비어 있다.
+        // READY 로 전이됐고 선언 파일명·해시가 기록된다. HEAD 로 알 수 없는 치수는 비어 있다.
         var row = jdbcTemplate.queryForMap(
-                "SELECT status, file_size, sha256, width FROM files WHERE upload_id = ?",
+                "SELECT status, file_size, file_name, sha256, width FROM files WHERE upload_id = ?",
                 UUID.fromString(uploadId));
         assertThat(row.get("status")).isEqualTo("READY");
         assertThat(((Number) row.get("file_size")).longValue()).isEqualTo(5);
-        assertThat(row.get("sha256")).isNull();
+        assertThat(row.get("file_name")).isEqualTo("after.jpg");
+        assertThat((String) row.get("sha256")).isEqualTo(DECLARED_SHA256);
         assertThat(row.get("width")).isNull();
     }
 
@@ -216,14 +222,31 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
         assertThat(fileCount()).isZero();
     }
 
+    /**
+     * 내부 생성물 용도는 외부 발급이 거부된다. 사용자가 ANALYSIS_OVERLAY_INTERNAL 로 객체를 올릴 수
+     * 있으면 이후 단계가 이 purpose 를 "시스템이 만든 파일"로 신뢰할 근거가 사라진다.
+     */
+    @Test
+    void rejectsInternalOverlayPurposeAtPresignTimeWithoutCreatingASession() throws Exception {
+        mockMvc.perform(post("/uploads/presign")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(presignBody("ANALYSIS_OVERLAY_INTERNAL", "image/png", 1024)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("FILE_PURPOSE_NOT_ALLOWED"));
+
+        assertThat(fileCount()).isZero();
+    }
+
     @Test
     void rejectsMalformedPresignRequestsAsFieldValidation() throws Exception {
         mockMvc.perform(post("/uploads/presign")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"purpose":"TREATMENT_PHOTO","content_type":"image/jpeg","file_size":0}
-                                """))
+                                {"purpose":"TREATMENT_PHOTO","content_type":"image/jpeg",
+                                 "file_name":"after.jpg","file_size":0,"sha256":"%s"}
+                                """.formatted(DECLARED_SHA256)))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.error.field_errors[0].field").value("file_size"));
@@ -283,14 +306,13 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
 
     @Test
     void rejectsObjectsWhoseStoredContentTypeDiffersFromTheSession() throws Exception {
-        String responseBody = presign(USER_ID, "TREATMENT_PHOTO", "image/jpeg", 1024);
+        String responseBody = presign(USER_ID, "TREATMENT_PHOTO", "image/jpeg", 5);
         String uploadUrl = jsonField(responseBody, "upload_url");
         String uploadId = jsonField(responseBody, "upload_id");
 
         // 서명된 Content-Type 과 다르게 올린다. LocalStack 은 서명 헤더를 강제하지 않으므로
         // 객체가 png 로 기록되고, 불일치 판정은 complete 의 HEAD 대조가 맡는다.
-        assertThat(put(uploadUrl, "image/png", "heddy".getBytes(StandardCharsets.UTF_8)))
-                .isEqualTo(200);
+        assertThat(put(uploadUrl, "image/png", UPLOAD_BYTES)).isEqualTo(200);
 
         mockMvc.perform(post("/uploads/" + uploadId + "/complete")
                         .with(authentication(userAuthentication(USER_ID))))
@@ -298,8 +320,57 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.error.code").value("FILE_CONTENT_TYPE_MISMATCH"));
     }
 
+    /**
+     * 명세의 "크기 일치" 검증. presigned PUT 은 크기를 서명하지 않아 선언과 다른 크기가 올라갈 수
+     * 있고, purpose 최대치 이하라 해도 READY 로 통과시키면 안 된다.
+     */
     @Test
-    void rejectsActualObjectsBiggerThanThePurposeMaximumEvenWhenDeclaredSmaller()
+    void rejectsObjectsWhoseActualSizeDiffersFromTheDeclaration() throws Exception {
+        String responseBody = presign(USER_ID, "TREATMENT_PHOTO", "image/jpeg", 5);
+        String uploadUrl = jsonField(responseBody, "upload_url");
+        String uploadId = jsonField(responseBody, "upload_id");
+
+        byte[] differentSize = "heddy!".getBytes(StandardCharsets.UTF_8);
+        assertThat(put(uploadUrl, "image/jpeg", differentSize)).isEqualTo(200);
+
+        mockMvc.perform(post("/uploads/" + uploadId + "/complete")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("FILE_SIZE_MISMATCH"));
+
+        assertThat(statusOf(uploadId)).isEqualTo("PENDING");
+    }
+
+    /**
+     * 완료 뒤 같은 URL 로 덮어쓰면 READY 내용이 몰래 바뀐다. 발급 때 서명한 If-None-Match:* 조건이
+     * 이미 존재하는 객체에 대한 두 번째 PUT 을 스토리지에서 막는지 프로토콜 전체로 확인한다.
+     */
+    @Test
+    void blocksOverwriteThroughTheSameUrlAfterCompletion() throws Exception {
+        String responseBody = presign(USER_ID, "TREATMENT_PHOTO", "image/jpeg", 5);
+        String uploadUrl = jsonField(responseBody, "upload_url");
+        String uploadId = jsonField(responseBody, "upload_id");
+
+        assertThat(put(uploadUrl, "image/jpeg", UPLOAD_BYTES)).isEqualTo(200);
+        mockMvc.perform(post("/uploads/" + uploadId + "/complete")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk());
+
+        byte[] replacement = "stolen".getBytes(StandardCharsets.UTF_8);
+        assertThat(put(uploadUrl, "image/jpeg", replacement)).isEqualTo(412);
+
+        mockMvc.perform(post("/uploads/" + uploadId + "/complete")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.file_size").value(5));
+    }
+
+    /**
+     * 최대치 초과도 결국 선언 불일치다. 일치 검증이 먼저 막고, 도메인 문턱(TOO_LARGE)은
+     * 선언과 무관하게 객체가 직접 쓰이는 경로를 위한 최후 방어로 남는다.
+     */
+    @Test
+    void reportsSizeMismatchEvenWhenActualObjectExceedsThePurposeMaximum()
             throws Exception {
         long withinMaximum = 1024;
         int actualOverMaximum = 5 * 1024 * 1024 + 1;
@@ -311,8 +382,10 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
 
         mockMvc.perform(post("/uploads/" + uploadId + "/complete")
                         .with(authentication(userAuthentication(USER_ID))))
-                .andExpect(status().isPayloadTooLarge())
-                .andExpect(jsonPath("$.error.code").value("FILE_TOO_LARGE"));
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("FILE_SIZE_MISMATCH"));
+
+        assertThat(statusOf(uploadId)).isEqualTo("PENDING");
     }
 
     @Test
@@ -348,14 +421,28 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
                         + ".properties.purpose.description").value(containsString("TREATMENT_PHOTO")))
                 .andExpect(jsonPath("$.components.schemas.PresignUploadRequest"
                         + ".properties.file_size.description")
-                        .value(containsString("재검증")));
+                        .value(containsString("재검증")))
+                .andExpect(jsonPath("$.components.schemas.PresignUploadRequest"
+                        + ".properties.file_name.description").isNotEmpty())
+                .andExpect(jsonPath("$.components.schemas.PresignUploadRequest.required",
+                        org.hamcrest.Matchers.hasItem("file_name")))
+                .andExpect(jsonPath("$.components.schemas.PresignUploadRequest"
+                        + ".properties.sha256.pattern").value("^[0-9a-fA-F]{64}$"))
+                .andExpect(jsonPath("$.components.schemas.PresignUploadResponse"
+                        + ".properties.method.description").isNotEmpty())
+                .andExpect(jsonPath("$.components.schemas.PresignUploadResponse"
+                        + ".properties.required_headers.description").isNotEmpty())
+                .andExpect(jsonPath("$.components.schemas.CompleteUploadResponse"
+                        + ".properties.width").exists())
+                .andExpect(jsonPath("$.components.schemas.CompleteUploadResponse"
+                        + ".properties.height").exists());
     }
 
     // ------------------------------------------------------------------ 헬퍼
 
     /** presign 만 하고 끝낸다. upload_id 를 돌려준다. */
     private String presignOnly(UUID userId, String purpose, String contentType) throws Exception {
-        String responseBody = presign(userId, purpose, contentType, 1024);
+        String responseBody = presign(userId, purpose, contentType, UPLOAD_BYTES.length);
         return jsonField(responseBody, "upload_id");
     }
 
@@ -371,17 +458,17 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
 
     private String presignBody(String purpose, String contentType, long fileSize) {
         return """
-                {"purpose":"%s","content_type":"%s","file_size":%d}
-                """.formatted(purpose, contentType, fileSize);
+                {"purpose":"%s","content_type":"%s","file_name":"after.jpg",
+                 "file_size":%d,"sha256":"%s"}
+                """.formatted(purpose, contentType, fileSize, DECLARED_SHA256);
     }
 
     /** presign → PUT → complete 까지 정상으로 밟고 upload_id 를 돌려준다. */
     private String presignPutComplete(UUID userId) throws Exception {
-        String responseBody = presign(userId, "TREATMENT_PHOTO", "image/jpeg", 1024);
+        String responseBody = presign(userId, "TREATMENT_PHOTO", "image/jpeg", UPLOAD_BYTES.length);
         String uploadUrl = jsonField(responseBody, "upload_url");
         String uploadId = jsonField(responseBody, "upload_id");
-        assertThat(put(uploadUrl, "image/jpeg", "heddy".getBytes(StandardCharsets.UTF_8)))
-                .isEqualTo(200);
+        assertThat(put(uploadUrl, "image/jpeg", UPLOAD_BYTES)).isEqualTo(200);
         mockMvc.perform(post("/uploads/" + uploadId + "/complete")
                         .with(authentication(userAuthentication(userId))))
                 .andExpect(status().isOk());
@@ -402,10 +489,18 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
         HttpResponse<String> response = HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder(URI.create(url))
                         .header("Content-Type", contentType)
+                        // 발급 응답의 required_headers 그대로다. 조건이 서명에 포함돼 있다.
+                        .header("If-None-Match", "*")
                         .PUT(HttpRequest.BodyPublishers.ofByteArray(body))
                         .build(),
                 HttpResponse.BodyHandlers.ofString());
         return response.statusCode();
+    }
+
+    private String statusOf(String uploadId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT status FROM files WHERE upload_id = ?", String.class,
+                UUID.fromString(uploadId));
     }
 
     private UsernamePasswordAuthenticationToken userAuthentication(UUID userId) {

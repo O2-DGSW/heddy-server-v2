@@ -16,15 +16,20 @@ class StoredFileTest {
     private static final UUID USER_ID = UUID.randomUUID();
     private static final String OBJECT_KEY = "TREATMENT_PHOTO/user/photo.jpg";
     private static final Instant EXPIRES_AT = Instant.parse("2026-08-23T12:00:00Z");
+    /** 클라이언트가 presign 으로 선언한 해시. 검증된 값이 아니다. */
+    private static final String DECLARED_SHA256 = "b".repeat(64);
+    /** 내용을 내려받아 실측한 해시. */
     private static final String SHA256 = "a".repeat(64);
 
     @Test
-    void opensUploadSessionInPendingStateWithoutContentFacts() {
+    void opensUploadSessionInPendingStateRecordingOnlyDeclaredFacts() {
         StoredFile file = pendingPhoto(1_024);
 
         assertThat(file.status()).isEqualTo(FileStatus.PENDING);
         assertThat(file.isReady()).isFalse();
-        assertThat(file.sha256()).isNull();
+        assertThat(file.fileName()).isEqualTo("photo.jpg");
+        // 크기·해시는 선언값이 기록된다. HEAD 나 디코딩으로 알 수 있는 치수는 비어 있다.
+        assertThat(file.sha256()).isEqualTo(DECLARED_SHA256);
         assertThat(file.width()).isNull();
         assertThat(file.height()).isNull();
         assertThat(file.createdAt()).isNull();
@@ -41,7 +46,7 @@ class StoredFileTest {
     void rejectsContentTypeThatPurposeDoesNotAllow() {
         assertThatThrownBy(() -> StoredFile.pending(
                 USER_ID, FilePurpose.TREATMENT_PHOTO, OBJECT_KEY,
-                "application/pdf", 1_024, EXPIRES_AT))
+                "application/pdf", "photo.jpg", 1_024, DECLARED_SHA256, EXPIRES_AT))
                 .isInstanceOf(FileException.class)
                 .extracting(exception -> ((FileException) exception).error())
                 .isEqualTo(FileError.CONTENT_TYPE_NOT_ALLOWED);
@@ -61,6 +66,14 @@ class StoredFileTest {
     }
 
     @Test
+    void rejectsBlankFileName() {
+        assertThatThrownBy(() -> StoredFile.pending(
+                USER_ID, FilePurpose.TREATMENT_PHOTO, OBJECT_KEY,
+                "image/jpeg", " ", 1_024, DECLARED_SHA256, EXPIRES_AT))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void recordsVerifiedContentFactsWhenBecomingReady() {
         StoredFile ready = pendingPhoto(1_024).markReady(
                 new VerifiedContent("image/png", 2_048, SHA256, 800, 600));
@@ -68,9 +81,24 @@ class StoredFileTest {
         assertThat(ready.isReady()).isTrue();
         assertThat(ready.contentType()).isEqualTo("image/png");
         assertThat(ready.fileSize()).isEqualTo(2_048);
+        // 선언 해시가 실측 해시로 대체된다.
         assertThat(ready.sha256()).isEqualTo(SHA256);
         assertThat(ready.width()).isEqualTo(800);
         assertThat(ready.height()).isEqualTo(600);
+    }
+
+    /**
+     * HEAD 만으로는 내용을 알 수 없다. 그 전이로 READY 가 돼도 선언 해시는 선언 해시다 — 실측으로
+     * 바꾸지 않는 것이 정직하다. 대체는 내용 검증 단위가 맡는다.
+     */
+    @Test
+    void keepsDeclaredHashUntouchedWhenBecomingReadyThroughHeadOnly() {
+        StoredFile ready = pendingPhoto(1_024)
+                .markReady(new StorageObject("image/jpeg", 1_024));
+
+        assertThat(ready.isReady()).isTrue();
+        assertThat(ready.sha256()).isEqualTo(DECLARED_SHA256);
+        assertThat(ready.width()).isNull();
     }
 
     @Test
@@ -140,6 +168,7 @@ class StoredFileTest {
 
     private static StoredFile pendingPhoto(long fileSize) {
         return StoredFile.pending(
-                USER_ID, FilePurpose.TREATMENT_PHOTO, OBJECT_KEY, "image/jpeg", fileSize, EXPIRES_AT);
+                USER_ID, FilePurpose.TREATMENT_PHOTO, OBJECT_KEY, "image/jpeg", "photo.jpg",
+                fileSize, DECLARED_SHA256, EXPIRES_AT);
     }
 }

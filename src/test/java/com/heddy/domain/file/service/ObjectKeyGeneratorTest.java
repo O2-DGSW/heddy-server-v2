@@ -1,5 +1,7 @@
 package com.heddy.domain.file.service;
 
+import com.heddy.domain.file.exception.FileError;
+import com.heddy.domain.file.exception.FileException;
 import com.heddy.domain.file.model.FilePurpose;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +44,21 @@ class ObjectKeyGeneratorTest {
     void rejectsContentTypeWithoutKnownExtension() {
         assertThatThrownBy(() -> ObjectKeyGenerator.generate(
                 FilePurpose.TREATMENT_PHOTO, OWNER_ID, "application/pdf"))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(FileException.class)
+                .extracting(exception -> ((FileException) exception).error())
+                .isEqualTo(FileError.CONTENT_TYPE_NOT_ALLOWED);
+    }
+
+    /**
+     * 허용 목록과 확장자 매핑이 따로 있어서, 한쪽에만 형식을 추가하면 런타임에야 드러난다.
+     * 그 어긋남을 빌드 시점에 잡는다.
+     */
+    @Test
+    void mapsAnExtensionForEveryContentTypeAnyPurposeAllows() {
+        for (FilePurpose purpose : FilePurpose.values()) {
+            assertThat(ObjectKeyGenerator.mappedContentTypes())
+                    .as("%s 가 허용하는 형식", purpose)
+                    .containsAll(purpose.allowedContentTypes());
+        }
     }
 }

@@ -7,6 +7,7 @@ import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.model.PresignedUpload;
 import com.heddy.domain.file.model.StorageObject;
 import com.heddy.domain.file.model.StoredFile;
+import com.heddy.domain.file.port.in.CancelUploadCommand;
 import com.heddy.domain.file.port.in.CompleteUploadCommand;
 import com.heddy.domain.file.port.in.PresignUploadCommand;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
@@ -33,6 +34,7 @@ import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -263,6 +265,77 @@ class UploadSessionServiceTest {
         verifyNoInteractions(fileStoragePort);
     }
 
+    // ------------------------------------------------------------------ cancel
+
+    /**
+     * 취소는 객체를 먼저 지우고 행을 DELETED 로 전이한다. 순서가 바뀌면 행 전이 뒤 객체 삭제가
+     * 실패했을 때 아무 기록도 객체를 가리키지 않아 개인정보가 회수 불가능한 고아로 남는다.
+     */
+    @Test
+    void deletesTheStoredObjectBeforeTransitioningTheRowToDeletedOnCancellation() {
+        StoredFile pending = insertPending();
+        given(fileRepositoryPort.transition(any(), any()))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        service.cancel(new CancelUploadCommand(USER_ID, pending.uploadId()));
+
+        verify(fileStoragePort).deleteObject(pending.objectKey());
+        ArgumentCaptor<StoredFile> captor = ArgumentCaptor.forClass(StoredFile.class);
+        verify(fileRepositoryPort).transition(captor.capture(), eq(FileStatus.PENDING));
+        assertThat(captor.getValue().status()).isEqualTo(FileStatus.DELETED);
+    }
+
+    @Test
+    void reportsUnknownSessionsAsResourceNotFoundWhenCancelling() {
+        given(fileRepositoryPort.findByUploadId(any())).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.cancel(
+                new CancelUploadCommand(USER_ID, UUID.randomUUID())))
+                .isInstanceOfSatisfying(ApplicationException.class, exception ->
+                        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND));
+        verifyNoInteractions(fileStoragePort);
+    }
+
+    /**
+     * READY 는 완료 검증을 통과해 다른 도메인이 참조할 수 있는 파일이다. 그 삭제는 업로드 취소가
+     * 아니라 파일 삭제 기능의 몫이므로 취소 경로에서 거부한다.
+     */
+    @Test
+    void rejectsCancellingAReadySession() {
+        StoredFile ready = pendingPhoto(1_024)
+                .markReady(new StorageObject("image/jpeg", 1_024));
+        given(fileRepositoryPort.findByUploadId(ready.uploadId())).willReturn(Optional.of(ready));
+
+        assertCancelError(ready.uploadId(), FileError.INVALID_STATE_TRANSITION);
+        verifyNoInteractions(fileStoragePort);
+        verify(fileRepositoryPort, never()).transition(any(), any());
+    }
+
+    /** 이미 DELETED 인 세션은 정리가 끝난 뒤다. 멱등하게 성공으로 답한다. */
+    @Test
+    void answersRepeatedCancellationWithIdempotentSuccessWithoutTouchingAnything() {
+        StoredFile deleted = insertPending().markDeleted();
+        given(fileRepositoryPort.findByUploadId(deleted.uploadId())).willReturn(Optional.of(deleted));
+
+        service.cancel(new CancelUploadCommand(USER_ID, deleted.uploadId()));
+
+        verifyNoInteractions(fileStoragePort);
+        verify(fileRepositoryPort, never()).transition(any(), any());
+    }
+
+    @Test
+    void propagatesStorageFailureAndLeavesTheRowUntouchedForRetry() {
+        StoredFile pending = insertPending();
+        // 포트가 던지는 구체 타입은 어댑터의 몫이다. 단위 테스트는 전파와 행 무결성만 본다.
+        RuntimeException storageFailure = new RuntimeException("storage down");
+        doThrow(storageFailure).when(fileStoragePort).deleteObject(pending.objectKey());
+
+        assertThatThrownBy(() -> service.cancel(
+                new CancelUploadCommand(USER_ID, pending.uploadId())))
+                .isSameAs(storageFailure);
+        verify(fileRepositoryPort, never()).transition(any(), any());
+    }
+
     // ------------------------------------------------------------------ 헬퍼
 
     private static PresignUploadCommand command(
@@ -307,6 +380,12 @@ class UploadSessionServiceTest {
 
     private void assertCompleteError(UUID uploadId, FileError expected) {
         assertThatThrownBy(() -> service.complete(new CompleteUploadCommand(USER_ID, uploadId)))
+                .isInstanceOfSatisfying(FileException.class, exception ->
+                        assertThat(exception.error()).isEqualTo(expected));
+    }
+
+    private void assertCancelError(UUID uploadId, FileError expected) {
+        assertThatThrownBy(() -> service.cancel(new CancelUploadCommand(USER_ID, uploadId)))
                 .isInstanceOfSatisfying(FileException.class, exception ->
                         assertThat(exception.error()).isEqualTo(expected));
     }

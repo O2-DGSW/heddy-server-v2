@@ -26,6 +26,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.net.URI;
@@ -39,6 +41,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -117,6 +120,7 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
     @Autowired MockMvc mockMvc;
     @Autowired JdbcTemplate jdbcTemplate;
     @Autowired EntityManager entityManager;
+    @Autowired S3Client s3Client;
 
     @BeforeEach
     void setUpUsers() {
@@ -397,7 +401,7 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
-    void requiresAuthenticationForBothEndpoints() throws Exception {
+    void requiresAuthenticationForEveryUploadEndpoint() throws Exception {
         mockMvc.perform(post("/uploads/presign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(presignBody("TREATMENT_PHOTO", "image/jpeg", 1024)))
@@ -405,6 +409,79 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
 
         mockMvc.perform(post("/uploads/" + UUID.randomUUID() + "/complete"))
                 .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(delete("/uploads/" + UUID.randomUUID()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ------------------------------------------------------------------ 취소
+
+    /** 취소는 스토리지 객체와 세션 행을 함께 정리한다. 실물이 사라졌는지는 HEAD 로 직접 본다. */
+    @Test
+    void cancelsAPendingSessionAndRemovesItsStoredObject() throws Exception {
+        String responseBody = presign(USER_ID, "TREATMENT_PHOTO", "image/jpeg", UPLOAD_BYTES.length);
+        String uploadUrl = jsonField(responseBody, "upload_url");
+        String uploadId = jsonField(responseBody, "upload_id");
+        assertThat(put(uploadUrl, "image/jpeg", UPLOAD_BYTES)).isEqualTo(200);
+
+        mockMvc.perform(delete("/uploads/" + uploadId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent());
+
+        assertThat(objectAbsent(objectKeyOf(uploadId))).isTrue();
+        assertThat(statusOf(uploadId)).isEqualTo("DELETED");
+    }
+
+    /**
+     * 한 번도 업로드되지 않은 세션의 취소와 그 재요청. 지울 객체가 없어도 S3 는 성공이고,
+     * DELETED 뒤의 재요청은 멱등하게 다시 204 다.
+     */
+    @Test
+    void answersCancellationOfANeverUploadedSessionAndItsRepeatWithNoContent()
+            throws Exception {
+        String uploadId = presignOnly(USER_ID, "TREATMENT_PHOTO", "image/jpeg");
+
+        mockMvc.perform(delete("/uploads/" + uploadId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/uploads/" + uploadId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent());
+
+        assertThat(statusOf(uploadId)).isEqualTo("DELETED");
+    }
+
+    @Test
+    void rejectsForeignCancellationWithForbiddenResource() throws Exception {
+        String uploadId = presignOnly(USER_ID, "TREATMENT_PHOTO", "image/jpeg");
+
+        mockMvc.perform(delete("/uploads/" + uploadId)
+                        .with(authentication(userAuthentication(OTHER_USER_ID))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN_RESOURCE"));
+
+        assertThat(statusOf(uploadId)).isEqualTo("PENDING");
+    }
+
+    @Test
+    void reportsUnknownUploadIdsAsResourceNotFoundOnCancellation() throws Exception {
+        mockMvc.perform(delete("/uploads/" + UUID.randomUUID())
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    /** READY 는 다른 도메인이 참조할 수 있는 검증된 파일이라 업로드 취소 대상이 아니다. */
+    @Test
+    void rejectsCancellingAReadySessionWithInvalidState() throws Exception {
+        String uploadId = presignPutComplete(USER_ID);
+
+        mockMvc.perform(delete("/uploads/" + uploadId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("FILE_INVALID_STATE"));
+
+        assertThat(statusOf(uploadId)).isEqualTo("READY");
     }
 
     // ------------------------------------------------------------------ 문서화
@@ -416,6 +493,8 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$['paths']['/uploads/presign']['post']"
                         + "['security'][0]['bearerAuth']").isArray())
                 .andExpect(jsonPath("$['paths']['/uploads/{uploadId}/complete']['post']"
+                        + "['security'][0]['bearerAuth']").isArray())
+                .andExpect(jsonPath("$['paths']['/uploads/{uploadId}']['delete']"
                         + "['security'][0]['bearerAuth']").isArray())
                 .andExpect(jsonPath("$.components.schemas.PresignUploadRequest"
                         + ".properties.purpose.description").value(containsString("TREATMENT_PHOTO")))
@@ -501,6 +580,23 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
         return jdbcTemplate.queryForObject(
                 "SELECT status FROM files WHERE upload_id = ?", String.class,
                 UUID.fromString(uploadId));
+    }
+
+    private String objectKeyOf(String uploadId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT object_key FROM files WHERE upload_id = ?", String.class,
+                UUID.fromString(uploadId));
+    }
+
+    /** 객체 키가 스토리지에 실제로 없는지 HEAD 로 확인한다. 취소의 핵심 결과라 가짜로 안 본다. */
+    private boolean objectAbsent(String objectKey) {
+        try {
+            s3Client.headObject(HeadObjectRequest.builder()
+                    .bucket(BUCKET).key(objectKey).build());
+            return false;
+        } catch (NoSuchKeyException exception) {
+            return true;
+        }
     }
 
     private UsernamePasswordAuthenticationToken userAuthentication(UUID userId) {

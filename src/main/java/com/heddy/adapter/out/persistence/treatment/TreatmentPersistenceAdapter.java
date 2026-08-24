@@ -38,7 +38,7 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
     }
 
     private List<TreatmentPhoto> photosOf(UUID recordId) {
-        return photoRepository.findByRecordIdOrderByCreatedAtAsc(recordId).stream()
+        return photoRepository.findByRecordIdOrderByCreatedAtAscPhotoIdAsc(recordId).stream()
                 .map(TreatmentPhotoEntity::toDomain)
                 .toList();
     }

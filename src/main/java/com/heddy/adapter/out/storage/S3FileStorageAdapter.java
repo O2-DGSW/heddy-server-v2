@@ -1,5 +1,6 @@
 package com.heddy.adapter.out.storage;
 
+import com.heddy.domain.file.model.PresignedUpload;
 import com.heddy.domain.file.model.StorageObject;
 import com.heddy.domain.file.model.StoredFile;
 import com.heddy.domain.file.port.out.FileStoragePort;
@@ -21,6 +22,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -57,9 +59,15 @@ public class S3FileStorageAdapter implements FileStoragePort {
      * <p>Content-Type 을 서명에 포함한다. 그래야 클라이언트가 다른 형식으로 바꿔 올릴 때 S3 가 거부한다.
      * 크기는 서명에 넣지 않는다 — 넣으면 바이트 단위까지 정확히 맞아야 해서 EXIF 처리나 인코더 차이로
      * 몇 바이트만 달라져도 업로드가 실패한다. 크기 검증은 완료 시점의 HEAD 로 한다.
+     *
+     * <p>{@code If-None-Match: *} 조건을 함께 서명한다. 같은 키의 객체를 완료 검증 뒤에 덮어쓰면
+     * READY 로 확정된 내용이 몰래 바뀌는데, 이 조건이 있으면 대상이 이미 존재할 때 두 번째 PUT 부터
+     * 412 로 막힌다. 헤더는 서명 대상이라 실제 S3 는 이를 빠뜨린 PUT 자체를 서명 불일치로 거부한다 —
+     * 클라이언트가 조건을 지우는 우회도 안 된다. LocalStack 은 서명 강제가 느슨해 이 조차 허용하지만,
+     * 운영 버킷은 닫혀 있다.
      */
     @Override
-    public URI createUploadUrl(StoredFile file) {
+    public PresignedUpload createUploadUrl(StoredFile file) {
         Duration untilSessionExpiry = Duration.between(Instant.now(), file.expiresAt());
         if (untilSessionExpiry.isNegative() || untilSessionExpiry.isZero()) {
             throw new IllegalStateException("이미 만료된 업로드 세션에는 URL 을 발급할 수 없습니다");
@@ -68,11 +76,15 @@ public class S3FileStorageAdapter implements FileStoragePort {
                 .bucket(bucket)
                 .key(file.objectKey())
                 .contentType(file.contentType())
+                .ifNoneMatch("*")
                 .build();
-        return toUri(presigner.presignPutObject(PutObjectPresignRequest.builder()
+        URI url = toUri(presigner.presignPutObject(PutObjectPresignRequest.builder()
                 .signatureDuration(untilSessionExpiry)
                 .putObjectRequest(putRequest)
                 .build()).url());
+        return new PresignedUpload(url, "PUT", Map.of(
+                "Content-Type", file.contentType(),
+                "If-None-Match", "*"));
     }
 
     @Override

@@ -19,8 +19,14 @@ import java.util.UUID;
  * <p>{@code uploadId} 는 업로드 세션 식별자로 {@code fileId} 와 따로 둔다. presign 응답과 complete
  * 요청이 쓰는 값이라 파일 식별자와 같다고 전제하면 나중에 분리할 수 없다.
  *
- * <p>{@code sha256}·{@code width}·{@code height} 는 PENDING 동안 {@code null} 이다. 실물을 보기 전에는
- * 알 수 없는 값이라 선언값으로 채우지 않는다.
+ * <p>{@code fileName} 은 클라이언트가 선언한 원본 이름이다. 오브젝트 키 생성에는 절대 쓰지 않고
+ * ({@link com.heddy.domain.file.service.ObjectKeyGenerator}), 감사·표시 목적으로만 보관한다.
+ *
+ * <p>{@code sha256} 은 presign 시점에는 클라이언트가 <em>선언한</em> 값이고, {@code width}·{@code height} 는
+ * {@code null} 이다. 선언 해시는 검증된 값이 아니다 — 실물을 보기 전에는 알 수 없는 값이라 선언으로
+ * 믿지 않는다. 내용 해시·치수가 <em>실측</em>으로 바뀌는 지점은 객체를 내려받아 확인하는
+ * {@link #markReady(VerifiedContent)} 전이다. HEAD 만으로 전이하는 {@link #markReady(StorageObject)} 는
+ * 선언 해시를 그대로 둔다(HEAD 로는 내용을 알 수 없다).
  */
 public record StoredFile(
         UUID fileId,
@@ -30,6 +36,7 @@ public record StoredFile(
         FileStatus status,
         String objectKey,
         String contentType,
+        String fileName,
         long fileSize,
         String sha256,
         Integer width,
@@ -45,44 +52,54 @@ public record StoredFile(
         Objects.requireNonNull(status, "status");
         Objects.requireNonNull(objectKey, "objectKey");
         Objects.requireNonNull(contentType, "contentType");
+        Objects.requireNonNull(fileName, "fileName");
+        if (fileName.isBlank()) {
+            throw new IllegalArgumentException("fileName 은 비어 있을 수 없습니다.");
+        }
         Objects.requireNonNull(expiresAt, "expiresAt");
         if (fileSize <= 0) {
             throw new IllegalArgumentException("fileSize 는 양수여야 합니다: " + fileSize);
         }
     }
 
-    /** 업로드 세션을 연다. 여기서 통과한 크기·형식은 클라이언트가 <em>선언한</em> 값이다. */
+    /**
+     * 업로드 세션을 연다. 여기서 통과한 크기·형식은 클라이언트가 <em>선언한</em> 값이고,
+     * {@code declaredSha256} 도 마찬가지로 선언일 뿐이다.
+     */
     public static StoredFile pending(
             UUID userId,
             FilePurpose purpose,
             String objectKey,
             String contentType,
+            String fileName,
             long fileSize,
+            String declaredSha256,
             Instant expiresAt
     ) {
         requireUploadable(purpose, contentType, fileSize);
         return new StoredFile(
                 UUID.randomUUID(), UUID.randomUUID(), userId, purpose, FileStatus.PENDING,
-                objectKey, contentType, fileSize, null, null, null, expiresAt, null);
+                objectKey, contentType, fileName, fileSize, declaredSha256, null, null,
+                expiresAt, null);
     }
 
     /**
      * HEAD 로 확인한 실측값으로 검증하고 {@code READY} 로 전이한다.
      *
-     * <p>선언값을 다시 믿지 않고 실측값으로 재검증한다. presign 때 1MB 라고 해놓고 20MB 를 올리는 것을
+     * <p>선언 크기와 실측 크기의 일치는 서비스가 먼저 확인한다. 여기서는 선언을 다시 믿지 않고
+     * 실측값으로 허용 형식·최대 크기를 재검증한다 — presign 때 1MB 라고 해놓고 20MB 를 올리는 것을
      * 스토리지는 막지 않는다.
      *
-     * <p>{@code sha256}·{@code width}·{@code height} 는 HEAD 로는 알 수 없어 그대로 비워 둔다.
-     * 이들을 채우려면 객체를 내려받아 디코딩해야 하므로, 내용 해시까지 확인하는 검증은 별도 단위
-     * ({@link VerifiedContent} 를 받는 {@link #markReady(VerifiedContent)})가 담당한다. 두 전이가
-     * 허용 형식·최대 크기라는 같은 문턱을 통과한다는 점은 변하지 않는다.
+     * <p>{@code sha256}·{@code width}·{@code height} 는 HEAD 로는 알 수 없어 그대로 둔다.
+     * 이들을 실측값으로 채우려면 객체를 내려받아 디코딩해야 하므로, 내용 해시까지 확인하는 전이는
+     * 별도 단위({@link VerifiedContent} 를 받는 {@link #markReady(VerifiedContent)})가 담당한다.
      */
     public StoredFile markReady(StorageObject object) {
         requireStatus(FileStatus.PENDING);
         requireUploadable(purpose, object.contentType(), object.byteSize());
         return new StoredFile(
                 fileId, uploadId, userId, purpose, FileStatus.READY, objectKey,
-                object.contentType(), object.byteSize(), sha256, width, height,
+                object.contentType(), fileName, object.byteSize(), sha256, width, height,
                 expiresAt, createdAt);
     }
 
@@ -96,7 +113,7 @@ public record StoredFile(
         requireUploadable(purpose, verified.contentType(), verified.fileSize());
         return new StoredFile(
                 fileId, uploadId, userId, purpose, FileStatus.READY, objectKey,
-                verified.contentType(), verified.fileSize(), verified.sha256(),
+                verified.contentType(), fileName, verified.fileSize(), verified.sha256(),
                 verified.width(), verified.height(), expiresAt, createdAt);
     }
 
@@ -107,7 +124,7 @@ public record StoredFile(
         }
         return new StoredFile(
                 fileId, uploadId, userId, purpose, FileStatus.DELETED, objectKey,
-                contentType, fileSize, sha256, width, height, expiresAt, createdAt);
+                contentType, fileName, fileSize, sha256, width, height, expiresAt, createdAt);
     }
 
     public boolean isReady() {

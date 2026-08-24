@@ -29,7 +29,9 @@ public class UploadExceptionHandler {
         return switch (error) {
             case TOO_LARGE -> ErrorCode.FILE_TOO_LARGE;
             case CONTENT_TYPE_NOT_ALLOWED -> ErrorCode.FILE_CONTENT_TYPE_NOT_ALLOWED;
+            case PURPOSE_NOT_ALLOWED -> ErrorCode.FILE_PURPOSE_NOT_ALLOWED;
             case CONTENT_TYPE_MISMATCH -> ErrorCode.FILE_CONTENT_TYPE_MISMATCH;
+            case SIZE_MISMATCH -> ErrorCode.FILE_SIZE_MISMATCH;
             case OBJECT_NOT_FOUND -> ErrorCode.FILE_OBJECT_NOT_FOUND;
             case UPLOAD_EXPIRED -> ErrorCode.FILE_UPLOAD_EXPIRED;
             case INVALID_STATE_TRANSITION -> ErrorCode.FILE_INVALID_STATE;

@@ -12,7 +12,9 @@ public record CompleteUploadResult(
         UUID uploadId,
         FileStatus status,
         String contentType,
-        long fileSize
+        long fileSize,
+        Integer width,
+        Integer height
 ) {
     public CompleteUploadResult {
         Objects.requireNonNull(fileId, "fileId");
@@ -21,8 +23,13 @@ public record CompleteUploadResult(
         Objects.requireNonNull(contentType, "contentType");
     }
 
+    /**
+     * {@code width}·{@code height} 는 HEAD 로 알 수 없어 아직 비어 있다. 내용을 내려받아 확인하는
+     * 검증 단위가 실측값을 채운 뒤부터 값이 나온다.
+     */
     public static CompleteUploadResult from(StoredFile file) {
         return new CompleteUploadResult(
-                file.fileId(), file.uploadId(), file.status(), file.contentType(), file.fileSize());
+                file.fileId(), file.uploadId(), file.status(), file.contentType(),
+                file.fileSize(), file.width(), file.height());
     }
 }

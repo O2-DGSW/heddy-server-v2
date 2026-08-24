@@ -32,7 +32,8 @@ import java.time.Instant;
  *
  * <p>완료(complete)에서는 스토리지 HEAD 로 알아낸 <em>실측</em> 객체 존재·크기·Content-Type 으로
  * 재검증한다. presigned PUT 은 Content-Type 을 서명에 넣지만 크기는 넣지 않으므로, 실물이 없거나
- * 선언과 다른 파일이 READY 로 지정되는 일은 여기서 막는다.
+ * 선언과 다른 파일이 READY 로 지정되는 일은 여기서 막는다. 크기는 "선언과 일치"까지 요구한다 —
+ * purpose 최대치 이하만으로는 부족하다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -55,6 +56,11 @@ public class UploadSessionService implements PresignUploadUseCase, CompleteUploa
     @Override
     @Transactional
     public PresignUploadResult presign(PresignUploadCommand command) {
+        // 내부 생성물 용도는 외부 발급 경로가 열어주면 안 된다. 사용자가 ANALYSIS_OVERLAY_INTERNAL
+        // 로 객체를 올릴 수 있으면 이후 단계가 그것을 "시스템이 만든 파일"로 신뢰할 근거가 사라진다.
+        if (!command.purpose().isExternallyRequestable()) {
+            throw new FileException(FileError.PURPOSE_NOT_ALLOWED);
+        }
         // StoredFile.pending 이 purpose 별 허용 형식·최대 크기를 검증한다. 통과하지 못하면
         // 세션 행을 만들지 않는다.
         StoredFile pending = StoredFile.pending(
@@ -62,11 +68,14 @@ public class UploadSessionService implements PresignUploadUseCase, CompleteUploa
                 command.purpose(),
                 ObjectKeyGenerator.generate(command.purpose(), command.userId(), command.contentType()),
                 command.contentType(),
+                command.fileName(),
                 command.fileSize(),
+                command.sha256(),
                 Instant.now().plus(sessionTtl));
         StoredFile saved = fileRepositoryPort.insert(pending);
         return new PresignUploadResult(
-                saved.uploadId(), saved.fileId(), fileStoragePort.createUploadUrl(saved), saved.expiresAt());
+                saved.uploadId(), saved.fileId(), fileStoragePort.createUploadUrl(saved),
+                saved.expiresAt());
     }
 
     /**
@@ -110,6 +119,12 @@ public class UploadSessionService implements PresignUploadUseCase, CompleteUploa
             // presigned PUT 이 Content-Type 을 서명에 포함하므로, 스토리지에 기록된 타입이
             // 세션과 다르다는 것은 세션 밖의 경로로 객체가 들어갔다는 뜻이다.
             throw new FileException(FileError.CONTENT_TYPE_MISMATCH);
+        }
+        if (pending.fileSize() != object.byteSize()) {
+            // presigned PUT 은 크기를 서명에 포함하지 않으므로 선언과 다른 크기가 올라올 수 있다.
+            // 명세의 "크기 일치" 검증이다. 통과시키면 선언 근거가 없는 객체를 READY 로 확정하고
+            // 다른 도메인이 그 메타데이터를 근거로 참조하게 된다.
+            throw new FileException(FileError.SIZE_MISMATCH);
         }
         // 최종 문턱은 도메인이 지난다. markReady 가 실측값으로 허용 형식·최대 크기를 재검증한다.
         StoredFile ready = pending.markReady(object);

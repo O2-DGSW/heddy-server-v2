@@ -36,17 +36,36 @@ class S3ClientConfig {
             @Value("${app.storage.access-key:}") String accessKey,
             @Value("${app.storage.secret-key:}") String secretKey
     ) {
+        if (accessKey.isBlank() != secretKey.isBlank()) {
+            // 한쪽만 있으면 서명은 만들어지고 클라이언트의 업로드만 SignatureDoesNotMatch 로 실패한다.
+            // 서버 로그에는 아무것도 남지 않으므로 기동 시점에 막는다.
+            throw new IllegalStateException(
+                    "app.storage.access-key 와 secret-key 는 둘 다 설정하거나 둘 다 비워야 합니다");
+        }
         this.region = region;
         this.endpoint = endpoint;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
     }
 
+    /**
+     * 자격증명 제공자를 빈으로 둬서 스프링이 닫게 한다. {@code DefaultCredentialsProvider} 는
+     * 자격증명 갱신 스레드와 HTTP 클라이언트를 들고 있어, 빈 밖에서 만들면 애플리케이션이
+     * 살아 있는 내내 회수되지 않는다.
+     */
+    @Bean(destroyMethod = "close")
+    AwsCredentialsProvider awsCredentialsProvider() {
+        if (accessKey.isBlank()) {
+            return DefaultCredentialsProvider.create();
+        }
+        return StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey));
+    }
+
     @Bean
-    S3Client s3Client() {
+    S3Client s3Client(AwsCredentialsProvider credentialsProvider) {
         S3ClientBuilder builder = S3Client.builder()
                 .region(Region.of(region))
-                .credentialsProvider(credentialsProvider());
+                .credentialsProvider(credentialsProvider);
         if (!endpoint.isBlank()) {
             builder.endpointOverride(URI.create(endpoint))
                     .serviceConfiguration(pathStyleAccess());
@@ -55,10 +74,10 @@ class S3ClientConfig {
     }
 
     @Bean
-    S3Presigner s3Presigner() {
+    S3Presigner s3Presigner(AwsCredentialsProvider credentialsProvider) {
         S3Presigner.Builder builder = S3Presigner.builder()
                 .region(Region.of(region))
-                .credentialsProvider(credentialsProvider());
+                .credentialsProvider(credentialsProvider);
         if (!endpoint.isBlank()) {
             builder.endpointOverride(URI.create(endpoint))
                     .serviceConfiguration(pathStyleAccess());
@@ -68,13 +87,5 @@ class S3ClientConfig {
 
     private S3Configuration pathStyleAccess() {
         return S3Configuration.builder().pathStyleAccessEnabled(true).build();
-    }
-
-    /** 로컬·개발 환경은 정적 키를, 운영은 인스턴스 역할 등 기본 체인을 쓴다. */
-    private AwsCredentialsProvider credentialsProvider() {
-        if (accessKey.isBlank()) {
-            return DefaultCredentialsProvider.create();
-        }
-        return StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey));
     }
 }

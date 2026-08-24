@@ -14,6 +14,9 @@ import java.util.UUID;
 
 /**
  * 시술기록 첨부 사진의 JPA 표현. 바이너리는 스토리지에 있고 여기엔 {@code file_id} 참조만 둔다.
+ *
+ * <p>{@code image_type} 은 API(PATCH .../photos/{photoId})로 고칠 수 있으므로 {@code updatable}
+ * 제약을 두지 않는다. 걸어두면 병합 시 조용히 누락된다.
  */
 @Entity
 @Table(name = "treatment_record_photos")
@@ -30,7 +33,7 @@ class TreatmentPhotoEntity extends BaseEntity {
     private UUID fileId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "image_type", nullable = false, length = 20, updatable = false)
+    @Column(name = "image_type", nullable = false, length = 20)
     private ImageType imageType;
 
     protected TreatmentPhotoEntity() {

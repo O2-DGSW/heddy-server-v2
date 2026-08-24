@@ -67,10 +67,29 @@ public record StoredFile(
     }
 
     /**
-     * 실물에서 확인한 값으로 검증하고 {@code READY} 로 전이한다.
+     * HEAD 로 확인한 실측값으로 검증하고 {@code READY} 로 전이한다.
      *
      * <p>선언값을 다시 믿지 않고 실측값으로 재검증한다. presign 때 1MB 라고 해놓고 20MB 를 올리는 것을
      * 스토리지는 막지 않는다.
+     *
+     * <p>{@code sha256}·{@code width}·{@code height} 는 HEAD 로는 알 수 없어 그대로 비워 둔다.
+     * 이들을 채우려면 객체를 내려받아 디코딩해야 하므로, 내용 해시까지 확인하는 검증은 별도 단위
+     * ({@link VerifiedContent} 를 받는 {@link #markReady(VerifiedContent)})가 담당한다. 두 전이가
+     * 허용 형식·최대 크기라는 같은 문턱을 통과한다는 점은 변하지 않는다.
+     */
+    public StoredFile markReady(StorageObject object) {
+        requireStatus(FileStatus.PENDING);
+        requireUploadable(purpose, object.contentType(), object.byteSize());
+        return new StoredFile(
+                fileId, uploadId, userId, purpose, FileStatus.READY, objectKey,
+                object.contentType(), object.byteSize(), sha256, width, height,
+                expiresAt, createdAt);
+    }
+
+    /**
+     * 객체를 내려받아 확인한 값으로 검증하고 {@code READY} 로 전이한다.
+     *
+     * <p>HEAD 만으로는 알 수 없는 해시·이미지 치수까지 아는 시점에 쓴다.
      */
     public StoredFile markReady(VerifiedContent verified) {
         requireStatus(FileStatus.PENDING);

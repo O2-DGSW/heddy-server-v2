@@ -55,6 +55,8 @@ app:
     secret-key: ${AWS_S3_SECRET_KEY:}
     # 업로드 URL 만료는 업로드 세션(files.expires_at)을 따른다. 조회 URL 만 여기서 정한다.
     download-url-ttl-seconds: 60
+    # 업로드 세션 수명. presign 부터 complete 까지 클라이언트가 직접 올릴 시간을 준다.
+    upload-session-ttl-seconds: ${UPLOAD_SESSION_TTL_SECONDS:600}
   ai:
     base-url: ${AI_SERVER_URL:http://localhost:8000}
     connect-timeout-seconds: 3

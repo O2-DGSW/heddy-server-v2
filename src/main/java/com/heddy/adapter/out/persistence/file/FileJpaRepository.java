@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 interface FileJpaRepository extends JpaRepository<FileEntity, UUID> {
@@ -40,4 +41,6 @@ interface FileJpaRepository extends JpaRepository<FileEntity, UUID> {
             @Param("width") Integer width,
             @Param("height") Integer height,
             @Param("now") Instant now);
+
+    Optional<FileEntity> findByUploadId(UUID uploadId);
 }

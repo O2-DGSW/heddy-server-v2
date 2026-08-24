@@ -7,10 +7,13 @@ import com.heddy.domain.treatment.exception.TreatmentError;
 import com.heddy.domain.treatment.exception.TreatmentException;
 import com.heddy.domain.treatment.model.ImageType;
 import com.heddy.domain.treatment.model.ServiceType;
+import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
 import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase.Command;
+import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase.Query;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
+import com.heddy.domain.file.port.out.FileStoragePort;
 import com.heddy.global.error.ApplicationException;
 import com.heddy.global.error.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -41,12 +45,14 @@ class TreatmentRecordServiceTest {
 
     @Mock TreatmentRecordRepositoryPort recordRepositoryPort;
     @Mock FileRepositoryPort fileRepositoryPort;
+    @Mock FileStoragePort fileStoragePort;
 
     private TreatmentRecordService service;
 
     @BeforeEach
     void setUp() {
-        service = new TreatmentRecordService(recordRepositoryPort, fileRepositoryPort);
+        service = new TreatmentRecordService(
+                recordRepositoryPort, fileRepositoryPort, fileStoragePort);
     }
 
     // ------------------------------------------------------------------ 등록
@@ -62,6 +68,7 @@ class TreatmentRecordServiceTest {
         assertThat(saved.serviceTypes()).containsExactlyInAnyOrder(ServiceType.CUT, ServiceType.COLOR);
         assertThat(saved.photos()).isEmpty();
         verify(recordRepositoryPort).insert(saved);
+        verifyNoInteractions(fileStoragePort);
     }
 
     @Test
@@ -77,6 +84,7 @@ class TreatmentRecordServiceTest {
         assertThat(saved.photos()).hasSize(1);
         assertThat(saved.photos().get(0).fileId()).isEqualTo(fileId);
         assertThat(saved.photos().get(0).imageType()).isEqualTo(ImageType.BEFORE);
+        verifyNoInteractions(fileStoragePort);
     }
 
     @Test
@@ -135,6 +143,56 @@ class TreatmentRecordServiceTest {
                 .isInstanceOf(ApplicationException.class)
                 .hasFieldOrPropertyWithValue("errorCode", expected);
         verify(recordRepositoryPort, never()).insert(any());
+    }
+
+    // ------------------------------------------------------------------ 조회
+
+    @Test
+    void loadsOwnRecordAndSignsFreshDownloadUrlsPerPhoto() {
+        UUID recordId = UUID.randomUUID();
+        // 사진의 record_id 는 기록 식별자와 같아야 한다(도메인 불변식).
+        TreatmentPhoto photo = new TreatmentPhoto(UUID.randomUUID(), recordId,
+                UUID.randomUUID(), ImageType.AFTER, Instant.now());
+        TreatmentRecord record = new TreatmentRecord(recordId, USER_ID,
+                Set.of(ServiceType.CUT), null, null, PERFORMED_AT, null, null, null, null,
+                List.of(photo), Instant.now());
+        URI signed = URI.create("https://bucket.s3.example/signed?X-Amz-Signature=s");
+        given(recordRepositoryPort.findById(record.recordId())).willReturn(Optional.of(record));
+        given(fileRepositoryPort.findById(photo.fileId()))
+                .willReturn(Optional.of(readyFile(photo.fileId())));
+        given(fileStoragePort.createDownloadUrl(any())).willReturn(signed);
+
+        var result = service.get(new Query(USER_ID, record.recordId()));
+
+        assertThat(result.record().recordId()).isEqualTo(record.recordId());
+        assertThat(result.photoUrls()).containsEntry(photo.photoId(), signed);
+        verify(fileStoragePort).createDownloadUrl(any());
+    }
+
+    /** 남의 기록은 없는 기록과 똑같이 RESOURCE_NOT_FOUND 다. 존재 여부를 노출하지 않는다(#31). */
+    @Test
+    void answersResourceNotFoundForAnotherUsersRecord() {
+        UUID recordId = UUID.randomUUID();
+        TreatmentPhoto photo = new TreatmentPhoto(UUID.randomUUID(), recordId,
+                UUID.randomUUID(), ImageType.AFTER, Instant.now());
+        TreatmentRecord foreign = new TreatmentRecord(recordId, UUID.randomUUID(),
+                Set.of(ServiceType.CUT), null, null, PERFORMED_AT, null, null, null, null,
+                List.of(photo), Instant.now());
+        given(recordRepositoryPort.findById(foreign.recordId())).willReturn(Optional.of(foreign));
+
+        assertThatThrownBy(() -> service.get(new Query(USER_ID, foreign.recordId())))
+                .isInstanceOf(ApplicationException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
+        verifyNoInteractions(fileStoragePort);
+    }
+
+    @Test
+    void answersResourceNotFoundForUnknownRecordId() {
+        given(recordRepositoryPort.findById(any())).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.get(new Query(USER_ID, UUID.randomUUID())))
+                .isInstanceOf(ApplicationException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
     }
 
     // ------------------------------------------------------------------ 헬퍼

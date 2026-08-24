@@ -1,8 +1,11 @@
 package com.heddy.domain.file.service;
 
+import com.heddy.domain.file.exception.FileError;
+import com.heddy.domain.file.exception.FileException;
 import com.heddy.domain.file.model.FilePurpose;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -26,10 +29,17 @@ public final class ObjectKeyGenerator {
     private ObjectKeyGenerator() {
     }
 
+    /** 확장자를 아는 Content-Type 목록. {@link FilePurpose} 의 허용 목록과 어긋나면 안 된다. */
+    public static Set<String> mappedContentTypes() {
+        return EXTENSIONS.keySet();
+    }
+
     public static String generate(FilePurpose purpose, UUID ownerId, String contentType) {
         String extension = EXTENSIONS.get(contentType);
         if (extension == null) {
-            throw new IllegalArgumentException("확장자를 알 수 없는 Content-Type: " + contentType);
+            // FilePurpose 가 허용하는 형식인데 여기 매핑이 빠지면 도메인 오류가 아니라 500 이 난다.
+            // 두 목록이 어긋나지 않는지는 ObjectKeyGeneratorTest 가 빌드 시점에 확인한다.
+            throw new FileException(FileError.CONTENT_TYPE_NOT_ALLOWED);
         }
         return "%s/%s/%s.%s".formatted(purpose.name(), ownerId, UUID.randomUUID(), extension);
     }

@@ -17,9 +17,7 @@ public enum FilePurpose {
     AR_CAPTURE(5L * 1024 * 1024, Set.of("image/jpeg", "image/png")),
 
     /** 분석 서버가 생성하는 오버레이 이미지. 사용자에게 직접 노출되지 않는다. */
-    ANALYSIS_OVERLAY_INTERNAL(5L * 1024 * 1024, Set.of("image/png"));
-
-    private final long maximumBytes;
+    ANALYSIS_OVERLAY_INTERNAL(5L * 1024 * 1024, Set.of("image/png"));    private final long maximumBytes;
     private final Set<String> allowedContentTypes;
 
     FilePurpose(long maximumBytes, Set<String> allowedContentTypes) {
@@ -43,5 +41,17 @@ public enum FilePurpose {
 
     public boolean exceedsMaximum(long byteSize) {
         return byteSize > maximumBytes;
+    }
+
+    /**
+     * 외부(앱) 업로드 API 가 발급받을 수 있는 용도인지.
+     *
+     * <p>{@code ANALYSIS_OVERLAY_INTERNAL} 은 분석 서버가 만드는 내부 생성물이다. 사용자가 같은
+     * 용도로 객체를 발급해 올릴 수 있으면, 이후 단계는 이 purpose 를 "시스템이 만들고 검증한
+     * 파일"로 신뢰할 근거를 잃는다. 그래서 내부 전용 용도는 외부 발급 경로에서 거부하고, 생성은
+     * 나중에 생길 내부 전용 경로(분석 callback)가 맡는다.
+     */
+    public boolean isExternallyRequestable() {
+        return this != ANALYSIS_OVERLAY_INTERNAL;
     }
 }

@@ -27,6 +27,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
 
     private static final UUID USER_ID = UUID.fromString("80000000-0000-4000-8000-000000000001");
+    /** presign 으로 선언된 해시. READY 전이로 실측(SHA256)으로 대체되기 전의 값이다. */
+    private static final String DECLARED_SHA256 = "b".repeat(64);
     private static final String SHA256 = "c".repeat(64);
 
     @Autowired FilePersistenceAdapter adapter;
@@ -48,10 +50,27 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
         assertThat(found.uploadId()).isEqualTo(saved.uploadId());
         assertThat(found.userId()).isEqualTo(USER_ID);
         assertThat(found.status()).isEqualTo(FileStatus.PENDING);
+        assertThat(found.fileName()).isEqualTo("photo-1.jpg");
         assertThat(found.fileSize()).isEqualTo(1_024);
-        assertThat(found.sha256()).isNull();
+        // PENDING 행의 해시는 선언값이다. 실측으로 대체되는 시점은 내용 검증이다.
+        assertThat(found.sha256()).isEqualTo(DECLARED_SHA256);
         assertThat(found.width()).isNull();
         assertThat(found.createdAt()).isNotNull();
+    }
+
+    @Test
+    void findsFilesByUploadSessionId() {
+        StoredFile saved = adapter.insert(pendingPhoto("by-upload-id.jpg"));
+
+        StoredFile found = adapter.findByUploadId(saved.uploadId()).orElseThrow();
+
+        assertThat(found.fileId()).isEqualTo(saved.fileId());
+        assertThat(found.uploadId()).isEqualTo(saved.uploadId());
+    }
+
+    @Test
+    void reportsEmptyForUnknownUploadSessionIds() {
+        assertThat(adapter.findByUploadId(UUID.randomUUID())).isEmpty();
     }
 
     @Test
@@ -85,8 +104,8 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
         StoredFile first = adapter.insert(pendingPhoto("upload-1.jpg"));
         StoredFile clashing = new StoredFile(
                 UUID.randomUUID(), first.uploadId(), USER_ID, FilePurpose.TREATMENT_PHOTO,
-                FileStatus.PENDING, "TREATMENT_PHOTO/other.jpg", "image/jpeg", 1_024,
-                null, null, null, first.expiresAt(), null);
+                FileStatus.PENDING, "TREATMENT_PHOTO/other.jpg", "image/jpeg", "other.jpg",
+                1_024, null, null, null, first.expiresAt(), null);
 
         assertThatThrownBy(() -> adapter.insert(clashing))
                 .isInstanceOf(DataIntegrityViolationException.class);
@@ -149,6 +168,7 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
         assertColumn("status", "character varying", 20, false);
         assertColumn("object_key", "character varying", 500, false);
         assertColumn("content_type", "character varying", 100, false);
+        assertColumn("file_name", "character varying", 255, true);
         assertColumn("file_size", "bigint", null, false);
         assertColumn("sha256", "character varying", 64, true);
         assertColumn("width", "integer", null, true);
@@ -181,7 +201,8 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
     private static StoredFile pendingPhoto(String name) {
         return StoredFile.pending(
                 USER_ID, FilePurpose.TREATMENT_PHOTO, "TREATMENT_PHOTO/" + USER_ID + "/" + name,
-                "image/jpeg", 1_024, Instant.now().plus(5, ChronoUnit.MINUTES));
+                "image/jpeg", name, 1_024, DECLARED_SHA256,
+                Instant.now().plus(5, ChronoUnit.MINUTES));
     }
 
     private void insertUser(UUID userId, String email) {

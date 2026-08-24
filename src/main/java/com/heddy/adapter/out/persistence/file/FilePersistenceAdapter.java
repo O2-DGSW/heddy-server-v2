@@ -38,4 +38,9 @@ public class FilePersistenceAdapter implements FileRepositoryPort {
     public Optional<StoredFile> findById(UUID fileId) {
         return repository.findById(fileId).map(FileEntity::toDomain);
     }
+
+    @Override
+    public Optional<StoredFile> findByUploadId(UUID uploadId) {
+        return repository.findByUploadId(uploadId).map(FileEntity::toDomain);
+    }
 }

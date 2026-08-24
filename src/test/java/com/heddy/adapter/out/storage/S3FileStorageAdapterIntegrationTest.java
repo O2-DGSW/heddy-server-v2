@@ -1,6 +1,7 @@
 package com.heddy.adapter.out.storage;
 
 import com.heddy.domain.file.model.FilePurpose;
+import com.heddy.domain.file.model.PresignedUpload;
 import com.heddy.domain.file.model.StorageObject;
 import com.heddy.domain.file.model.StoredFile;
 import com.heddy.domain.file.service.ObjectKeyGenerator;
@@ -98,6 +99,24 @@ class S3FileStorageAdapterIntegrationTest {
         assertThat(object.byteSize()).isEqualTo(CONTENT.length);
     }
 
+    /**
+     * 덮어쓰기 방지 조건이 실제로 스토리지까지 적용되는지 본다. 같은 URL 로 두 번째 PUT 은
+     * 대상이 이미 존재하므로 412 로 막혀야 한다. READY 로 확정된 객체가 완료 뒤 몰래 바뀌는
+     * 경로를 이 조건이 닫는다.
+     */
+    @Test
+    void refusesToOverwriteAnExistingObjectThroughTheSameSignedUrl() throws Exception {
+        StoredFile file = pendingPhoto();
+        PresignedUpload upload = adapter.createUploadUrl(file);
+
+        assertThat(put(upload, file.contentType(), CONTENT)).isEqualTo(200);
+        byte[] replacement = "different-content".getBytes(StandardCharsets.UTF_8);
+        assertThat(put(upload, file.contentType(), replacement)).isEqualTo(412);
+
+        assertThat(adapter.findObject(file.objectKey()).orElseThrow().byteSize())
+                .isEqualTo(CONTENT.length);
+    }
+
     @Test
     void reportsNothingForKeyThatWasNeverUploaded() {
         Optional<StorageObject> object = adapter.findObject("TREATMENT_PHOTO/nobody/missing.jpg");
@@ -128,7 +147,7 @@ class S3FileStorageAdapterIntegrationTest {
     void signsUploadUrlUntilTheUploadSessionExpires() {
         StoredFile file = pendingPhoto();
 
-        Instant urlExpiry = expiryOf(adapter.createUploadUrl(file));
+        Instant urlExpiry = expiryOf(adapter.createUploadUrl(file).url());
 
         assertThat(Duration.between(urlExpiry, file.expiresAt()).abs())
                 .isLessThanOrEqualTo(Duration.ofSeconds(2));
@@ -137,8 +156,8 @@ class S3FileStorageAdapterIntegrationTest {
     @Test
     void refusesToIssueUploadUrlForAnAlreadyExpiredSession() {
         StoredFile expired = StoredFile.pending(
-                USER_ID, FilePurpose.TREATMENT_PHOTO, objectKey(), "image/jpeg", CONTENT.length,
-                Instant.now().minusSeconds(1));
+                USER_ID, FilePurpose.TREATMENT_PHOTO, objectKey(), "image/jpeg", "expired.jpg",
+                CONTENT.length, "b".repeat(64), Instant.now().minusSeconds(1));
 
         assertThatThrownBy(() -> adapter.createUploadUrl(expired))
                 .isInstanceOf(IllegalStateException.class);
@@ -152,16 +171,24 @@ class S3FileStorageAdapterIntegrationTest {
     }
 
     /**
-     * Content-Type 이 서명에 포함돼야 클라이언트가 다른 형식으로 바꿔 올릴 때 S3 가 거부한다.
+     * Content-Type 과 덮어쓰기 방지 조건이 모두 서명 대상이어야 한다. Content-Type 이 빠지면
+     * 클라이언트가 형식을 바꿔 올릴 수 있고, If-None-Match 가 빠지면 조건 없는 PUT 으로 READY
+     * 객체를 덮어쓸 수 있다.
      *
-     * <p>거부 자체를 확인하지 않고 서명 대상만 확인하는 이유는, LocalStack 이 서명을 검증하지 않아
-     * 잘못된 Content-Type 으로 올려도 200 을 주기 때문이다. 실제 거부 동작은 개발용 S3 에서 확인한다.
+     * <p>거부 동작 자체는 {@link #refusesToOverwriteAnExistingObjectThroughTheSameSignedUrl} 이
+     * 확인한다. 여기서 서명 대상만 따로 보는 이유는, LocalStack 이 서명 검증은 느슨해도 조건
+     * 적용은 하므로 둘의 근거를 분리해야 어디가 깨졌는지 알아보기 쉽기 때문이다.
      */
     @Test
-    void signsContentTypeSoStorageCanRejectMismatchedUploads() {
-        URI url = adapter.createUploadUrl(pendingPhoto());
+    void signsContentTypeAndWriteConditionSoStorageCanRejectUnsafeUploads() {
+        PresignedUpload upload = adapter.createUploadUrl(pendingPhoto());
 
-        assertThat(queryOf(url).get("X-Amz-SignedHeaders")).isEqualTo("content-type;host");
+        assertThat(queryOf(upload.url()).get("X-Amz-SignedHeaders"))
+                .isEqualTo("content-type;host;if-none-match");
+        assertThat(upload.method()).isEqualTo("PUT");
+        assertThat(upload.requiredHeaders())
+                .containsEntry("Content-Type", "image/jpeg")
+                .containsEntry("If-None-Match", "*");
     }
 
     // ------------------------------------------------------------------ 헬퍼
@@ -184,14 +211,22 @@ class S3FileStorageAdapterIntegrationTest {
 
     private static StoredFile pendingPhoto() {
         return StoredFile.pending(
-                USER_ID, FilePurpose.TREATMENT_PHOTO, objectKey(), "image/jpeg", CONTENT.length,
-                Instant.now().plus(5, ChronoUnit.MINUTES));
+                USER_ID, FilePurpose.TREATMENT_PHOTO, objectKey(), "image/jpeg", "after.jpg",
+                CONTENT.length, "b".repeat(64), Instant.now().plus(5, ChronoUnit.MINUTES));
     }
 
-    private static int put(URI url, String contentType, byte[] body) throws IOException, InterruptedException {
+    private static int put(PresignedUpload upload, String contentType, byte[] body)
+            throws IOException, InterruptedException {
+        return put(upload.url(), contentType, body);
+    }
+
+    private static int put(URI url, String contentType, byte[] body)
+            throws IOException, InterruptedException {
         return HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder(url)
                         .header("Content-Type", contentType)
+                        // 발급 응답의 required_headers 가 클라이언트가 보내야 하는 그대로다.
+                        .header("If-None-Match", "*")
                         .PUT(HttpRequest.BodyPublishers.ofByteArray(body))
                         .build(),
                 HttpResponse.BodyHandlers.ofString()).statusCode();

@@ -22,4 +22,7 @@ public interface FileRepositoryPort {
     StoredFile transition(StoredFile file, FileStatus expectedStatus);
 
     Optional<StoredFile> findById(UUID fileId);
+
+    /** presign 응답과 complete 요청이 쓰는 업로드 세션 식별자로 조회한다. */
+    Optional<StoredFile> findByUploadId(UUID uploadId);
 }

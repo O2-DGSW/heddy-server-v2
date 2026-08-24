@@ -53,8 +53,7 @@ app:
     endpoint: ${AWS_S3_ENDPOINT:}
     access-key: ${AWS_S3_ACCESS_KEY:}
     secret-key: ${AWS_S3_SECRET_KEY:}
-    # 업로드 URL 은 앱이 곧바로 올릴 만큼만, 조회 URL 은 화면에 뿌린 뒤 새로 받게 짧게 준다.
-    upload-url-ttl-seconds: 300
+    # 업로드 URL 만료는 업로드 세션(files.expires_at)을 따른다. 조회 URL 만 여기서 정한다.
     download-url-ttl-seconds: 60
   ai:
     base-url: ${AI_SERVER_URL:http://localhost:8000}

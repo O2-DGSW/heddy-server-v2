@@ -4,6 +4,7 @@ import com.heddy.domain.treatment.model.ImageType;
 import com.heddy.domain.treatment.model.ServiceType;
 import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
+import com.heddy.domain.treatment.model.TreatmentRecordFilter;
 import com.heddy.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -119,6 +120,34 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
         assertThat(adapter.findById(UUID.randomUUID())).isEmpty();
     }
 
+    @Test
+    void findsAFilteredPageInStablePerformedAtOrder() {
+        TreatmentRecord older = adapter.insert(TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), "준헤어", "김실장",
+                PERFORMED_AT.minusSeconds(3_600), null, null, null, null));
+        TreatmentRecord newer = adapter.insert(TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT, ServiceType.COLOR), "준헤어", "김실장",
+                PERFORMED_AT, null, null, null, null));
+        adapter.insert(TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.PERM), "다른미용실", "다른디자이너",
+                PERFORMED_AT.minusSeconds(1_800), null, null, null, null));
+
+        var firstPage = adapter.findPage(new TreatmentRecordFilter(
+                USER_ID, ServiceType.CUT, "김실장", "준헤어",
+                PERFORMED_AT.minusSeconds(7_200), PERFORMED_AT.plusSeconds(1),
+                0, 1, false));
+        var secondPage = adapter.findPage(new TreatmentRecordFilter(
+                USER_ID, ServiceType.CUT, "김실장", "준헤어",
+                PERFORMED_AT.minusSeconds(7_200), PERFORMED_AT.plusSeconds(1),
+                1, 1, false));
+
+        assertThat(firstPage.totalElements()).isEqualTo(2);
+        assertThat(firstPage.items()).extracting(TreatmentRecord::recordId)
+                .containsExactly(newer.recordId());
+        assertThat(secondPage.items()).extracting(TreatmentRecord::recordId)
+                .containsExactly(older.recordId());
+    }
+
     // ------------------------------------------------------------------ 참조 무결성
 
     @Test
@@ -204,6 +233,14 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
                 WHERE i.tablename = 'treatment_records' AND i.indexname = 'idx_treatment_records_service_types'
                 """, String.class);
         assertThat(accessMethod).isEqualTo("gin");
+
+        jdbcTemplate.execute("SET LOCAL enable_seqscan = off");
+        String plan = String.join("\n", jdbcTemplate.queryForList("""
+                EXPLAIN SELECT record_id
+                FROM treatment_records
+                WHERE service_types @> '["CUT"]'::jsonb
+                """, String.class));
+        assertThat(plan).contains("idx_treatment_records_service_types");
     }
 
     // ------------------------------------------------------------------ 헬퍼

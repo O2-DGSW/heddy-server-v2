@@ -67,7 +67,11 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
 
     @Override
     public boolean deleteById(UUID recordId) {
-        return recordRepository.deleteByRecordId(recordId) == 1;
+        boolean deleted = recordRepository.deleteByRecordId(recordId) == 1;
+        if (deleted) {
+            recordRepository.flush();
+        }
+        return deleted;
     }
 
     private List<TreatmentPhoto> photosOf(UUID recordId) {

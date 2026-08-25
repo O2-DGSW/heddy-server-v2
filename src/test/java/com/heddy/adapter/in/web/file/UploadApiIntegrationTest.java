@@ -1,6 +1,7 @@
 package com.heddy.adapter.in.web.file;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.heddy.domain.file.port.in.ReclaimUploadObjectsUseCase;
 import com.heddy.support.PostgresIntegrationTest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -121,6 +122,7 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
     @Autowired JdbcTemplate jdbcTemplate;
     @Autowired EntityManager entityManager;
     @Autowired S3Client s3Client;
+    @Autowired ReclaimUploadObjectsUseCase reclaimUploadObjectsUseCase;
 
     @BeforeEach
     void setUpUsers() {
@@ -484,6 +486,46 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
         assertThat(statusOf(uploadId)).isEqualTo("READY");
     }
 
+    /**
+     * 취소 뒤에도 이미 발급된 presigned PUT URL 은 세션 만료까지 유효하다. 전송 중이던 PUT 이나
+     * 클라이언트 재시도가 도착하면 객체만 되살아나고, 행은 이미 DELETED 라 PENDING·READY 를 훑는
+     * 정리 작업이 잡지 못한다. 만료 이후 회수 경로가 같은 키를 다시 지우는지 실물로 확인한다.
+     */
+    @Test
+    void reclaimsObjectsResurrectedByTheStillValidUploadUrlAfterCancellation() throws Exception {
+        String responseBody = presign(USER_ID, "TREATMENT_PHOTO", "image/jpeg", UPLOAD_BYTES.length);
+        String uploadUrl = jsonField(responseBody, "upload_url");
+        String uploadId = jsonField(responseBody, "upload_id");
+        assertThat(put(uploadUrl, "image/jpeg", UPLOAD_BYTES)).isEqualTo(200);
+        mockMvc.perform(delete("/uploads/" + uploadId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent());
+
+        // 취소가 지운 자리에 같은 URL 로 객체가 다시 생긴다. If-None-Match: * 도 막지 못한다.
+        assertThat(put(uploadUrl, "image/jpeg", UPLOAD_BYTES)).isEqualTo(200);
+        assertThat(objectAbsent(objectKeyOf(uploadId))).isFalse();
+
+        expireSession(uploadId);
+        assertThat(reclaimUploadObjectsUseCase.reclaimExpired(10)).isEqualTo(1);
+
+        assertThat(objectAbsent(objectKeyOf(uploadId))).isTrue();
+        assertThat(reclaimedAtOf(uploadId)).isNotNull();
+        assertThat(statusOf(uploadId)).isEqualTo("DELETED");
+    }
+
+    /** 회수가 끝난 세션은 다음 회차의 대상이 아니다. */
+    @Test
+    void doesNotReclaimTheSameCancelledSessionTwice() throws Exception {
+        String uploadId = presignOnly(USER_ID, "TREATMENT_PHOTO", "image/jpeg");
+        mockMvc.perform(delete("/uploads/" + uploadId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent());
+        expireSession(uploadId);
+
+        assertThat(reclaimUploadObjectsUseCase.reclaimExpired(10)).isEqualTo(1);
+        assertThat(reclaimUploadObjectsUseCase.reclaimExpired(10)).isZero();
+    }
+
     // ------------------------------------------------------------------ 문서화
 
     @Test
@@ -574,6 +616,19 @@ class UploadApiIntegrationTest extends PostgresIntegrationTest {
                         .build(),
                 HttpResponse.BodyHandlers.ofString());
         return response.statusCode();
+    }
+
+    /** 발급된 업로드 URL 이 만료된 시점을 만든다. 회수는 그 뒤에야 의미가 있다. */
+    private void expireSession(String uploadId) {
+        jdbcTemplate.update(
+                "UPDATE files SET expires_at = now() - interval '1 minute' WHERE upload_id = ?",
+                UUID.fromString(uploadId));
+    }
+
+    private java.time.Instant reclaimedAtOf(String uploadId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT reclaimed_at FROM files WHERE upload_id = ?", java.time.Instant.class,
+                UUID.fromString(uploadId));
     }
 
     private String statusOf(String uploadId) {

@@ -38,6 +38,8 @@ public record TreatmentRecord(
         Long priceAmount,
         String priceCurrency,
         UUID appointmentId,
+        String memo,
+        String nextVisitCautions,
         List<TreatmentPhoto> photos,
         Instant createdAt
 ) {
@@ -48,7 +50,9 @@ public record TreatmentRecord(
     public TreatmentRecord {
         Objects.requireNonNull(recordId, "recordId");
         Objects.requireNonNull(userId, "userId");
-        Objects.requireNonNull(performedAt, "performedAt");
+        if (performedAt == null) {
+            throw new TreatmentException(TreatmentError.PERFORMED_AT_REQUIRED);
+        }
 
         if (serviceTypes == null || serviceTypes.isEmpty()) {
             throw new TreatmentException(TreatmentError.SERVICE_TYPE_REQUIRED);
@@ -76,6 +80,9 @@ public record TreatmentRecord(
             throw new TreatmentException(TreatmentError.PERFORMED_AT_IN_FUTURE);
         }
 
+        memo = normalizeText(memo);
+        nextVisitCautions = normalizeText(nextVisitCautions);
+
         photos = photos == null ? List.of() : List.copyOf(photos);
         if (photos.size() > MAX_PHOTOS) {
             throw new TreatmentException(TreatmentError.PHOTO_LIMIT_EXCEEDED);
@@ -85,6 +92,26 @@ public record TreatmentRecord(
                 throw new TreatmentException(TreatmentError.PHOTO_RECORD_MISMATCH);
             }
         });
+    }
+
+    /** 메모 컬럼 도입 전 호출부와의 호환을 위한 생성자. */
+    public TreatmentRecord(
+            UUID recordId,
+            UUID userId,
+            Set<ServiceType> serviceTypes,
+            String salonName,
+            String designerName,
+            Instant performedAt,
+            Integer satisfaction,
+            Long priceAmount,
+            String priceCurrency,
+            UUID appointmentId,
+            List<TreatmentPhoto> photos,
+            Instant createdAt
+    ) {
+        this(recordId, userId, serviceTypes, salonName, designerName, performedAt,
+                satisfaction, priceAmount, priceCurrency, appointmentId,
+                null, null, photos, createdAt);
     }
 
     /** 새 기록을 만든다. 식별자는 도메인이 발급하고 사진은 빈 채로 시작한다. */
@@ -99,10 +126,28 @@ public record TreatmentRecord(
             String priceCurrency,
             UUID appointmentId
     ) {
+        return create(userId, serviceTypes, salonName, designerName, performedAt,
+                satisfaction, priceAmount, priceCurrency, appointmentId, null, null);
+    }
+
+    /** 메모와 다음 방문 주의사항을 포함해 새 기록을 만든다. */
+    public static TreatmentRecord create(
+            UUID userId,
+            Set<ServiceType> serviceTypes,
+            String salonName,
+            String designerName,
+            Instant performedAt,
+            Integer satisfaction,
+            Long priceAmount,
+            String priceCurrency,
+            UUID appointmentId,
+            String memo,
+            String nextVisitCautions
+    ) {
         return new TreatmentRecord(
                 UUID.randomUUID(), userId, serviceTypes, salonName, designerName,
                 performedAt, satisfaction, priceAmount, priceCurrency, appointmentId,
-                List.of(), null);
+                memo, nextVisitCautions, List.of(), null);
     }
 
     /**
@@ -123,7 +168,27 @@ public record TreatmentRecord(
         attached.add(photo);
         return new TreatmentRecord(
                 recordId, userId, serviceTypes, salonName, designerName, performedAt,
-                satisfaction, priceAmount, priceCurrency, appointmentId, attached, createdAt);
+                satisfaction, priceAmount, priceCurrency, appointmentId,
+                memo, nextVisitCautions, attached, createdAt);
+    }
+
+    /** 부분 수정에서 결정된 최종 값으로 기록의 새 스냅샷을 만든다. */
+    public TreatmentRecord update(
+            Set<ServiceType> serviceTypes,
+            String salonName,
+            String designerName,
+            Instant performedAt,
+            Integer satisfaction,
+            Long priceAmount,
+            String priceCurrency,
+            UUID appointmentId,
+            String memo,
+            String nextVisitCautions
+    ) {
+        return new TreatmentRecord(
+                recordId, userId, serviceTypes, salonName, designerName, performedAt,
+                satisfaction, priceAmount, priceCurrency, appointmentId,
+                memo, nextVisitCautions, photos, createdAt);
     }
 
     private static String normalizeName(String value, int maxLength, TreatmentError tooLong) {
@@ -143,5 +208,12 @@ public record TreatmentRecord(
             throw new TreatmentException(TreatmentError.PRICE_CURRENCY_INVALID);
         }
         return upper;
+    }
+
+    private static String normalizeText(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.strip();
     }
 }

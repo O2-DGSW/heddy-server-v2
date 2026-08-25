@@ -3,6 +3,7 @@ package com.heddy.domain.treatment.exception;
 public enum TreatmentError {
     SERVICE_TYPE_REQUIRED("TREATMENT_SERVICE_TYPE_REQUIRED", "시술 종류를 1개 이상 선택해야 합니다."),
     SERVICE_TYPE_UNKNOWN("TREATMENT_SERVICE_TYPE_UNKNOWN", "알 수 없는 시술 종류가 포함되어 있습니다."),
+    PERFORMED_AT_REQUIRED("TREATMENT_PERFORMED_AT_REQUIRED", "시술일을 입력해야 합니다."),
     PERFORMED_AT_IN_FUTURE("TREATMENT_PERFORMED_AT_IN_FUTURE", "시술일은 미래일 수 없습니다."),
     SATISFACTION_OUT_OF_RANGE("TREATMENT_SATISFACTION_OUT_OF_RANGE", "만족도는 1에서 5 사이여야 합니다."),
     PRICE_INCOMPLETE("TREATMENT_PRICE_INCOMPLETE", "가격은 금액과 통화를 함께 입력해야 합니다."),

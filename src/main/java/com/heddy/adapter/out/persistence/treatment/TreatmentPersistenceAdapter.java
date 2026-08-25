@@ -56,6 +56,24 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
         return new TreatmentRecordPage(records, result.getTotalElements());
     }
 
+    @Override
+    public Optional<TreatmentRecord> update(TreatmentRecord record) {
+        return recordRepository.findById(record.recordId()).map(entity -> {
+            entity.update(record);
+            TreatmentRecordEntity saved = recordRepository.saveAndFlush(entity);
+            return saved.toDomain(photosOf(saved.recordId()));
+        });
+    }
+
+    @Override
+    public boolean deleteById(UUID recordId) {
+        boolean deleted = recordRepository.deleteByRecordId(recordId) == 1;
+        if (deleted) {
+            recordRepository.flush();
+        }
+        return deleted;
+    }
+
     private List<TreatmentPhoto> photosOf(UUID recordId) {
         return photoRepository.findByRecordIdOrderByCreatedAtAscPhotoIdAsc(recordId).stream()
                 .map(TreatmentPhotoEntity::toDomain)

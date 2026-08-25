@@ -1,6 +1,7 @@
 package com.heddy.application.treatment.service;
 
 import com.heddy.domain.file.model.StoredFile;
+import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
 import com.heddy.domain.file.port.out.FileStoragePort;
 import com.heddy.domain.treatment.model.TreatmentPhoto;
@@ -8,8 +9,10 @@ import com.heddy.domain.treatment.model.TreatmentRecord;
 import com.heddy.domain.treatment.model.TreatmentRecordFilter;
 import com.heddy.domain.treatment.model.TreatmentRecordPage;
 import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase;
+import com.heddy.domain.treatment.port.in.DeleteTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.in.ListTreatmentRecordsUseCase;
+import com.heddy.domain.treatment.port.in.UpdateTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
 import com.heddy.global.error.ApplicationException;
 import com.heddy.global.error.ErrorCode;
@@ -30,7 +33,8 @@ import java.util.UUID;
 @Service
 @Transactional(readOnly = true)
 public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
-        GetTreatmentRecordUseCase, ListTreatmentRecordsUseCase {
+        GetTreatmentRecordUseCase, ListTreatmentRecordsUseCase,
+        UpdateTreatmentRecordUseCase, DeleteTreatmentRecordUseCase {
 
     private static final int MAX_PAGE_SIZE = 100;
     private static final String SORT_ASCENDING = "performedAt,asc";
@@ -57,7 +61,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         TreatmentRecord record = TreatmentRecord.create(
                 command.userId(), command.serviceTypes(), command.salonName(), command.designerName(),
                 command.performedAt(), command.satisfaction(), command.priceAmount(),
-                command.priceCurrency(), command.appointmentId());
+                command.priceCurrency(), command.appointmentId(), command.memo(),
+                command.nextVisitCautions());
         for (CreateTreatmentRecordUseCase.Command.Photo photo : command.photos()) {
             requireOwnedReadyFile(command.userId(), photo.fileId());
             record = record.attachPhoto(
@@ -94,6 +99,47 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                 .toList();
         return new ListTreatmentRecordsUseCase.Result(
                 items, query.page(), query.size(), page.totalElements());
+    }
+
+    @Override
+    @Transactional
+    public TreatmentRecord update(UpdateTreatmentRecordUseCase.Command command) {
+        TreatmentRecord current = ownedRecord(command.requesterId(), command.recordId());
+        TreatmentRecord updated = current.update(
+                command.serviceTypes().orElse(current.serviceTypes()),
+                command.salonName().orElse(current.salonName()),
+                command.designerName().orElse(current.designerName()),
+                command.performedAt().orElse(current.performedAt()),
+                command.satisfaction().orElse(current.satisfaction()),
+                command.priceAmount().orElse(current.priceAmount()),
+                command.priceCurrency().orElse(current.priceCurrency()),
+                command.appointmentId().orElse(current.appointmentId()),
+                command.memo().orElse(current.memo()),
+                command.nextVisitCautions().orElse(current.nextVisitCautions()));
+        return recordRepositoryPort.update(updated)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional
+    public void delete(DeleteTreatmentRecordUseCase.Command command) {
+        TreatmentRecord record = ownedRecord(command.requesterId(), command.recordId());
+        for (TreatmentPhoto photo : record.photos()) {
+            fileRepositoryPort.findById(photo.fileId()).ifPresent(file -> {
+                if (file.status() != FileStatus.DELETED) {
+                    fileRepositoryPort.transition(file.markDeleted(), file.status());
+                }
+            });
+        }
+        // 공개 API에 소프트 삭제 개념이 없으므로 기록은 하드 삭제하고 사진 행은 FK CASCADE에 맡긴다.
+        if (!recordRepositoryPort.deleteById(record.recordId())) {
+            throw new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+    }
+
+    private TreatmentRecord ownedRecord(UUID requesterId, UUID recordId) {
+        return recordRepositoryPort.findByIdAndUserId(recordId, requesterId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     private void validateListQuery(ListTreatmentRecordsUseCase.Query query) {

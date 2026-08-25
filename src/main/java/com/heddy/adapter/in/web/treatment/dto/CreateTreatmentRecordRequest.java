@@ -45,6 +45,12 @@ public record CreateTreatmentRecordRequest(
         @Schema(description = "연결할 예약 식별자. 선택 입력")
         @JsonProperty("appointment_id") UUID appointmentId,
 
+        @Schema(description = "개인 메모. 선택 입력")
+        @JsonProperty("memo") String memo,
+
+        @Schema(description = "다음 방문 시 주의사항. 선택 입력")
+        @JsonProperty("next_visit_cautions") String nextVisitCautions,
+
         @Valid
         @Schema(description = "첨부 사진. READY 인 요청자 소유 파일만 가리키며 최대 10장")
         @JsonProperty("photos") List<@NotNull @Valid PhotoRequest> photos
@@ -64,6 +70,7 @@ public record CreateTreatmentRecordRequest(
     public CreateTreatmentRecordUseCase.Command toCommand(UUID userId) {
         return new CreateTreatmentRecordUseCase.Command(userId, serviceTypes, salonName, designerName,
                 performedAt, satisfaction, priceAmount, priceCurrency, appointmentId,
+                memo, nextVisitCautions,
                 photos == null ? List.of() : photos.stream()
                         .map(photo -> new CreateTreatmentRecordUseCase.Command.Photo(
                                 photo.fileId(), photo.imageType()))

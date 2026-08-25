@@ -31,4 +31,10 @@ public interface TreatmentRecordRepositoryPort {
 
     /** 소유자 조건을 항상 포함해 필터·페이지 조건에 맞는 기록을 조회한다. */
     TreatmentRecordPage findPage(TreatmentRecordFilter filter);
+
+    /** 존재하는 기록의 수정 가능한 필드를 저장한다. */
+    Optional<TreatmentRecord> update(TreatmentRecord record);
+
+    /** 하드 삭제한다. 연결 사진 행은 데이터베이스 CASCADE가 함께 삭제한다. */
+    boolean deleteById(UUID recordId);
 }

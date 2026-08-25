@@ -3,10 +3,13 @@ package com.heddy.adapter.in.web.treatment;
 import com.heddy.adapter.in.web.treatment.dto.CreateTreatmentRecordRequest;
 import com.heddy.adapter.in.web.treatment.dto.TreatmentRecordResponse;
 import com.heddy.adapter.in.web.treatment.dto.TreatmentRecordSummaryResponse;
+import com.heddy.adapter.in.web.treatment.dto.UpdateTreatmentRecordRequest;
 import com.heddy.domain.treatment.model.ServiceType;
 import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase;
+import com.heddy.domain.treatment.port.in.DeleteTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.in.ListTreatmentRecordsUseCase;
+import com.heddy.domain.treatment.port.in.UpdateTreatmentRecordUseCase;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import com.heddy.global.response.PageResponse;
@@ -21,6 +24,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,6 +44,8 @@ public class TreatmentRecordController {
     private final CreateTreatmentRecordUseCase createTreatmentRecordUseCase;
     private final GetTreatmentRecordUseCase getTreatmentRecordUseCase;
     private final ListTreatmentRecordsUseCase listTreatmentRecordsUseCase;
+    private final UpdateTreatmentRecordUseCase updateTreatmentRecordUseCase;
+    private final DeleteTreatmentRecordUseCase deleteTreatmentRecordUseCase;
 
     @PostMapping("/treatment-records")
     @Operation(summary = "시술기록 등록",
@@ -101,5 +108,32 @@ public class TreatmentRecordController {
         return ApiResponse.success(
                 TreatmentRecordResponse.withPhotos(result.record(), result.photoUrls()),
                 RequestIdFilter.get(servletRequest));
+    }
+
+    @PatchMapping("/treatment-records/{recordId}")
+    @Operation(summary = "시술기록 부분 수정",
+            description = "전달한 필드만 수정합니다. nullable 필드에 null을 보내면 값을 삭제합니다.")
+    public ApiResponse<TreatmentRecordResponse> update(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID recordId,
+            @Valid @RequestBody UpdateTreatmentRecordRequest request,
+            HttpServletRequest servletRequest
+    ) {
+        return ApiResponse.success(
+                TreatmentRecordResponse.core(
+                        updateTreatmentRecordUseCase.update(request.toCommand(userId, recordId))),
+                RequestIdFilter.get(servletRequest));
+    }
+
+    @DeleteMapping("/treatment-records/{recordId}")
+    @Operation(summary = "시술기록 삭제",
+            description = "기록과 사진 연결을 삭제하고 연결 파일은 비동기 회수 대상 상태로 전이합니다.")
+    public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID recordId
+    ) {
+        deleteTreatmentRecordUseCase.delete(
+                new DeleteTreatmentRecordUseCase.Command(userId, recordId));
+        return ResponseEntity.noContent().build();
     }
 }

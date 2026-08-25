@@ -14,6 +14,8 @@ interface TreatmentRecordJpaRepository extends JpaRepository<TreatmentRecordEnti
 
     Optional<TreatmentRecordEntity> findByRecordIdAndUserId(UUID recordId, UUID userId);
 
+    long deleteByRecordId(UUID recordId);
+
     @Query(value = """
             SELECT tr.*
             FROM treatment_records tr

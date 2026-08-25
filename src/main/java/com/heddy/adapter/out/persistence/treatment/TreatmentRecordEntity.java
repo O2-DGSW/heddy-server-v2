@@ -92,6 +92,10 @@ class TreatmentRecordEntity extends BaseEntity {
                 photos, getCreatedAt());
     }
 
+    UUID recordId() {
+        return recordId;
+    }
+
     private static ServiceType parseServiceType(String name) {
         try {
             return ServiceType.valueOf(name);

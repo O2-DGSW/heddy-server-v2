@@ -2,6 +2,8 @@ package com.heddy.domain.treatment.port.out;
 
 import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
+import com.heddy.domain.treatment.model.TreatmentRecordFilter;
+import com.heddy.domain.treatment.model.TreatmentRecordPage;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -21,4 +23,7 @@ public interface TreatmentRecordRepositoryPort {
 
     /** 기록을 사진(생성 시각순)과 함께 조회한다. */
     Optional<TreatmentRecord> findById(UUID recordId);
+
+    /** 소유자 조건을 항상 포함해 필터·페이지 조건에 맞는 기록을 조회한다. */
+    TreatmentRecordPage findPage(TreatmentRecordFilter filter);
 }

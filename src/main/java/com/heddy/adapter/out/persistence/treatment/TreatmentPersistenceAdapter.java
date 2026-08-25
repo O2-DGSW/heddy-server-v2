@@ -2,8 +2,12 @@ package com.heddy.adapter.out.persistence.treatment;
 
 import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
+import com.heddy.domain.treatment.model.TreatmentRecordFilter;
+import com.heddy.domain.treatment.model.TreatmentRecordPage;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -35,6 +39,20 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
     public Optional<TreatmentRecord> findById(UUID recordId) {
         return recordRepository.findById(recordId)
                 .map(entity -> entity.toDomain(photosOf(recordId)));
+    }
+
+    @Override
+    public TreatmentRecordPage findPage(TreatmentRecordFilter filter) {
+        String serviceTypesJson = filter.serviceType() == null
+                ? null : "[\"" + filter.serviceType().name() + "\"]";
+        Page<TreatmentRecordEntity> result = recordRepository.findPage(
+                filter.userId(), serviceTypesJson, filter.designerName(), filter.salonName(),
+                filter.from(), filter.to(), filter.ascending(),
+                PageRequest.of(filter.page(), filter.size()));
+        List<TreatmentRecord> records = result.getContent().stream()
+                .map(entity -> entity.toDomain(photosOf(entity.recordId())))
+                .toList();
+        return new TreatmentRecordPage(records, result.getTotalElements());
     }
 
     private List<TreatmentPhoto> photosOf(UUID recordId) {

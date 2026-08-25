@@ -2,6 +2,7 @@ package com.heddy.infrastructure.security.jwt;
 
 import com.heddy.domain.account.model.AuthPrincipal;
 import com.heddy.domain.account.port.out.AuthTokenPort;
+import com.heddy.domain.account.port.out.AccountRepositoryPort;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final AuthTokenPort authTokenPort;
+    private final AccountRepositoryPort accountRepositoryPort;
 
     @Override
     protected void doFilterInternal(
@@ -37,6 +39,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void authenticate(AuthPrincipal principal) {
+        if (accountRepositoryPort.findById(principal.userId())
+                .map(account -> account.isDeleted())
+                .orElse(true)) {
+            return;
+        }
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
                         principal.userId(),

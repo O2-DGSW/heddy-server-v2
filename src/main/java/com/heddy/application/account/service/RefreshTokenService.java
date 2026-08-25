@@ -6,6 +6,7 @@ import com.heddy.domain.account.model.RefreshSession;
 import com.heddy.domain.account.port.in.AuthTokens;
 import com.heddy.domain.account.port.in.RefreshTokenUseCase;
 import com.heddy.domain.account.port.out.AuthTokenPort;
+import com.heddy.domain.account.port.out.AccountRepositoryPort;
 import com.heddy.domain.account.port.out.RefreshSessionRepositoryPort;
 import com.heddy.domain.account.port.out.SecureTokenGeneratorPort;
 import com.heddy.domain.account.port.out.TokenHasherPort;
@@ -23,6 +24,7 @@ public class RefreshTokenService implements RefreshTokenUseCase {
     private final SecureTokenGeneratorPort secureTokenGeneratorPort;
     private final TokenHasherPort tokenHasherPort;
     private final AuthTokenPort authTokenPort;
+    private final AccountRepositoryPort accountRepositoryPort;
     private final long accessTokenSeconds;
     private final long refreshTokenSeconds;
 
@@ -31,6 +33,7 @@ public class RefreshTokenService implements RefreshTokenUseCase {
             SecureTokenGeneratorPort secureTokenGeneratorPort,
             TokenHasherPort tokenHasherPort,
             AuthTokenPort authTokenPort,
+            AccountRepositoryPort accountRepositoryPort,
             @Value("${app.auth.access-token-seconds}") long accessTokenSeconds,
             @Value("${app.auth.refresh-token-seconds}") long refreshTokenSeconds
     ) {
@@ -38,6 +41,7 @@ public class RefreshTokenService implements RefreshTokenUseCase {
         this.secureTokenGeneratorPort = secureTokenGeneratorPort;
         this.tokenHasherPort = tokenHasherPort;
         this.authTokenPort = authTokenPort;
+        this.accountRepositoryPort = accountRepositoryPort;
         this.accessTokenSeconds = accessTokenSeconds;
         this.refreshTokenSeconds = refreshTokenSeconds;
     }
@@ -55,6 +59,12 @@ public class RefreshTokenService implements RefreshTokenUseCase {
         }
         if (current.isRevoked() || current.isExpiredAt(now)) {
             throw new AccountException(AccountError.REFRESH_TOKEN_INVALID);
+        }
+        if (accountRepositoryPort.findById(current.userId())
+                .map(account -> account.isDeleted())
+                .orElse(true)) {
+            refreshSessionRepositoryPort.revokeAll(current.userId(), now);
+            throw new AccountException(AccountError.ACCOUNT_DELETED);
         }
 
         String nextRawToken = secureTokenGeneratorPort.generate();

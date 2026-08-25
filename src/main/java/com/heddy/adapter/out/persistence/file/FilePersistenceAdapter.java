@@ -59,4 +59,9 @@ public class FilePersistenceAdapter implements FileRepositoryPort {
     public void markReclaimed(UUID fileId, Instant reclaimedAt) {
         repository.markReclaimed(fileId, reclaimedAt);
     }
+
+    @Override
+    public List<StoredFile> findAllByUserId(UUID userId) {
+        return repository.findAllByUserId(userId).stream().map(FileEntity::toDomain).toList();
+    }
 }

@@ -45,7 +45,6 @@ interface FileJpaRepository extends JpaRepository<FileEntity, UUID> {
             @Param("now") Instant now);
 
     Optional<FileEntity> findByUploadId(UUID uploadId);
-
     /**
      * 만료 이후 다시 회수해야 하는 취소 세션. 취소 시점의 객체 삭제는 presigned PUT URL 이
      * 살아 있는 동안 되살아날 수 있어 최종 회수가 아니다. {@code expiresAt} 이 지나야 URL 로
@@ -76,4 +75,6 @@ interface FileJpaRepository extends JpaRepository<FileEntity, UUID> {
                AND f.reclaimedAt IS NULL
             """)
     int markReclaimed(@Param("fileId") UUID fileId, @Param("now") Instant now);
+
+    List<FileEntity> findAllByUserId(UUID userId);
 }

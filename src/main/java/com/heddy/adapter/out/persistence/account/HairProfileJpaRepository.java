@@ -7,4 +7,5 @@ import java.util.UUID;
 
 interface HairProfileJpaRepository extends JpaRepository<HairProfileEntity, UUID> {
     Optional<HairProfileEntity> findByUserId(UUID userId);
+    long deleteByUserId(UUID userId);
 }

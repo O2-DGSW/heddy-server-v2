@@ -98,6 +98,12 @@ public class AccountPersistenceAdapter implements
     }
 
     @Override
+    public void deleteByUserId(UUID userId) {
+        userProfileJpaRepository.deleteByUserId(userId);
+        userProfileJpaRepository.flush();
+    }
+
+    @Override
     public List<ConsentStatus> findLatestByUserId(UUID userId) {
         return consentHistoryJpaRepository.findLatestByUserId(userId).stream()
                 .map(ConsentHistoryEntity::toDomain)

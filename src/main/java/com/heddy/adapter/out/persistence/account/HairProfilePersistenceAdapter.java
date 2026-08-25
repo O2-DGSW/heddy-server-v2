@@ -26,4 +26,10 @@ public class HairProfilePersistenceAdapter implements HairProfileRepositoryPort 
         entity.update(hairProfile);
         return repository.saveAndFlush(entity).toDomain();
     }
+
+    @Override
+    public void deleteByUserId(UUID userId) {
+        repository.deleteByUserId(userId);
+        repository.flush();
+    }
 }

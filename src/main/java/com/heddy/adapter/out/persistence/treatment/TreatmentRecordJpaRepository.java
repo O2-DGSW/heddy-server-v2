@@ -18,12 +18,16 @@ interface TreatmentRecordJpaRepository extends JpaRepository<TreatmentRecordEnti
             SELECT tr.*
             FROM treatment_records tr
             WHERE tr.user_id = :userId
-              AND (:serviceTypesJson IS NULL
+              AND (CAST(:serviceTypesJson AS jsonb) IS NULL
                    OR tr.service_types @> CAST(:serviceTypesJson AS jsonb))
-              AND (:designerName IS NULL OR tr.designer_name = :designerName)
-              AND (:salonName IS NULL OR tr.salon_name = :salonName)
-              AND (:from IS NULL OR tr.performed_at >= :from)
-              AND (:to IS NULL OR tr.performed_at <= :to)
+              AND (CAST(:designerName AS varchar) IS NULL
+                   OR tr.designer_name = CAST(:designerName AS varchar))
+              AND (CAST(:salonName AS varchar) IS NULL
+                   OR tr.salon_name = CAST(:salonName AS varchar))
+              AND (CAST(:from AS timestamptz) IS NULL
+                   OR tr.performed_at >= CAST(:from AS timestamptz))
+              AND (CAST(:to AS timestamptz) IS NULL
+                   OR tr.performed_at <= CAST(:to AS timestamptz))
             ORDER BY
               CASE WHEN :ascending = true THEN tr.performed_at END ASC,
               CASE WHEN :ascending = true THEN tr.record_id END ASC,
@@ -33,12 +37,16 @@ interface TreatmentRecordJpaRepository extends JpaRepository<TreatmentRecordEnti
             SELECT count(*)
             FROM treatment_records tr
             WHERE tr.user_id = :userId
-              AND (:serviceTypesJson IS NULL
+              AND (CAST(:serviceTypesJson AS jsonb) IS NULL
                    OR tr.service_types @> CAST(:serviceTypesJson AS jsonb))
-              AND (:designerName IS NULL OR tr.designer_name = :designerName)
-              AND (:salonName IS NULL OR tr.salon_name = :salonName)
-              AND (:from IS NULL OR tr.performed_at >= :from)
-              AND (:to IS NULL OR tr.performed_at <= :to)
+              AND (CAST(:designerName AS varchar) IS NULL
+                   OR tr.designer_name = CAST(:designerName AS varchar))
+              AND (CAST(:salonName AS varchar) IS NULL
+                   OR tr.salon_name = CAST(:salonName AS varchar))
+              AND (CAST(:from AS timestamptz) IS NULL
+                   OR tr.performed_at >= CAST(:from AS timestamptz))
+              AND (CAST(:to AS timestamptz) IS NULL
+                   OR tr.performed_at <= CAST(:to AS timestamptz))
             """, nativeQuery = true)
     Page<TreatmentRecordEntity> findPage(
             @Param("userId") UUID userId,

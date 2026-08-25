@@ -280,6 +280,33 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.page.has_next").value(false));
     }
 
+    /** 대표 사진은 생성 순서상 첫 번째로 조회 가능한 사진이고, 준비 상태가 아니면 null 이다. */
+    @Test
+    void listsRecordsWithTheFirstAvailableReadyThumbnailOrNone() throws Exception {
+        UUID pending = pendingFile(USER_ID);
+        UUID ready = readyFile(USER_ID);
+        UUID deleted = insertFile(USER_ID, "DELETED");
+        UUID newer = insertRecord(USER_ID, "[\"CUT\"]", "준헤어", "김실장",
+                "2026-08-20T10:00:00Z");
+        insertPhotoRow(newer, pending, "BEFORE", 0);
+        insertPhotoRow(newer, ready, "AFTER", 1);
+        UUID older = insertRecord(USER_ID, "[\"CUT\"]", "준헤어", "김실장",
+                "2026-08-10T10:00:00Z");
+        insertPhotoRow(older, deleted, "BEFORE", 0);
+
+        mockMvc.perform(get("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .param("sort", "performedAt,desc")
+                        .header("X-Request-Id", "request-66"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items", hasSize(2)))
+                .andExpect(jsonPath("$.data.items[0].record_id").value(newer.toString()))
+                .andExpect(jsonPath("$.data.items[0].thumbnail_url",
+                        containsString("X-Amz-Signature")))
+                .andExpect(jsonPath("$.data.items[1].record_id").value(older.toString()))
+                .andExpect(jsonPath("$.data.items[1].thumbnail_url").value(nullValue()));
+    }
+
     @Test
     void rejectsInvalidListRangePageAndSortAsBadRequest() throws Exception {
         mockMvc.perform(get("/treatment-records")

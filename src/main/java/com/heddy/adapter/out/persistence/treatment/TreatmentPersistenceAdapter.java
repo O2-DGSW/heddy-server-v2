@@ -10,7 +10,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -73,8 +76,10 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
                 filter.userId(), serviceTypesJson, filter.designerName(), filter.salonName(),
                 filter.from(), filter.to(), filter.ascending(),
                 PageRequest.of(filter.page(), filter.size()));
+        Map<UUID, List<TreatmentPhoto>> photosByRecord = photosOf(result.getContent());
         List<TreatmentRecord> records = result.getContent().stream()
-                .map(entity -> entity.toDomain(photosOf(entity.recordId())))
+                .map(entity -> entity.toDomain(
+                        photosByRecord.getOrDefault(entity.recordId(), List.of())))
                 .toList();
         return new TreatmentRecordPage(records, result.getTotalElements());
     }
@@ -107,5 +112,26 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
         return photoRepository.findByRecordIdOrderBySortOrderAscCreatedAtAscPhotoIdAsc(recordId).stream()
                 .map(TreatmentPhotoEntity::toDomain)
                 .toList();
+    }
+
+    /**
+     * 페이지에 속한 기록들의 사진을 질의 한 번으로 읽어 기록별로 모은다. 기록마다 사진을 다시
+     * 읽으면 페이지 크기만큼 질의가 늘어나므로(#66) IN 조회 하나로 고정한다. 개별 기록과 같은
+     * 정렬 규칙이므로 기록별 상대 순서는 유지된다.
+     */
+    private Map<UUID, List<TreatmentPhoto>> photosOf(List<TreatmentRecordEntity> records) {
+        if (records.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> recordIds = records.stream()
+                .map(TreatmentRecordEntity::recordId)
+                .toList();
+        Map<UUID, List<TreatmentPhoto>> grouped = new LinkedHashMap<>();
+        for (TreatmentPhotoEntity entity : photoRepository
+                .findByRecordIdInOrderBySortOrderAscCreatedAtAscPhotoIdAsc(recordIds)) {
+            grouped.computeIfAbsent(entity.recordId(), ignored -> new ArrayList<>())
+                    .add(entity.toDomain());
+        }
+        return grouped;
     }
 }

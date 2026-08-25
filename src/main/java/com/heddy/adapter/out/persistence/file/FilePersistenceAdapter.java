@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,6 +40,15 @@ public class FilePersistenceAdapter implements FileRepositoryPort {
     @Override
     public Optional<StoredFile> findById(UUID fileId) {
         return repository.findById(fileId).map(FileEntity::toDomain);
+    }
+
+    @Override
+    public List<StoredFile> findAllById(Collection<UUID> fileIds) {
+        // 빈 IN 절은 질의를 날리지 않는다 — 목록의 빈 페이지가 파일 조회 없이 끝난다.
+        if (fileIds.isEmpty()) {
+            return List.of();
+        }
+        return repository.findAllById(fileIds).stream().map(FileEntity::toDomain).toList();
     }
 
     @Override

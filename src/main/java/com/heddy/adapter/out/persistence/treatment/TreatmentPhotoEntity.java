@@ -50,6 +50,11 @@ class TreatmentPhotoEntity extends BaseEntity {
         sortOrder = photo.sortOrder();
     }
 
+    /** 페이지 조립이 사진을 기록별로 모을 때 쓴다(#66). */
+    UUID recordId() {
+        return recordId;
+    }
+
     TreatmentPhoto toDomain() {
         return new TreatmentPhoto(
                 photoId, recordId, fileId, imageType, sortOrder, getCreatedAt());

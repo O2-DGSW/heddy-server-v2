@@ -6,6 +6,9 @@ import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
 import com.heddy.domain.treatment.model.TreatmentRecordFilter;
 import com.heddy.support.PostgresIntegrationTest;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +33,7 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
 
     @Autowired TreatmentPersistenceAdapter adapter;
     @Autowired JdbcTemplate jdbcTemplate;
+    @Autowired EntityManagerFactory entityManagerFactory;
 
     @BeforeEach
     void setUpOwner() {
@@ -183,6 +187,44 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
                 .containsExactly(newer.recordId());
         assertThat(secondPage.items()).extracting(TreatmentRecord::recordId)
                 .containsExactly(older.recordId());
+    }
+
+    /** 페이지 조립의 질의 횟수는 페이지 크기와 무관하게 고정이다 — N+1(#66)이 돌아오면 실패한다. */
+    @Test
+    void loadsAPageWithAFixedNumberOfQueriesRegardlessOfItsSize() {
+        TreatmentRecord newer = adapter.insert(TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
+                null, null, null, null));
+        adapter.insertPhoto(TreatmentPhoto.create(
+                newer.recordId(), newFile(), ImageType.BEFORE, 0));
+        adapter.insertPhoto(TreatmentPhoto.create(
+                newer.recordId(), newFile(), ImageType.AFTER, 1));
+        TreatmentRecord older = adapter.insert(TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT.minusSeconds(3_600),
+                null, null, null, null));
+        adapter.insertPhoto(TreatmentPhoto.create(
+                older.recordId(), newFile(), ImageType.AFTER));
+
+        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+        try {
+            var page = adapter.findPage(new TreatmentRecordFilter(
+                    USER_ID, ServiceType.CUT, null, null,
+                    PERFORMED_AT.minusSeconds(7_200), PERFORMED_AT.plusSeconds(1),
+                    0, 2, false));
+
+            assertThat(page.items()).extracting(TreatmentRecord::recordId)
+                    .containsExactly(newer.recordId(), older.recordId());
+            assertThat(page.items().get(0).photos()).hasSize(2);
+            assertThat(page.items().get(1).photos()).hasSize(1);
+            // 페이지 조회 + 개수 + 사진 IN 조회 = 3 문. 기록마다 사진을 다시 읽던 구조라면
+            // 페이지 크기만큼 더 늘어난다.
+            assertThat(statistics.getPrepareStatementCount()).isEqualTo(3L);
+        } finally {
+            statistics.setStatisticsEnabled(false);
+            statistics.clear();
+        }
     }
 
     @Test

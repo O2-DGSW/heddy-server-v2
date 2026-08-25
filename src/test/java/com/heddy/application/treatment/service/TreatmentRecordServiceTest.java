@@ -41,10 +41,13 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class TreatmentRecordServiceTest {
@@ -254,8 +257,8 @@ class TreatmentRecordServiceTest {
                 null, null, null, List.of(photo), Instant.now());
         given(recordRepositoryPort.findPage(any()))
                 .willReturn(new TreatmentRecordPage(List.of(record), 3));
-        given(fileRepositoryPort.findById(photo.fileId()))
-                .willReturn(Optional.of(readyFile(photo.fileId())));
+        given(fileRepositoryPort.findAllById(List.of(photo.fileId())))
+                .willReturn(List.of(readyFile(photo.fileId())));
         URI signed = URI.create("https://bucket.s3.example/thumbnail?X-Amz-Signature=s");
         given(fileStoragePort.createDownloadUrl(any())).willReturn(signed);
 
@@ -275,6 +278,70 @@ class TreatmentRecordServiceTest {
         assertThat(filter.getValue().designerName()).isEqualTo("김실장");
         assertThat(filter.getValue().salonName()).isEqualTo("준헤어");
         assertThat(filter.getValue().ascending()).isTrue();
+        // 페이지 조립은 파일을 질의 한 번으로 읽는다. 건별 재조회(#66)가 남아 있으면 실패한다.
+        verify(fileRepositoryPort).findAllById(anyCollection());
+        verify(fileRepositoryPort, never()).findById(any());
+        verifyNoMoreInteractions(fileRepositoryPort);
+    }
+
+    /** 첫 사진의 파일이 준비 상태가 아니면 그다음 사진이 대표가 된다 — 기존 선택 규칙 그대로다. */
+    @Test
+    void fallsBackToTheNextPhotoWhenTheFirstThumbnailsFileIsUnusable() {
+        UUID recordId = UUID.randomUUID();
+        TreatmentPhoto pending = photoOf(recordId, ImageType.BEFORE, 0);
+        TreatmentPhoto ready = photoOf(recordId, ImageType.AFTER, 1);
+        TreatmentRecord record = recordWithPhotos(recordId, List.of(pending, ready));
+        given(recordRepositoryPort.findPage(any()))
+                .willReturn(new TreatmentRecordPage(List.of(record), 1));
+        given(fileRepositoryPort.findAllById(any())).willReturn(List.of(readyFile(ready.fileId())));
+        URI signed = URI.create("https://bucket.s3.example/fallback?X-Amz-Signature=s");
+        given(fileStoragePort.createDownloadUrl(any())).willReturn(signed);
+
+        var result = service.list(listQuery());
+
+        assertThat(result.items().get(0).thumbnailUrl()).isEqualTo(signed);
+        verify(fileStoragePort, times(1)).createDownloadUrl(any());
+    }
+
+    /** 같은 파일이 여러 기록의 대표 사진이어도 서명은 한 번만 발급한다(#66). */
+    @Test
+    void signsASharedThumbnailFileOnceEvenWhenSeveralRecordsUseIt() {
+        UUID sharedFileId = UUID.randomUUID();
+        UUID firstId = UUID.randomUUID();
+        UUID secondId = UUID.randomUUID();
+        TreatmentRecord first = recordWithPhotos(firstId,
+                List.of(photoWithFile(firstId, sharedFileId, ImageType.BEFORE)));
+        TreatmentRecord second = recordWithPhotos(secondId,
+                List.of(photoWithFile(secondId, sharedFileId, ImageType.AFTER)));
+        given(recordRepositoryPort.findPage(any()))
+                .willReturn(new TreatmentRecordPage(List.of(first, second), 2));
+        given(fileRepositoryPort.findAllById(List.of(sharedFileId)))
+                .willReturn(List.of(readyFile(sharedFileId)));
+        URI signed = URI.create("https://bucket.s3.example/shared?X-Amz-Signature=s");
+        given(fileStoragePort.createDownloadUrl(any())).willReturn(signed);
+
+        var result = service.list(listQuery());
+
+        assertThat(result.items()).extracting(ListTreatmentRecordsUseCase.Item::thumbnailUrl)
+                .containsExactly(signed, signed);
+        verify(fileStoragePort, times(1)).createDownloadUrl(any());
+    }
+
+    /** 모든 대표 후보 파일이 준비 상태가 아니면 URL 없이 응답한다 — 스토리지는 건드리지 않는다. */
+    @Test
+    void leavesThumbnailsEmptyWhenNoCandidateFileIsReady() {
+        UUID recordId = UUID.randomUUID();
+        TreatmentPhoto deleted = photoOf(recordId, ImageType.BEFORE, 0);
+        TreatmentRecord record = recordWithPhotos(recordId, List.of(deleted));
+        given(recordRepositoryPort.findPage(any()))
+                .willReturn(new TreatmentRecordPage(List.of(record), 1));
+        given(fileRepositoryPort.findAllById(any()))
+                .willReturn(List.of(fileInStatus(deleted.fileId(), FileStatus.DELETED)));
+
+        var result = service.list(listQuery());
+
+        assertThat(result.items().get(0).thumbnailUrl()).isNull();
+        verifyNoInteractions(fileStoragePort);
     }
 
     @Test
@@ -568,6 +635,21 @@ class TreatmentRecordServiceTest {
         return new TreatmentRecord(
                 recordId, USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
                 5, null, null, null, null, "다음 방문 주의", photos, Instant.now());
+    }
+
+    private ListTreatmentRecordsUseCase.Query listQuery() {
+        return new ListTreatmentRecordsUseCase.Query(
+                USER_ID, null, null, null, null, null, 0, 20, "performedAt,desc");
+    }
+
+    private TreatmentPhoto photoOf(UUID recordId, ImageType imageType, int sortOrder) {
+        return new TreatmentPhoto(UUID.randomUUID(), recordId, UUID.randomUUID(),
+                imageType, sortOrder, Instant.now());
+    }
+
+    private TreatmentPhoto photoWithFile(UUID recordId, UUID fileId, ImageType imageType) {
+        return new TreatmentPhoto(UUID.randomUUID(), recordId, fileId,
+                imageType, Instant.now());
     }
 
     private StoredFile readyFileOwnedBy(UUID fileId, UUID userId) {

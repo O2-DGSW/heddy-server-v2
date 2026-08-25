@@ -29,8 +29,26 @@ public interface CreateTreatmentRecordUseCase {
             Long priceAmount,
             String priceCurrency,
             UUID appointmentId,
+            String memo,
+            String nextVisitCautions,
             List<Photo> photos
     ) {
+        public Command(
+                UUID userId,
+                Set<ServiceType> serviceTypes,
+                String salonName,
+                String designerName,
+                Instant performedAt,
+                Integer satisfaction,
+                Long priceAmount,
+                String priceCurrency,
+                UUID appointmentId,
+                List<Photo> photos
+        ) {
+            this(userId, serviceTypes, salonName, designerName, performedAt, satisfaction,
+                    priceAmount, priceCurrency, appointmentId, null, null, photos);
+        }
+
         public record Photo(UUID fileId, ImageType imageType) {
         }
     }

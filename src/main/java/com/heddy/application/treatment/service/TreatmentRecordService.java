@@ -61,7 +61,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         TreatmentRecord record = TreatmentRecord.create(
                 command.userId(), command.serviceTypes(), command.salonName(), command.designerName(),
                 command.performedAt(), command.satisfaction(), command.priceAmount(),
-                command.priceCurrency(), command.appointmentId());
+                command.priceCurrency(), command.appointmentId(), command.memo(),
+                command.nextVisitCautions());
         for (CreateTreatmentRecordUseCase.Command.Photo photo : command.photos()) {
             requireOwnedReadyFile(command.userId(), photo.fileId());
             record = record.attachPhoto(

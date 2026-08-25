@@ -41,6 +41,12 @@ public record TreatmentRecordResponse(
         @Schema(description = "연결된 예약 식별자. 없으면 비어 있다")
         @JsonProperty("appointment_id") UUID appointmentId,
 
+        @Schema(description = "개인 메모. 없으면 비어 있다")
+        String memo,
+
+        @Schema(description = "다음 방문 시 주의사항. 없으면 비어 있다")
+        @JsonProperty("next_visit_cautions") String nextVisitCautions,
+
         @Schema(description = "기록 생성 시각")
         @JsonProperty("created_at") Instant createdAt,
 
@@ -119,6 +125,7 @@ public record TreatmentRecordResponse(
                 record.performedAt(), record.satisfaction(),
                 record.priceAmount() == null ? null
                         : new Price(record.priceAmount(), record.priceCurrency()),
-                record.appointmentId(), record.createdAt(), photos);
+                record.appointmentId(), record.memo(), record.nextVisitCautions(),
+                record.createdAt(), photos);
     }
 }

@@ -46,6 +46,11 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: heddy-v2-postgres
+    # SSH 터널 경로의 DB 클라이언트 접속용이다. 보안그룹에서 5432 가 0.0.0.0/0 으로
+    # 열려 있으므로 호스트 전체 바인딩하면 DB 가 공인 인터넷에 노출된다.
+    # 127.0.0.1 로 묶어 SSH 터널을 통해서만 접근 가능하게 한다.
+    ports:
+      - "127.0.0.1:5432:5432"
     restart: unless-stopped
     # DB 이름은 고정(heddy_v2)이고 계정·비밀번호는 app 의 DB_USERNAME · DB_PASSWORD 와
     # 같은 변수를 쓰므로 양쪽 값이 어긋날 수 없다. DB_URL 은

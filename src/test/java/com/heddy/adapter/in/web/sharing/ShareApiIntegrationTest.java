@@ -21,8 +21,11 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -253,6 +256,145 @@ class ShareApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    // ------------------------------------------------------------------ 상세·수정·철회
+
+    @Test
+    void readsBackOwnedShareDetailWithTargets() throws Exception {
+        UUID recordId = insertRecord(USER_ID);
+        String created = createShare(recordId);
+        String shareId = shareIdOf(created);
+
+        mockMvc.perform(get("/shares/" + shareId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .header("X-Request-Id", "request-50"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.share_id").value(shareId))
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.data.fields", containsInAnyOrder("PHOTOS")))
+                .andExpect(jsonPath("$.data.record_ids", hasSize(1)))
+                .andExpect(jsonPath("$.data.saved_style_ids", hasSize(0)))
+                .andExpect(jsonPath("$.data.revoked_at").isEmpty())
+                .andExpect(jsonPath("$.request_id").value("request-50"));
+    }
+
+    @Test
+    void patchesOnlyPresentedFieldsAndKeepsTargets() throws Exception {
+        UUID recordId = insertRecord(USER_ID);
+        String created = createShare(recordId);
+        String shareId = shareIdOf(created);
+
+        mockMvc.perform(patch("/shares/" + shareId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fields\":[\"MEMO\",\"CAUTIONS\"]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.fields",
+                        containsInAnyOrder("MEMO", "CAUTIONS")))
+                .andExpect(jsonPath("$.data.expires_at").isNotEmpty());
+
+        mockMvc.perform(patch("/shares/" + shareId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"expires_at\":\"2027-01-01T00:00:00Z\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.expires_at").value("2027-01-01T00:00:00Z"))
+                .andExpect(jsonPath("$.data.fields",
+                        containsInAnyOrder("MEMO", "CAUTIONS")))
+                .andExpect(jsonPath("$.data.record_ids", hasSize(1)));
+    }
+
+    @Test
+    void rejectsPatchWithEmptyFieldsOrPastExpiryAs422() throws Exception {
+        UUID recordId = insertRecord(USER_ID);
+        String shareId = shareIdOf(createShare(recordId));
+
+        mockMvc.perform(patch("/shares/" + shareId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fields\":[]}"))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("SHARE_EMPTY_SELECTION"));
+
+        mockMvc.perform(patch("/shares/" + shareId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"expires_at\":\"2020-01-01T00:00:00Z\"}"))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code")
+                        .value("SHARING_EXPIRES_AT_NOT_FUTURE"));
+    }
+
+    @Test
+    void revokesImmediatelyAndKeepsTheRow() throws Exception {
+        UUID recordId = insertRecord(USER_ID);
+        String shareId = shareIdOf(createShare(recordId));
+
+        mockMvc.perform(delete("/shares/" + shareId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM shares WHERE share_id = ?",
+                String.class, UUID.fromString(shareId))).isEqualTo("REVOKED");
+        Integer rows = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM shares WHERE share_id = ? AND revoked_at IS NOT NULL",
+                Integer.class, UUID.fromString(shareId));
+        assertThat(rows).isEqualTo(1);
+
+        // 철회는 멱등이다.
+        mockMvc.perform(delete("/shares/" + shareId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void hidesForeignShareDuringGetPatchAndDelete() throws Exception {
+        UUID recordId = insertRecord(USER_ID);
+        String shareId = shareIdOf(createShare(recordId));
+
+        mockMvc.perform(get("/shares/" + shareId)
+                        .with(authentication(userAuthentication(OTHER_USER_ID))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+
+        mockMvc.perform(patch("/shares/" + shareId)
+                        .with(authentication(userAuthentication(OTHER_USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fields\":[\"MEMO\"]}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+
+        mockMvc.perform(delete("/shares/" + shareId)
+                        .with(authentication(userAuthentication(OTHER_USER_ID))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+
+        // 남의 요청으로 행이 바뀌지 않았다.
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM shares WHERE share_id = ?",
+                String.class, UUID.fromString(shareId))).isEqualTo("ACTIVE");
+    }
+
+    @Test
+    void answers404ForUnknownShareOnDetailPatchAndDelete() throws Exception {
+        String unknown = UUID.randomUUID().toString();
+
+        mockMvc.perform(get("/shares/" + unknown)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(patch("/shares/" + unknown)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(delete("/shares/" + unknown)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNotFound());
+    }
+
     // ------------------------------------------------------------------ 헬퍼
 
     private String createShare(UUID recordId) throws Exception {
@@ -270,6 +412,11 @@ class ShareApiIntegrationTest extends PostgresIntegrationTest {
                 {"record_ids":["%s"],"fields":["PHOTOS"]%s}
                 """.formatted(recordId,
                 expiresInDays == null ? "" : ",\"expires_in_days\":" + expiresInDays);
+    }
+
+    private String shareIdOf(String createdBody) throws Exception {
+        return new ObjectMapper().readTree(createdBody)
+                .path("data").path("share_id").asText();
     }
 
     private UsernamePasswordAuthenticationToken userAuthentication(UUID userId) {

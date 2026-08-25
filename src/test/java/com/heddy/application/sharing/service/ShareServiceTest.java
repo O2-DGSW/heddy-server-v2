@@ -9,7 +9,10 @@ import com.heddy.domain.sharing.model.ShareFieldType;
 import com.heddy.domain.sharing.model.SharePage;
 import com.heddy.domain.sharing.model.ShareStatus;
 import com.heddy.domain.sharing.port.in.CreateShareUseCase;
+import com.heddy.domain.sharing.port.in.DeleteShareUseCase;
+import com.heddy.domain.sharing.port.in.GetShareUseCase;
 import com.heddy.domain.sharing.port.in.ListSharesUseCase;
+import com.heddy.domain.sharing.port.in.UpdateShareUseCase;
 import com.heddy.domain.sharing.port.out.ShareRepositoryPort;
 import com.heddy.domain.treatment.model.TreatmentRecord;
 import com.heddy.domain.treatment.model.ServiceType;
@@ -36,6 +39,7 @@ import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
@@ -172,14 +176,129 @@ class ShareServiceTest {
     @Test
     void rejectsInvalidPagingAsBadRequest() {
         assertThatThrownBy(() -> service.list(
-                new ListSharesUseCase.Query(USER_ID, null, -1, 20)))
+                        new ListSharesUseCase.Query(USER_ID, null, -1, 20)))
                 .isInstanceOfSatisfying(ApplicationException.class, e ->
                         assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST));
         assertThatThrownBy(() -> service.list(
-                new ListSharesUseCase.Query(USER_ID, null, 0, 101)))
+                        new ListSharesUseCase.Query(USER_ID, null, 0, 101)))
                 .isInstanceOfSatisfying(ApplicationException.class, e ->
                         assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST));
         then(shareRepositoryPort).shouldHaveNoInteractions();
+    }
+
+    // ------------------------------------------------------------------ 상세·수정·철회
+
+    @Test
+    void getsOwnShareThroughTheOwnerScopedQuery() {
+        Share stored = share(ShareStatus.ACTIVE);
+        given(shareRepositoryPort.findByIdAndUserId(stored.shareId(), USER_ID))
+                .willReturn(Optional.of(stored));
+
+        assertThat(service.get(new GetShareUseCase.Query(USER_ID, stored.shareId())))
+                .isSameAs(stored);
+    }
+
+    @Test
+    void hidesForeignShareDuringGetUpdateAndDelete() {
+        UUID shareId = UUID.randomUUID();
+        given(shareRepositoryPort.findByIdAndUserId(shareId, USER_ID))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.get(new GetShareUseCase.Query(USER_ID, shareId)))
+                .isInstanceOfSatisfying(ApplicationException.class, e ->
+                        assertThat(e.getErrorCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND));
+        assertThatThrownBy(() -> service.update(updateCommand(USER_ID, shareId)))
+                .isInstanceOfSatisfying(ApplicationException.class, e ->
+                        assertThat(e.getErrorCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND));
+        assertThatThrownBy(() -> service.delete(
+                        new DeleteShareUseCase.Command(USER_ID, shareId)))
+                .isInstanceOfSatisfying(ApplicationException.class, e ->
+                        assertThat(e.getErrorCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND));
+        then(shareRepositoryPort).should(never()).update(any());
+    }
+
+    @Test
+    void patchesOnlyPresentedFieldsKeepingTargetsUntouched() {
+        Share current = share(ShareStatus.ACTIVE);
+        given(shareRepositoryPort.findByIdAndUserId(current.shareId(), USER_ID))
+                .willReturn(Optional.of(current));
+        given(shareRepositoryPort.update(any()))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        Instant newExpiresAt = Instant.now().plusSeconds(30 * 86_400);
+        Share updated = service.update(new UpdateShareUseCase.Command(
+                USER_ID, current.shareId(),
+                UpdateShareUseCase.Patch.present(Set.of(ShareFieldType.MEMO)),
+                UpdateShareUseCase.Patch.present(newExpiresAt)));
+
+        assertThat(updated.fields()).containsExactly(ShareFieldType.MEMO);
+        assertThat(updated.expiresAt()).isEqualTo(newExpiresAt);
+        // 대상과 토큰은 수정 범위가 아니다.
+        assertThat(updated.recordIds()).isEqualTo(current.recordIds());
+        assertThat(updated.savedStyleIds()).isEqualTo(current.savedStyleIds());
+        assertThat(updated.tokenHash()).isEqualTo(current.tokenHash());
+    }
+
+    @Test
+    void patchWithoutAnyPresentedFieldKeepsEverything() {
+        Share current = share(ShareStatus.ACTIVE);
+        given(shareRepositoryPort.findByIdAndUserId(current.shareId(), USER_ID))
+                .willReturn(Optional.of(current));
+        given(shareRepositoryPort.update(any()))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        Share updated = service.update(new UpdateShareUseCase.Command(
+                USER_ID, current.shareId(),
+                UpdateShareUseCase.Patch.absent(), UpdateShareUseCase.Patch.absent()));
+
+        assertThat(updated).usingRecursiveComparison().isEqualTo(current);
+    }
+
+    @Test
+    void refusesPatchToPastExpiryThroughTheDomain() {
+        Share current = share(ShareStatus.ACTIVE);
+        given(shareRepositoryPort.findByIdAndUserId(current.shareId(), USER_ID))
+                .willReturn(Optional.of(current));
+
+        assertThatThrownBy(() -> service.update(new UpdateShareUseCase.Command(
+                USER_ID, current.shareId(),
+                UpdateShareUseCase.Patch.absent(),
+                UpdateShareUseCase.Patch.present(Instant.now().minusSeconds(60)))))
+                .isInstanceOfSatisfying(SharingException.class, e ->
+                        assertThat(e.error()).isEqualTo(SharingError.EXPIRES_AT_NOT_FUTURE));
+        then(shareRepositoryPort).should(never()).update(any());
+    }
+
+    @Test
+    void revokesInsteadOfDeletingTheRow() {
+        Share current = share(ShareStatus.ACTIVE);
+        given(shareRepositoryPort.findByIdAndUserId(current.shareId(), USER_ID))
+                .willReturn(Optional.of(current));
+
+        service.delete(new DeleteShareUseCase.Command(USER_ID, current.shareId()));
+
+        ArgumentCaptor<Share> captor = ArgumentCaptor.forClass(Share.class);
+        then(shareRepositoryPort).should().update(captor.capture());
+        assertThat(captor.getValue().status()).isEqualTo(ShareStatus.REVOKED);
+        assertThat(captor.getValue().revokedAt()).isNotNull();
+    }
+
+    @Test
+    void deletingAnAlreadyRevokedShareStaysQuiet() {
+        // DB 에서 읽은 철회 행은 철회 시각을 이미 갖고 있다. 다시 DELETE 해도 그 값이 유지된다.
+        Instant revokedAt = Instant.now().minusSeconds(60);
+        Share revoked = Share.reconstitute(UUID.randomUUID(), USER_ID, TOKEN_HASH,
+                ShareStatus.REVOKED, Instant.now().plusSeconds(86_400), revokedAt,
+                Set.of(UUID.randomUUID()), Set.of(ShareFieldType.PHOTOS), Set.of(),
+                Instant.now());
+        given(shareRepositoryPort.findByIdAndUserId(revoked.shareId(), USER_ID))
+                .willReturn(Optional.of(revoked));
+
+        service.delete(new DeleteShareUseCase.Command(USER_ID, revoked.shareId()));
+
+        ArgumentCaptor<Share> captor = ArgumentCaptor.forClass(Share.class);
+        then(shareRepositoryPort).should().update(captor.capture());
+        assertThat(captor.getValue().revokedAt()).isEqualTo(revokedAt);
     }
 
     // ------------------------------------------------------------------ 헬퍼
@@ -189,6 +308,11 @@ class ShareServiceTest {
             Integer expiresInDays) {
         return new CreateShareUseCase.Command(
                 USER_ID, recordIds, savedStyleIds, fields, expiresInDays);
+    }
+
+    private UpdateShareUseCase.Command updateCommand(UUID requesterId, UUID shareId) {
+        return new UpdateShareUseCase.Command(requesterId, shareId,
+                UpdateShareUseCase.Patch.absent(), UpdateShareUseCase.Patch.absent());
     }
 
     private Set<ShareFieldType> fields() {

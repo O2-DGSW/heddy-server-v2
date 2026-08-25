@@ -28,6 +28,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -204,6 +205,30 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                         containsString("X-Amz-Signature")));
     }
 
+    /**
+     * READY 가 아닌 파일의 사진은 URL 을 발급하지 못한다. 이때 photo_url 은 생략되는 게 아니라
+     * null 로 내려가야 한다 — 클라이언트가 "사진은 있는데 지금은 볼 수 없다"를 구분해야 한다.
+     */
+    @Test
+    void keepsPhotoUrlNullForFilesThatAreNotReady() throws Exception {
+        UUID pending = pendingFile(USER_ID);
+        UUID deleted = insertFile(USER_ID, "DELETED");
+        UUID recordId = insertRecordRow(USER_ID);
+        insertPhotoRow(recordId, pending, "BEFORE", 0);
+        insertPhotoRow(recordId, deleted, "AFTER", 1);
+
+        mockMvc.perform(get("/treatment-records/" + recordId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.photos", hasSize(2)))
+                .andExpect(jsonPath("$.data.photos[0].image_type").value("BEFORE"))
+                .andExpect(jsonPath("$.data.photos[0].photo_url").hasJsonPath())
+                .andExpect(jsonPath("$.data.photos[0].photo_url").value(nullValue()))
+                .andExpect(jsonPath("$.data.photos[1].image_type").value("AFTER"))
+                .andExpect(jsonPath("$.data.photos[1].photo_url").hasJsonPath())
+                .andExpect(jsonPath("$.data.photos[1].photo_url").value(nullValue()));
+    }
+
     /** 타인 기록은 존재 여부를 노출하지 않게 없는 기록과 같은 404 다(#31). 403 이 아니다. */
     @Test
     void hidesAnotherUsersRecordBehindResourceNotFound() throws Exception {
@@ -312,6 +337,25 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
 
     private UUID pendingFile(UUID ownerId) {
         return insertFile(ownerId, "PENDING");
+    }
+
+    private UUID insertRecordRow(UUID ownerId) {
+        UUID recordId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO treatment_records (
+                    record_id, user_id, service_types, performed_at
+                ) VALUES (?, ?, ?::jsonb, now())
+                """, recordId, ownerId, "[\"CUT\"]");
+        return recordId;
+    }
+
+    /** 사진 순서는 created_at 순이다. now() 는 트랜잭션 시각으로 고정이라 초를 벌려 심는다. */
+    private void insertPhotoRow(UUID recordId, UUID fileId, String imageType, int order) {
+        jdbcTemplate.update("""
+                INSERT INTO treatment_record_photos (
+                    photo_id, record_id, file_id, image_type, created_at
+                ) VALUES (?, ?, ?, ?, now() + (? * interval '1 second'))
+                """, UUID.randomUUID(), recordId, fileId, imageType, order);
     }
 
     private UUID insertFile(UUID ownerId, String status) {

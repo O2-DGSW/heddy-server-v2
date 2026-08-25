@@ -21,6 +21,12 @@ public interface TreatmentRecordRepositoryPort {
      */
     TreatmentPhoto insertPhoto(TreatmentPhoto photo);
 
+    /** 사진 유형과 표시 순서를 저장한다. */
+    Optional<TreatmentPhoto> updatePhoto(TreatmentPhoto photo);
+
+    /** 사진 연결 한 건을 삭제한다. */
+    boolean deletePhoto(UUID photoId);
+
     /**
      * 소유자 조건까지 걸어 기록을 사진(생성 시각순)과 함께 조회한다.
      *
@@ -28,6 +34,9 @@ public interface TreatmentRecordRepositoryPort {
      * 질의 횟수로 존재 여부가 새어 나간다. 그래서 포트 자체가 소유자 조건을 받는다.
      */
     Optional<TreatmentRecord> findByIdAndUserId(UUID recordId, UUID userId);
+
+    /** 사진 추가 상한을 직렬화하기 위해 기록 행을 쓰기 잠금으로 조회한다. */
+    Optional<TreatmentRecord> findByIdForUpdate(UUID recordId);
 
     /** 소유자 조건을 항상 포함해 필터·페이지 조건에 맞는 기록을 조회한다. */
     TreatmentRecordPage findPage(TreatmentRecordFilter filter);

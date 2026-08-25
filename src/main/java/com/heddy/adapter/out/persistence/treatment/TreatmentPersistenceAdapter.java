@@ -36,9 +36,32 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
     }
 
     @Override
+    public Optional<TreatmentPhoto> updatePhoto(TreatmentPhoto photo) {
+        return photoRepository.findById(photo.photoId()).map(entity -> {
+            entity.update(photo);
+            return photoRepository.saveAndFlush(entity).toDomain();
+        });
+    }
+
+    @Override
+    public boolean deletePhoto(UUID photoId) {
+        boolean deleted = photoRepository.deleteByPhotoId(photoId) == 1;
+        if (deleted) {
+            photoRepository.flush();
+        }
+        return deleted;
+    }
+
+    @Override
     public Optional<TreatmentRecord> findByIdAndUserId(UUID recordId, UUID userId) {
         // 소유자 조건을 질의에 실어 보낸다. 남의 기록이면 사진을 읽기 전에 빈 값이 된다.
         return recordRepository.findByRecordIdAndUserId(recordId, userId)
+                .map(entity -> entity.toDomain(photosOf(recordId)));
+    }
+
+    @Override
+    public Optional<TreatmentRecord> findByIdForUpdate(UUID recordId) {
+        return recordRepository.findByIdForUpdate(recordId)
                 .map(entity -> entity.toDomain(photosOf(recordId)));
     }
 
@@ -75,7 +98,7 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
     }
 
     private List<TreatmentPhoto> photosOf(UUID recordId) {
-        return photoRepository.findByRecordIdOrderByCreatedAtAscPhotoIdAsc(recordId).stream()
+        return photoRepository.findByRecordIdOrderBySortOrderAscCreatedAtAscPhotoIdAsc(recordId).stream()
                 .map(TreatmentPhotoEntity::toDomain)
                 .toList();
     }

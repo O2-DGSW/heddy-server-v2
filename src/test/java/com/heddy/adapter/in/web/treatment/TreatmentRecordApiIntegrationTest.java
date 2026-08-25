@@ -467,6 +467,119 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
     }
 
+    // ------------------------------------------------------------------ 사진 관리·비교
+
+    @Test
+    void addsUpdatesAndDeletesPhoto() throws Exception {
+        String recordId = createRecord(USER_ID);
+        UUID fileId = readyFile(USER_ID);
+        String added = mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"file_id":"%s","image_type":"BEFORE","sort_order":2}
+                                """.formatted(fileId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.record_id").value(recordId))
+                .andExpect(jsonPath("$.data.image_type").value("BEFORE"))
+                .andExpect(jsonPath("$.data.sort_order").value(2))
+                .andExpect(jsonPath("$.data.display_url", containsString("X-Amz-Signature")))
+                .andReturn().getResponse().getContentAsString();
+        String photoId = new ObjectMapper().readTree(added).path("data").path("photo_id").asText();
+
+        mockMvc.perform(patch("/treatment-records/" + recordId + "/photos/" + photoId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"image_type\":\"AFTER\",\"sort_order\":1}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.image_type").value("AFTER"))
+                .andExpect(jsonPath("$.data.sort_order").value(1));
+
+        mockMvc.perform(delete("/treatment-records/" + recordId + "/photos/" + photoId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM treatment_record_photos WHERE photo_id = ?",
+                Integer.class, UUID.fromString(photoId))).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM files WHERE file_id = ?", String.class, fileId))
+                .isEqualTo("DELETED");
+    }
+
+    @Test
+    void comparesBeforeAndAfterPhotosAndRejectsIncompletePair() throws Exception {
+        UUID before = readyFile(USER_ID);
+        UUID after = readyFile(USER_ID);
+        String created = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody("2026-08-01T10:00:00Z", photoRefs(before, after))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String recordId = new ObjectMapper().readTree(created).path("data").path("record_id").asText();
+
+        mockMvc.perform(get("/treatment-records/" + recordId + "/photo-comparison")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.record_id").value(recordId))
+                .andExpect(jsonPath("$.data.before_photos", hasSize(1)))
+                .andExpect(jsonPath("$.data.before_photos[0].sort_order").value(0))
+                .andExpect(jsonPath("$.data.before_photos[0].display_url",
+                        containsString("X-Amz-Signature")))
+                .andExpect(jsonPath("$.data.after_photos", hasSize(1)))
+                .andExpect(jsonPath("$.data.after_photos[0].sort_order").value(1))
+                .andExpect(jsonPath("$.data.treatment_summary.service_types",
+                        containsInAnyOrder("CUT", "COLOR")))
+                .andExpect(jsonPath("$.data.treatment_summary.satisfaction").value(4))
+                .andExpect(jsonPath("$.data.treatment_summary.next_visit_cautions")
+                        .value("기존 주의사항"));
+
+        UUID onlyBefore = readyFile(USER_ID);
+        String incomplete = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody("2026-08-02T10:00:00Z", photoRefs(onlyBefore))))
+                .andReturn().getResponse().getContentAsString();
+        String incompleteId = new ObjectMapper().readTree(incomplete)
+                .path("data").path("record_id").asText();
+        mockMvc.perform(get("/treatment-records/" + incompleteId + "/photo-comparison")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code")
+                        .value("PHOTO_COMPARISON_NOT_AVAILABLE"));
+    }
+
+    @Test
+    void enforcesTenPhotoLimitAndHidesForeignPhotoResources() throws Exception {
+        UUID[] firstTen = new UUID[10];
+        for (int index = 0; index < firstTen.length; index++) {
+            firstTen[index] = readyFile(USER_ID);
+        }
+        String created = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody("2026-08-01T10:00:00Z", photoRefs(firstTen))))
+                .andReturn().getResponse().getContentAsString();
+        String recordId = new ObjectMapper().readTree(created).path("data").path("record_id").asText();
+        UUID eleventh = readyFile(USER_ID);
+
+        mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"file_id":"%s","image_type":"OTHER","sort_order":10}
+                                """.formatted(eleventh)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("TREATMENT_PHOTO_LIMIT_EXCEEDED"));
+
+        mockMvc.perform(get("/treatment-records/" + recordId + "/photo-comparison")
+                        .with(authentication(userAuthentication(OTHER_USER_ID))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+    }
+
     @Test
     void requiresAuthenticationForAllEndpoints() throws Exception {
         mockMvc.perform(post("/treatment-records")
@@ -487,6 +600,21 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
 
         mockMvc.perform(delete("/treatment-records/" + UUID.randomUUID()))
                 .andExpect(status().isUnauthorized());
+
+        UUID recordId = UUID.randomUUID();
+        UUID photoId = UUID.randomUUID();
+        mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/treatment-records/" + recordId + "/photos/" + photoId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/treatment-records/" + recordId + "/photos/" + photoId))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/treatment-records/" + recordId + "/photo-comparison"))
+                .andExpect(status().isUnauthorized());
     }
 
     // ------------------------------------------------------------------ 문서화
@@ -504,6 +632,14 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$['paths']['/treatment-records/{recordId}']['patch']"
                         + "['security'][0]['bearerAuth']").isArray())
                 .andExpect(jsonPath("$['paths']['/treatment-records/{recordId}']['delete']"
+                        + "['security'][0]['bearerAuth']").isArray())
+                .andExpect(jsonPath("$['paths']['/treatment-records/{recordId}/photos']['post']"
+                        + "['security'][0]['bearerAuth']").isArray())
+                .andExpect(jsonPath("$['paths']['/treatment-records/{recordId}/photos/{photoId}']['patch']"
+                        + "['security'][0]['bearerAuth']").isArray())
+                .andExpect(jsonPath("$['paths']['/treatment-records/{recordId}/photos/{photoId}']['delete']"
+                        + "['security'][0]['bearerAuth']").isArray())
+                .andExpect(jsonPath("$['paths']['/treatment-records/{recordId}/photo-comparison']['get']"
                         + "['security'][0]['bearerAuth']").isArray())
                 .andExpect(jsonPath("$.components.schemas.CreateTreatmentRecordRequest"
                         + ".properties.service_types.description").value(containsString("CUT")))

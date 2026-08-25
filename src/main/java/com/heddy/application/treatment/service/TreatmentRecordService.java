@@ -4,6 +4,10 @@ import com.heddy.domain.file.model.StoredFile;
 import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
 import com.heddy.domain.file.port.out.FileStoragePort;
+import com.heddy.domain.analysis.port.out.AnalysisStalenessPort;
+import com.heddy.domain.treatment.exception.TreatmentError;
+import com.heddy.domain.treatment.exception.TreatmentException;
+import com.heddy.domain.treatment.model.ImageType;
 import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
 import com.heddy.domain.treatment.model.TreatmentRecordFilter;
@@ -11,13 +15,17 @@ import com.heddy.domain.treatment.model.TreatmentRecordPage;
 import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.in.DeleteTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase;
+import com.heddy.domain.treatment.port.in.GetPhotoComparisonUseCase;
 import com.heddy.domain.treatment.port.in.ListTreatmentRecordsUseCase;
+import com.heddy.domain.treatment.port.in.ManageTreatmentPhotosUseCase;
 import com.heddy.domain.treatment.port.in.UpdateTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
 import com.heddy.global.error.ApplicationException;
 import com.heddy.global.error.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -34,7 +42,8 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         GetTreatmentRecordUseCase, ListTreatmentRecordsUseCase,
-        UpdateTreatmentRecordUseCase, DeleteTreatmentRecordUseCase {
+        UpdateTreatmentRecordUseCase, DeleteTreatmentRecordUseCase,
+        ManageTreatmentPhotosUseCase, GetPhotoComparisonUseCase {
 
     private static final int MAX_PAGE_SIZE = 100;
     private static final String SORT_ASCENDING = "performedAt,asc";
@@ -43,8 +52,23 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     private final TreatmentRecordRepositoryPort recordRepositoryPort;
     private final FileRepositoryPort fileRepositoryPort;
     private final FileStoragePort fileStoragePort;
+    private final AnalysisStalenessPort analysisStalenessPort;
 
+    @Autowired
     public TreatmentRecordService(
+            TreatmentRecordRepositoryPort recordRepositoryPort,
+            FileRepositoryPort fileRepositoryPort,
+            FileStoragePort fileStoragePort,
+            ObjectProvider<AnalysisStalenessPort> analysisStalenessPortProvider
+    ) {
+        this.recordRepositoryPort = recordRepositoryPort;
+        this.fileRepositoryPort = fileRepositoryPort;
+        this.fileStoragePort = fileStoragePort;
+        this.analysisStalenessPort = analysisStalenessPortProvider.getIfAvailable(() -> recordId -> { });
+    }
+
+    /** 분석 도메인이 없는 단위 테스트와의 호환을 위한 생성자. */
+    TreatmentRecordService(
             TreatmentRecordRepositoryPort recordRepositoryPort,
             FileRepositoryPort fileRepositoryPort,
             FileStoragePort fileStoragePort
@@ -52,6 +76,19 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         this.recordRepositoryPort = recordRepositoryPort;
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
+        this.analysisStalenessPort = recordId -> { };
+    }
+
+    TreatmentRecordService(
+            TreatmentRecordRepositoryPort recordRepositoryPort,
+            FileRepositoryPort fileRepositoryPort,
+            FileStoragePort fileStoragePort,
+            AnalysisStalenessPort analysisStalenessPort
+    ) {
+        this.recordRepositoryPort = recordRepositoryPort;
+        this.fileRepositoryPort = fileRepositoryPort;
+        this.fileStoragePort = fileStoragePort;
+        this.analysisStalenessPort = analysisStalenessPort;
     }
 
     @Override
@@ -66,7 +103,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         for (CreateTreatmentRecordUseCase.Command.Photo photo : command.photos()) {
             requireOwnedReadyFile(command.userId(), photo.fileId());
             record = record.attachPhoto(
-                    TreatmentPhoto.create(record.recordId(), photo.fileId(), photo.imageType()));
+                    TreatmentPhoto.create(record.recordId(), photo.fileId(),
+                            photo.imageType(), photo.sortOrder()));
         }
         return recordRepositoryPort.insert(record);
     }
@@ -137,9 +175,106 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         }
     }
 
+    @Override
+    @Transactional
+    public ManageTreatmentPhotosUseCase.Result add(ManageTreatmentPhotosUseCase.AddCommand command) {
+        TreatmentRecord record = ownedLockedRecord(command.requesterId(), command.recordId());
+        TreatmentPhoto photo = TreatmentPhoto.create(
+                record.recordId(), command.fileId(), command.imageType(), command.sortOrder());
+        record.attachPhoto(photo);
+        requireOwnedReadyFile(command.requesterId(), command.fileId());
+        TreatmentPhoto saved = recordRepositoryPort.insertPhoto(photo);
+        if (saved.imageType() == ImageType.AFTER) {
+            analysisStalenessPort.markLatestStale(record.recordId());
+        }
+        return new ManageTreatmentPhotosUseCase.Result(saved, downloadUrl(saved));
+    }
+
+    @Override
+    @Transactional
+    public ManageTreatmentPhotosUseCase.Result update(ManageTreatmentPhotosUseCase.UpdateCommand command) {
+        TreatmentRecord record = ownedRecord(command.requesterId(), command.recordId());
+        TreatmentPhoto current = ownedPhoto(record, command.photoId());
+        if (command.imageType() == null && command.sortOrder() == null) {
+            throw new ApplicationException(ErrorCode.INVALID_REQUEST);
+        }
+        ImageType imageType = command.imageType() == null ? current.imageType() : command.imageType();
+        int sortOrder = command.sortOrder() == null ? current.sortOrder() : command.sortOrder();
+        TreatmentPhoto updated = current.update(imageType, sortOrder);
+        TreatmentPhoto saved = recordRepositoryPort.updatePhoto(updated)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+        if (current.imageType() != saved.imageType()
+                && (current.imageType() == ImageType.AFTER || saved.imageType() == ImageType.AFTER)) {
+            analysisStalenessPort.markLatestStale(record.recordId());
+        }
+        return new ManageTreatmentPhotosUseCase.Result(saved, downloadUrl(saved));
+    }
+
+    @Override
+    @Transactional
+    public void delete(ManageTreatmentPhotosUseCase.DeleteCommand command) {
+        TreatmentRecord record = ownedRecord(command.requesterId(), command.recordId());
+        TreatmentPhoto photo = ownedPhoto(record, command.photoId());
+        StoredFile file = fileRepositoryPort.findById(photo.fileId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+        if (!recordRepositoryPort.deletePhoto(photo.photoId())) {
+            throw new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+        if (file.status() != FileStatus.DELETED) {
+            fileRepositoryPort.transition(file.markDeleted(), file.status());
+        }
+        if (photo.imageType() == ImageType.AFTER) {
+            analysisStalenessPort.markLatestStale(record.recordId());
+        }
+    }
+
+    @Override
+    public GetPhotoComparisonUseCase.Result getPhotoComparison(
+            GetPhotoComparisonUseCase.Query query
+    ) {
+        TreatmentRecord record = ownedRecord(query.requesterId(), query.recordId());
+        List<GetPhotoComparisonUseCase.Photo> before = comparisonPhotos(record, ImageType.BEFORE);
+        List<GetPhotoComparisonUseCase.Photo> after = comparisonPhotos(record, ImageType.AFTER);
+        if (before.isEmpty() || after.isEmpty()) {
+            throw new TreatmentException(TreatmentError.PHOTO_COMPARISON_NOT_AVAILABLE);
+        }
+        return new GetPhotoComparisonUseCase.Result(
+                record.recordId(), before, after,
+                new GetPhotoComparisonUseCase.TreatmentSummary(
+                        record.serviceTypes(), record.satisfaction(), record.nextVisitCautions()));
+    }
+
     private TreatmentRecord ownedRecord(UUID requesterId, UUID recordId) {
         return recordRepositoryPort.findByIdAndUserId(recordId, requesterId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    private TreatmentRecord ownedLockedRecord(UUID requesterId, UUID recordId) {
+        return recordRepositoryPort.findByIdForUpdate(recordId)
+                .filter(record -> record.userId().equals(requesterId))
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    private TreatmentPhoto ownedPhoto(TreatmentRecord record, UUID photoId) {
+        return record.photos().stream()
+                .filter(photo -> photo.photoId().equals(photoId))
+                .findFirst()
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    private List<GetPhotoComparisonUseCase.Photo> comparisonPhotos(
+            TreatmentRecord record, ImageType imageType
+    ) {
+        return record.photos().stream()
+                .filter(photo -> photo.imageType() == imageType)
+                .map(photo -> {
+                    URI url = downloadUrl(photo);
+                    return url == null ? null
+                            : new GetPhotoComparisonUseCase.Photo(
+                                    photo.photoId(), photo.sortOrder(), url);
+                })
+                .filter(java.util.Objects::nonNull)
+                .toList();
     }
 
     private void validateListQuery(ListTreatmentRecordsUseCase.Query query) {

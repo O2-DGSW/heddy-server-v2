@@ -3,6 +3,7 @@ package com.heddy.application.treatment.service;
 import com.heddy.domain.file.model.FilePurpose;
 import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.model.StoredFile;
+import com.heddy.domain.analysis.port.out.AnalysisStalenessPort;
 import com.heddy.domain.treatment.exception.TreatmentError;
 import com.heddy.domain.treatment.exception.TreatmentException;
 import com.heddy.domain.treatment.model.ImageType;
@@ -13,7 +14,9 @@ import com.heddy.domain.treatment.model.TreatmentRecordFilter;
 import com.heddy.domain.treatment.model.TreatmentRecordPage;
 import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase.Command;
 import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase.Query;
+import com.heddy.domain.treatment.port.in.GetPhotoComparisonUseCase;
 import com.heddy.domain.treatment.port.in.ListTreatmentRecordsUseCase;
+import com.heddy.domain.treatment.port.in.ManageTreatmentPhotosUseCase;
 import com.heddy.domain.treatment.port.in.DeleteTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.in.UpdateTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
@@ -52,13 +55,15 @@ class TreatmentRecordServiceTest {
     @Mock TreatmentRecordRepositoryPort recordRepositoryPort;
     @Mock FileRepositoryPort fileRepositoryPort;
     @Mock FileStoragePort fileStoragePort;
+    @Mock AnalysisStalenessPort analysisStalenessPort;
 
     private TreatmentRecordService service;
 
     @BeforeEach
     void setUp() {
         service = new TreatmentRecordService(
-                recordRepositoryPort, fileRepositoryPort, fileStoragePort);
+                recordRepositoryPort, fileRepositoryPort, fileStoragePort,
+                analysisStalenessPort);
     }
 
     // ------------------------------------------------------------------ 등록
@@ -403,6 +408,133 @@ class TreatmentRecordServiceTest {
         verify(recordRepositoryPort, never()).deleteById(any());
     }
 
+    // ------------------------------------------------------------------ 사진 관리·비교
+
+    @Test
+    void addsAfterPhotoUnderLockAndMarksLatestAnalysisStale() {
+        TreatmentRecord record = TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
+                null, null, null, null);
+        UUID fileId = UUID.randomUUID();
+        URI signed = URI.create("https://bucket.example/photo?signature=one");
+        given(recordRepositoryPort.findByIdForUpdate(record.recordId()))
+                .willReturn(Optional.of(record));
+        given(fileRepositoryPort.findById(fileId)).willReturn(Optional.of(readyFile(fileId)));
+        given(recordRepositoryPort.insertPhoto(any())).willAnswer(invocation ->
+                invocation.getArgument(0));
+        given(fileStoragePort.createDownloadUrl(any())).willReturn(signed);
+
+        var result = service.add(new ManageTreatmentPhotosUseCase.AddCommand(
+                USER_ID, record.recordId(), fileId, ImageType.AFTER, 3));
+
+        assertThat(result.photo().imageType()).isEqualTo(ImageType.AFTER);
+        assertThat(result.photo().sortOrder()).isEqualTo(3);
+        assertThat(result.displayUrl()).isEqualTo(signed);
+        verify(recordRepositoryPort).findByIdForUpdate(record.recordId());
+        verify(analysisStalenessPort).markLatestStale(record.recordId());
+    }
+
+    @Test
+    void refusesEleventhPhotoBeforeLookingUpItsFile() {
+        TreatmentRecord record = TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
+                null, null, null, null);
+        for (int index = 0; index < TreatmentRecord.MAX_PHOTOS; index++) {
+            record = record.attachPhoto(TreatmentPhoto.create(
+                    record.recordId(), UUID.randomUUID(), ImageType.OTHER, index));
+        }
+        given(recordRepositoryPort.findByIdForUpdate(record.recordId()))
+                .willReturn(Optional.of(record));
+
+        TreatmentRecord full = record;
+        assertThatThrownBy(() -> service.add(new ManageTreatmentPhotosUseCase.AddCommand(
+                USER_ID, full.recordId(), UUID.randomUUID(), ImageType.BEFORE, 10)))
+                .isInstanceOf(TreatmentException.class)
+                .hasFieldOrPropertyWithValue("error", TreatmentError.PHOTO_LIMIT_EXCEEDED);
+        verifyNoInteractions(fileRepositoryPort);
+        verify(recordRepositoryPort, never()).insertPhoto(any());
+    }
+
+    @Test
+    void updatesPhotoTypeAndMarksStaleOnlyWhenAfterInputChanges() {
+        UUID recordId = UUID.randomUUID();
+        TreatmentPhoto photo = new TreatmentPhoto(
+                UUID.randomUUID(), recordId, UUID.randomUUID(), ImageType.BEFORE, 1, Instant.now());
+        TreatmentRecord record = recordWithPhotos(recordId, List.of(photo));
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
+        given(recordRepositoryPort.updatePhoto(any())).willAnswer(invocation ->
+                Optional.of(invocation.getArgument(0)));
+        given(fileRepositoryPort.findById(photo.fileId()))
+                .willReturn(Optional.of(readyFile(photo.fileId())));
+        given(fileStoragePort.createDownloadUrl(any()))
+                .willReturn(URI.create("https://bucket.example/photo"));
+
+        var result = service.update(new ManageTreatmentPhotosUseCase.UpdateCommand(
+                USER_ID, recordId, photo.photoId(), ImageType.AFTER, 5));
+
+        assertThat(result.photo().imageType()).isEqualTo(ImageType.AFTER);
+        assertThat(result.photo().sortOrder()).isEqualTo(5);
+        verify(analysisStalenessPort).markLatestStale(recordId);
+    }
+
+    @Test
+    void deletesAfterPhotoAndMarksItsFileForCleanup() {
+        UUID recordId = UUID.randomUUID();
+        TreatmentPhoto photo = new TreatmentPhoto(
+                UUID.randomUUID(), recordId, UUID.randomUUID(), ImageType.AFTER, 0, Instant.now());
+        TreatmentRecord record = recordWithPhotos(recordId, List.of(photo));
+        StoredFile file = readyFile(photo.fileId());
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
+        given(fileRepositoryPort.findById(photo.fileId())).willReturn(Optional.of(file));
+        given(recordRepositoryPort.deletePhoto(photo.photoId())).willReturn(true);
+        given(fileRepositoryPort.transition(any(), any())).willAnswer(invocation ->
+                invocation.getArgument(0));
+
+        service.delete(new ManageTreatmentPhotosUseCase.DeleteCommand(
+                USER_ID, recordId, photo.photoId()));
+
+        verify(recordRepositoryPort).deletePhoto(photo.photoId());
+        verify(fileRepositoryPort).transition(file.markDeleted(), FileStatus.READY);
+        verify(analysisStalenessPort).markLatestStale(recordId);
+    }
+
+    @Test
+    void returnsSignedBeforeAndAfterComparisonOrRejectsIncompletePair() {
+        UUID recordId = UUID.randomUUID();
+        TreatmentPhoto before = new TreatmentPhoto(
+                UUID.randomUUID(), recordId, UUID.randomUUID(), ImageType.BEFORE, 1, Instant.now());
+        TreatmentPhoto after = new TreatmentPhoto(
+                UUID.randomUUID(), recordId, UUID.randomUUID(), ImageType.AFTER, 2, Instant.now());
+        TreatmentRecord record = recordWithPhotos(recordId, List.of(before, after));
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
+        given(fileRepositoryPort.findById(before.fileId()))
+                .willReturn(Optional.of(readyFile(before.fileId())));
+        given(fileRepositoryPort.findById(after.fileId()))
+                .willReturn(Optional.of(readyFile(after.fileId())));
+        given(fileStoragePort.createDownloadUrl(any()))
+                .willReturn(URI.create("https://bucket.example/signed"));
+
+        var result = service.getPhotoComparison(
+                new GetPhotoComparisonUseCase.Query(USER_ID, recordId));
+
+        assertThat(result.beforePhotos()).extracting(GetPhotoComparisonUseCase.Photo::photoId)
+                .containsExactly(before.photoId());
+        assertThat(result.afterPhotos()).extracting(GetPhotoComparisonUseCase.Photo::photoId)
+                .containsExactly(after.photoId());
+
+        TreatmentRecord incomplete = recordWithPhotos(UUID.randomUUID(), List.of());
+        given(recordRepositoryPort.findByIdAndUserId(incomplete.recordId(), USER_ID))
+                .willReturn(Optional.of(incomplete));
+        assertThatThrownBy(() -> service.getPhotoComparison(
+                new GetPhotoComparisonUseCase.Query(USER_ID, incomplete.recordId())))
+                .isInstanceOf(TreatmentException.class)
+                .hasFieldOrPropertyWithValue(
+                        "error", TreatmentError.PHOTO_COMPARISON_NOT_AVAILABLE);
+    }
+
     // ------------------------------------------------------------------ 헬퍼
 
     private Command command(Instant performedAt, List<Command.Photo> photos) {
@@ -430,6 +562,12 @@ class TreatmentRecordServiceTest {
 
     private StoredFile readyFile(UUID fileId) {
         return readyFileOwnedBy(fileId, USER_ID);
+    }
+
+    private TreatmentRecord recordWithPhotos(UUID recordId, List<TreatmentPhoto> photos) {
+        return new TreatmentRecord(
+                recordId, USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
+                5, null, null, null, null, "다음 방문 주의", photos, Instant.now());
     }
 
     private StoredFile readyFileOwnedBy(UUID fileId, UUID userId) {

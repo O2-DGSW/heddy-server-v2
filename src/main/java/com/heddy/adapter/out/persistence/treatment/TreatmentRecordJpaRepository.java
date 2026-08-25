@@ -3,6 +3,7 @@ package com.heddy.adapter.out.persistence.treatment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -10,11 +11,17 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.persistence.LockModeType;
+
 interface TreatmentRecordJpaRepository extends JpaRepository<TreatmentRecordEntity, UUID> {
 
     Optional<TreatmentRecordEntity> findByRecordIdAndUserId(UUID recordId, UUID userId);
 
     long deleteByRecordId(UUID recordId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select record from TreatmentRecordEntity record where record.recordId = :recordId")
+    java.util.Optional<TreatmentRecordEntity> findByIdForUpdate(@Param("recordId") UUID recordId);
 
     @Query(value = """
             SELECT tr.*

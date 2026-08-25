@@ -167,10 +167,10 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     @Transactional
     public ManageTreatmentPhotosUseCase.Result add(ManageTreatmentPhotosUseCase.AddCommand command) {
         TreatmentRecord record = ownedLockedRecord(command.requesterId(), command.recordId());
-        requireOwnedReadyFile(command.requesterId(), command.fileId());
         TreatmentPhoto photo = TreatmentPhoto.create(
                 record.recordId(), command.fileId(), command.imageType(), command.sortOrder());
         record.attachPhoto(photo);
+        requireOwnedReadyFile(command.requesterId(), command.fileId());
         TreatmentPhoto saved = recordRepositoryPort.insertPhoto(photo);
         if (saved.imageType() == ImageType.AFTER) {
             analysisStalenessPort.markLatestStale(record.recordId());

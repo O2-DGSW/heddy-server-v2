@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -44,6 +45,15 @@ public class AccountDeletionPersistenceAdapter implements AccountDeletionReposit
     }
 
     @Override
+    public List<AccountDeletionRequest> findFailedBatch(int limit, int maxAttempts, Instant retryCutoff) {
+        return requestRepository.findRetryBatch(
+                        AccountDeletionStatus.FAILED, maxAttempts, retryCutoff, PageRequest.of(0, limit))
+                .stream()
+                .map(AccountDeletionRequestEntity::toDomain)
+                .toList();
+    }
+
+    @Override
     public boolean consumeReauthenticationToken(UUID tokenId, UUID userId, Instant usedAt) {
         try {
             usedTokenRepository.saveAndFlush(
@@ -52,5 +62,11 @@ public class AccountDeletionPersistenceAdapter implements AccountDeletionReposit
         } catch (DataIntegrityViolationException duplicate) {
             return false;
         }
+    }
+
+    @Override
+    @Transactional
+    public int deleteUsedTokensBefore(Instant threshold) {
+        return usedTokenRepository.deleteByUsedAtBefore(threshold);
     }
 }

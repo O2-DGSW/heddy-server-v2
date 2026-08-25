@@ -36,6 +36,9 @@ class AccountDeletionRequestEntity {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    @Column(name = "attempt_count", nullable = false)
+    private int attemptCount;
+
     protected AccountDeletionRequestEntity() {
     }
 
@@ -50,10 +53,11 @@ class AccountDeletionRequestEntity {
         reason = request.reason();
         requestedAt = request.requestedAt();
         completedAt = request.completedAt();
+        attemptCount = request.attemptCount();
     }
 
     AccountDeletionRequest toDomain() {
         return new AccountDeletionRequest(
-                deletionRequestId, userId, status, reason, requestedAt, completedAt);
+                deletionRequestId, userId, status, reason, requestedAt, completedAt, attemptCount);
     }
 }

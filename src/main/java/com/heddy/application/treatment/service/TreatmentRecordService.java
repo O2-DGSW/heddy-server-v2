@@ -5,8 +5,11 @@ import com.heddy.domain.file.port.out.FileRepositoryPort;
 import com.heddy.domain.file.port.out.FileStoragePort;
 import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
+import com.heddy.domain.treatment.model.TreatmentRecordFilter;
+import com.heddy.domain.treatment.model.TreatmentRecordPage;
 import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase;
+import com.heddy.domain.treatment.port.in.ListTreatmentRecordsUseCase;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
 import com.heddy.global.error.ApplicationException;
 import com.heddy.global.error.ErrorCode;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,7 +29,12 @@ import java.util.UUID;
  */
 @Service
 @Transactional(readOnly = true)
-public class TreatmentRecordService implements CreateTreatmentRecordUseCase, GetTreatmentRecordUseCase {
+public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
+        GetTreatmentRecordUseCase, ListTreatmentRecordsUseCase {
+
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final String SORT_ASCENDING = "performedAt,asc";
+    private static final String SORT_DESCENDING = "performedAt,desc";
 
     private final TreatmentRecordRepositoryPort recordRepositoryPort;
     private final FileRepositoryPort fileRepositoryPort;
@@ -58,7 +67,7 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase, Get
     }
 
     @Override
-    public Result get(Query query) {
+    public GetTreatmentRecordUseCase.Result get(GetTreatmentRecordUseCase.Query query) {
         // 소유자 조건을 질의에 함께 실어 사진을 읽기 전에 DB 에서 거른다. 남의 기록은 없는 기록과
         // 같은 404 이고, 질의 횟수도 없는 기록과 같아야 존재 여부가 새지 않는다(#31).
         TreatmentRecord record = recordRepositoryPort
@@ -68,7 +77,58 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase, Get
         for (TreatmentPhoto photo : record.photos()) {
             photoUrls.put(photo.photoId(), downloadUrl(photo));
         }
-        return new Result(record, photoUrls);
+        return new GetTreatmentRecordUseCase.Result(record, photoUrls);
+    }
+
+    @Override
+    public ListTreatmentRecordsUseCase.Result list(ListTreatmentRecordsUseCase.Query query) {
+        validateListQuery(query);
+        TreatmentRecordFilter filter = new TreatmentRecordFilter(
+                query.requesterId(), query.serviceType(), normalizeFilter(query.designerName()),
+                normalizeFilter(query.salonName()), query.from(), query.to(), query.page(), query.size(),
+                SORT_ASCENDING.equals(query.sort()));
+        TreatmentRecordPage page = recordRepositoryPort.findPage(filter);
+        List<ListTreatmentRecordsUseCase.Item> items = page.items().stream()
+                .map(record -> new ListTreatmentRecordsUseCase.Item(
+                        record, thumbnailUrl(record), null))
+                .toList();
+        return new ListTreatmentRecordsUseCase.Result(
+                items, query.page(), query.size(), page.totalElements());
+    }
+
+    private void validateListQuery(ListTreatmentRecordsUseCase.Query query) {
+        boolean invalidRange = query.from() != null && query.to() != null
+                && query.from().isAfter(query.to());
+        boolean invalidPage = query.page() < 0 || query.size() < 1 || query.size() > MAX_PAGE_SIZE;
+        boolean invalidSort = !SORT_ASCENDING.equals(query.sort())
+                && !SORT_DESCENDING.equals(query.sort());
+        boolean invalidDesigner = exceedsLength(query.designerName(), 30);
+        boolean invalidSalon = exceedsLength(query.salonName(), 50);
+        if (invalidRange || invalidPage || invalidSort || invalidDesigner || invalidSalon) {
+            throw new ApplicationException(ErrorCode.INVALID_REQUEST);
+        }
+    }
+
+    private boolean exceedsLength(String value, int maximum) {
+        return value != null && value.strip().length() > maximum;
+    }
+
+    private String normalizeFilter(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.strip();
+    }
+
+    /** 목록 대표 이미지는 생성 순서상 첫 번째로 조회 가능한 사진을 사용한다. */
+    private URI thumbnailUrl(TreatmentRecord record) {
+        for (TreatmentPhoto photo : record.photos()) {
+            URI url = downloadUrl(photo);
+            if (url != null) {
+                return url;
+            }
+        }
+        return null;
     }
 
     /**

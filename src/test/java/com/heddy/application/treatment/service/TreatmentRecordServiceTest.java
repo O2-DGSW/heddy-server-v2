@@ -314,7 +314,8 @@ class TreatmentRecordServiceTest {
         TreatmentRecord current = TreatmentRecord.create(
                 USER_ID, Set.of(ServiceType.CUT), "준헤어", "김실장", PERFORMED_AT,
                 3, 100_000L, "KRW", UUID.randomUUID(), "기존 메모", "기존 주의사항");
-        given(recordRepositoryPort.findById(current.recordId())).willReturn(Optional.of(current));
+        given(recordRepositoryPort.findByIdAndUserId(current.recordId(), USER_ID))
+                .willReturn(Optional.of(current));
         given(recordRepositoryPort.update(any())).willAnswer(invocation ->
                 Optional.of(invocation.getArgument(0)));
 
@@ -347,7 +348,8 @@ class TreatmentRecordServiceTest {
         TreatmentRecord current = TreatmentRecord.create(
                 USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
                 null, null, null, null);
-        given(recordRepositoryPort.findById(current.recordId())).willReturn(Optional.of(current));
+        given(recordRepositoryPort.findByIdAndUserId(current.recordId(), USER_ID))
+                .willReturn(Optional.of(current));
         var command = updateOnlyPerformedAt(
                 current.recordId(), Instant.now().plusSeconds(86_400));
 
@@ -367,7 +369,8 @@ class TreatmentRecordServiceTest {
                 recordId, USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
                 null, null, null, null, List.of(photo), Instant.now());
         StoredFile file = readyFile(fileId);
-        given(recordRepositoryPort.findById(recordId)).willReturn(Optional.of(record));
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
         given(fileRepositoryPort.findById(fileId)).willReturn(Optional.of(file));
         given(fileRepositoryPort.transition(any(), any())).willAnswer(invocation ->
                 invocation.getArgument(0));
@@ -384,8 +387,8 @@ class TreatmentRecordServiceTest {
         TreatmentRecord foreign = TreatmentRecord.create(
                 UUID.randomUUID(), Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
                 null, null, null, null);
-        given(recordRepositoryPort.findById(foreign.recordId()))
-                .willReturn(Optional.of(foreign));
+        given(recordRepositoryPort.findByIdAndUserId(foreign.recordId(), USER_ID))
+                .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.update(updateOnlyPerformedAt(
                 foreign.recordId(), PERFORMED_AT.minusSeconds(1))))

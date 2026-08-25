@@ -167,7 +167,8 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
                 PERFORMED_AT, 3, 100_000L, "KRW", null, "기존 메모", "기존 주의사항"));
         TreatmentPhoto photo = adapter.insertPhoto(
                 TreatmentPhoto.create(saved.recordId(), newFile(), ImageType.AFTER));
-        TreatmentRecord withPhoto = adapter.findById(saved.recordId()).orElseThrow();
+        TreatmentRecord withPhoto = adapter
+                .findByIdAndUserId(saved.recordId(), USER_ID).orElseThrow();
         TreatmentRecord changed = withPhoto.update(
                 Set.of(ServiceType.COLOR), "새 미용실", "새 디자이너",
                 PERFORMED_AT.minusSeconds(60), 5, null, null, null,
@@ -195,7 +196,7 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
                 saved.recordId(), newFile(), ImageType.AFTER));
 
         assertThat(adapter.deleteById(saved.recordId())).isTrue();
-        assertThat(adapter.findById(saved.recordId())).isEmpty();
+        assertThat(adapter.findByIdAndUserId(saved.recordId(), USER_ID)).isEmpty();
         assertThat(photoCountOf(saved.recordId())).isZero();
         assertThat(adapter.deleteById(saved.recordId())).isFalse();
     }

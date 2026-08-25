@@ -59,6 +59,14 @@ class FileEntity extends BaseEntity {
     @Column(name = "expires_at", nullable = false, updatable = false)
     private Instant expiresAt;
 
+    /**
+     * 스토리지 객체를 최종 회수한 시각. 취소 시점의 삭제로는 채우지 않는다 — 발급된 presigned PUT
+     * URL 이 {@code expiresAt} 까지 유효해 그 삭제 뒤에도 객체가 되살아날 수 있기 때문이다.
+     * 비어 있는 DELETED 행은 만료 이후 정리 경로가 다시 훑는다.
+     */
+    @Column(name = "reclaimed_at")
+    private Instant reclaimedAt;
+
     protected FileEntity() {
     }
 

@@ -175,6 +175,23 @@ class UploadCancellationRaceIntegrationTest extends PostgresIntegrationTest {
         public List<StoredFile> findAllByUserId(UUID userId) {
             return delegate.findAllByUserId(userId);
         }
+
+        @Override
+        public List<StoredFile> findCleanupCandidates(
+                Instant pendingExpiredBefore, Instant readyCreatedBefore, int limit
+        ) {
+            return delegate.findCleanupCandidates(pendingExpiredBefore, readyCreatedBefore, limit);
+        }
+
+        @Override
+        public boolean tryAcquireCleanupLock() {
+            return delegate.tryAcquireCleanupLock();
+        }
+
+        @Override
+        public void deleteMetadata(UUID fileId) {
+            delegate.deleteMetadata(fileId);
+        }
     }
 
     /** 삭제 호출만 기록한다. 이 테스트가 보는 것은 "스토리지를 건드렸는가"다. */

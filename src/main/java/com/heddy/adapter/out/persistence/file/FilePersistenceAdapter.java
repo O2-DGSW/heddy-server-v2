@@ -64,4 +64,25 @@ public class FilePersistenceAdapter implements FileRepositoryPort {
     public List<StoredFile> findAllByUserId(UUID userId) {
         return repository.findAllByUserId(userId).stream().map(FileEntity::toDomain).toList();
     }
+
+    @Override
+    public List<StoredFile> findCleanupCandidates(
+            Instant pendingExpiredBefore, Instant readyCreatedBefore, int limit
+    ) {
+        return repository.findCleanupCandidates(
+                        pendingExpiredBefore, readyCreatedBefore, PageRequest.of(0, limit)).stream()
+                .map(FileEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public boolean tryAcquireCleanupLock() {
+        return repository.tryAcquireCleanupLock();
+    }
+
+    @Override
+    public void deleteMetadata(UUID fileId) {
+        repository.deleteById(fileId);
+        repository.flush();
+    }
 }

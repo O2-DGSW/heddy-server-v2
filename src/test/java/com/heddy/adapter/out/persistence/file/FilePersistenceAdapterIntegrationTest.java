@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import java.util.List;
+import java.sql.Timestamp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -214,6 +216,37 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
         assertThat(updatedAtOf(pending.fileId())).isAfterOrEqualTo(before);
     }
 
+    @Test
+    void findsExpiredPendingUnlinkedReadyAndExpiredDeletedCleanupCandidates() {
+        Instant now = Instant.now();
+        StoredFile expiredPending = adapter.insert(new StoredFile(
+                UUID.randomUUID(), UUID.randomUUID(), USER_ID, FilePurpose.TREATMENT_PHOTO,
+                FileStatus.PENDING, "TREATMENT_PHOTO/expired.jpg", "image/jpeg", "expired.jpg",
+                100, null, null, null, now.minusSeconds(120), null));
+        StoredFile freshPending = adapter.insert(pendingPhoto("fresh.jpg"));
+        StoredFile orphanReady = adapter.insert(pendingPhoto("orphan.jpg"));
+        orphanReady = adapter.transition(
+                orphanReady.markReady(new com.heddy.domain.file.model.StorageObject("image/jpeg", 1_024)),
+                FileStatus.PENDING);
+        jdbcTemplate.update("UPDATE files SET created_at = ? WHERE file_id = ?",
+                Timestamp.from(now.minusSeconds(172_800)), orphanReady.fileId());
+        StoredFile deleted = adapter.insert(StoredFile.pending(
+                USER_ID, FilePurpose.TREATMENT_PHOTO,
+                "TREATMENT_PHOTO/" + USER_ID + "/deleted.jpg",
+                "image/jpeg", "deleted.jpg", 1_024, DECLARED_SHA256,
+                now.minusSeconds(120)));
+        adapter.transition(deleted.markDeleted(), FileStatus.PENDING);
+        StoredFile freshDeleted = adapter.insert(pendingPhoto("fresh-deleted.jpg"));
+        adapter.transition(freshDeleted.markDeleted(), FileStatus.PENDING);
+
+        List<StoredFile> candidates = adapter.findCleanupCandidates(
+                now.minusSeconds(60), now.minusSeconds(86_400), 100);
+
+        assertThat(candidates).extracting(StoredFile::fileId)
+                .contains(expiredPending.fileId(), orphanReady.fileId(), deleted.fileId())
+                .doesNotContain(freshPending.fileId(), freshDeleted.fileId());
+    }
+
     // ------------------------------------------------------------------ 스키마 대조
 
     @Test
@@ -243,6 +276,13 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
                 .contains("uk_files_upload_id", "uk_files_object_key",
                         "idx_files_user_id", "idx_files_status_expires_at",
                         "idx_files_reclaim_targets");
+
+        jdbcTemplate.execute("SET LOCAL enable_seqscan = off");
+        String plan = String.join("\n", jdbcTemplate.queryForList("""
+                EXPLAIN SELECT file_id FROM files
+                WHERE status = 'PENDING' AND expires_at <= now()
+                """, String.class));
+        assertThat(plan).contains("idx_files_status_expires_at");
     }
 
     @Test

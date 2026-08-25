@@ -63,17 +63,26 @@ public record CreateTreatmentRecordRequest(
 
             @NotNull
             @Schema(description = "촬영 시점 구분. BEFORE AFTER OTHER")
-            @JsonProperty("image_type") ImageType imageType
+            @JsonProperty("image_type") ImageType imageType,
+
+            @Schema(description = "표시 순서. 생략하면 요청 배열 순서")
+            @JsonProperty("sort_order") Integer sortOrder
     ) {
+        public PhotoRequest(UUID fileId, ImageType imageType) {
+            this(fileId, imageType, null);
+        }
     }
 
     public CreateTreatmentRecordUseCase.Command toCommand(UUID userId) {
         return new CreateTreatmentRecordUseCase.Command(userId, serviceTypes, salonName, designerName,
                 performedAt, satisfaction, priceAmount, priceCurrency, appointmentId,
                 memo, nextVisitCautions,
-                photos == null ? List.of() : photos.stream()
-                        .map(photo -> new CreateTreatmentRecordUseCase.Command.Photo(
-                                photo.fileId(), photo.imageType()))
-                        .toList());
+                photos == null ? List.of() : java.util.stream.IntStream.range(0, photos.size())
+                        .mapToObj(index -> {
+                            PhotoRequest photo = photos.get(index);
+                            return new CreateTreatmentRecordUseCase.Command.Photo(
+                                    photo.fileId(), photo.imageType(),
+                                    photo.sortOrder() == null ? index : photo.sortOrder());
+                        }).toList());
     }
 }

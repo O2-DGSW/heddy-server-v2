@@ -66,7 +66,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         for (CreateTreatmentRecordUseCase.Command.Photo photo : command.photos()) {
             requireOwnedReadyFile(command.userId(), photo.fileId());
             record = record.attachPhoto(
-                    TreatmentPhoto.create(record.recordId(), photo.fileId(), photo.imageType()));
+                    TreatmentPhoto.create(record.recordId(), photo.fileId(),
+                            photo.imageType(), photo.sortOrder()));
         }
         return recordRepositoryPort.insert(record);
     }

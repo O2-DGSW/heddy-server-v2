@@ -73,6 +73,8 @@ public record TreatmentRecordResponse(
         UUID photoId();
 
         String imageType();
+
+        int sortOrder();
     }
 
     /** 등록 응답용. URL 을 발급하지 않으므로 photo_url 자리를 아예 두지 않는다. */
@@ -82,7 +84,10 @@ public record TreatmentRecordResponse(
             @JsonProperty("photo_id") UUID photoId,
 
             @Schema(description = "촬영 시점 구분. BEFORE AFTER OTHER")
-            @JsonProperty("image_type") String imageType
+            @JsonProperty("image_type") String imageType,
+
+            @Schema(description = "표시 순서")
+            @JsonProperty("sort_order") int sortOrder
     ) implements Photo {
     }
 
@@ -95,6 +100,9 @@ public record TreatmentRecordResponse(
             @Schema(description = "촬영 시점 구분. BEFORE AFTER OTHER")
             @JsonProperty("image_type") String imageType,
 
+            @Schema(description = "표시 순서")
+            @JsonProperty("sort_order") int sortOrder,
+
             @Schema(description = "Presigned GET URL. 짧은 만료로 조회 때마다 새로 발급되며 저장되지 "
                     + "않는다. READY 가 아닌 파일이면 null 이다", nullable = true)
             @JsonProperty("photo_url") String photoUrl
@@ -104,7 +112,8 @@ public record TreatmentRecordResponse(
     /** 등록 직후 응답. URL 이 필요 없는 만큼 사진은 식별자·촬영 시점만 담는다. */
     public static TreatmentRecordResponse core(TreatmentRecord record) {
         return of(record, record.photos().stream()
-                .map(photo -> new CorePhoto(photo.photoId(), photo.imageType().name()))
+                .map(photo -> new CorePhoto(
+                        photo.photoId(), photo.imageType().name(), photo.sortOrder()))
                 .toList());
     }
 
@@ -113,7 +122,8 @@ public record TreatmentRecordResponse(
         return of(record, record.photos().stream()
                 .map(photo -> {
                     URI url = photoUrls.get(photo.photoId());
-                    return new PhotoWithUrl(photo.photoId(), photo.imageType().name(),
+                    return new PhotoWithUrl(
+                            photo.photoId(), photo.imageType().name(), photo.sortOrder(),
                             url == null ? null : url.toString());
                 })
                 .toList());

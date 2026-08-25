@@ -49,7 +49,10 @@ public interface CreateTreatmentRecordUseCase {
                     priceAmount, priceCurrency, appointmentId, null, null, photos);
         }
 
-        public record Photo(UUID fileId, ImageType imageType) {
+        public record Photo(UUID fileId, ImageType imageType, int sortOrder) {
+            public Photo(UUID fileId, ImageType imageType) {
+                this(fileId, imageType, 0);
+            }
         }
     }
 }

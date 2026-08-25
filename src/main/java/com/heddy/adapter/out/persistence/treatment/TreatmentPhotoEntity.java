@@ -36,6 +36,9 @@ class TreatmentPhotoEntity extends BaseEntity {
     @Column(name = "image_type", nullable = false, length = 20)
     private ImageType imageType;
 
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder;
+
     protected TreatmentPhotoEntity() {
     }
 
@@ -44,9 +47,16 @@ class TreatmentPhotoEntity extends BaseEntity {
         recordId = photo.recordId();
         fileId = photo.fileId();
         imageType = photo.imageType();
+        sortOrder = photo.sortOrder();
     }
 
     TreatmentPhoto toDomain() {
-        return new TreatmentPhoto(photoId, recordId, fileId, imageType, getCreatedAt());
+        return new TreatmentPhoto(
+                photoId, recordId, fileId, imageType, sortOrder, getCreatedAt());
+    }
+
+    void update(TreatmentPhoto photo) {
+        imageType = photo.imageType();
+        sortOrder = photo.sortOrder();
     }
 }

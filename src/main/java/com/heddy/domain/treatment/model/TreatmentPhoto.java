@@ -18,6 +18,7 @@ public record TreatmentPhoto(
         UUID recordId,
         UUID fileId,
         ImageType imageType,
+        int sortOrder,
         Instant createdAt
 ) {
     public TreatmentPhoto {
@@ -25,10 +26,32 @@ public record TreatmentPhoto(
         Objects.requireNonNull(recordId, "recordId");
         Objects.requireNonNull(fileId, "fileId");
         Objects.requireNonNull(imageType, "imageType");
+        if (sortOrder < 0) {
+            throw new TreatmentException(TreatmentError.PHOTO_SORT_ORDER_NEGATIVE);
+        }
     }
 
     /** 새 사진을 만든다. 식별자는 도메인이 발급하고 {@code createdAt} 은 저장 계층이 채운다. */
     public static TreatmentPhoto create(UUID recordId, UUID fileId, ImageType imageType) {
-        return new TreatmentPhoto(UUID.randomUUID(), recordId, fileId, imageType, null);
+        return create(recordId, fileId, imageType, 0);
+    }
+
+    public static TreatmentPhoto create(
+            UUID recordId, UUID fileId, ImageType imageType, int sortOrder
+    ) {
+        return new TreatmentPhoto(
+                UUID.randomUUID(), recordId, fileId, imageType, sortOrder, null);
+    }
+
+    /** 순서 컬럼 도입 전 호출부와의 호환을 위한 생성자. */
+    public TreatmentPhoto(
+            UUID photoId, UUID recordId, UUID fileId, ImageType imageType, Instant createdAt
+    ) {
+        this(photoId, recordId, fileId, imageType, 0, createdAt);
+    }
+
+    public TreatmentPhoto update(ImageType newImageType, int newSortOrder) {
+        return new TreatmentPhoto(
+                photoId, recordId, fileId, newImageType, newSortOrder, createdAt);
     }
 }

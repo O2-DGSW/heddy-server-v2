@@ -32,8 +32,9 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
     }
 
     @Override
-    public Optional<TreatmentRecord> findById(UUID recordId) {
-        return recordRepository.findById(recordId)
+    public Optional<TreatmentRecord> findByIdAndUserId(UUID recordId, UUID userId) {
+        // 소유자 조건을 질의에 실어 보낸다. 남의 기록이면 사진을 읽기 전에 빈 값이 된다.
+        return recordRepository.findByRecordIdAndUserId(recordId, userId)
                 .map(entity -> entity.toDomain(photosOf(recordId)));
     }
 

@@ -19,6 +19,11 @@ public interface TreatmentRecordRepositoryPort {
      */
     TreatmentPhoto insertPhoto(TreatmentPhoto photo);
 
-    /** 기록을 사진(생성 시각순)과 함께 조회한다. */
-    Optional<TreatmentRecord> findById(UUID recordId);
+    /**
+     * 소유자 조건까지 걸어 기록을 사진(생성 시각순)과 함께 조회한다.
+     *
+     * <p>소유권을 메모리에서 걸러내면 남의 기록도 사진까지 읽은 뒤에야 404 가 되어, 응답 시간과
+     * 질의 횟수로 존재 여부가 새어 나간다. 그래서 포트 자체가 소유자 조건을 받는다.
+     */
+    Optional<TreatmentRecord> findByIdAndUserId(UUID recordId, UUID userId);
 }

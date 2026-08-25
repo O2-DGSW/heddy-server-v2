@@ -46,7 +46,7 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
 
         UUID recordId = adapter.insert(record).recordId();
 
-        TreatmentRecord found = adapter.findById(recordId).orElseThrow();
+        TreatmentRecord found = adapter.findByIdAndUserId(recordId, USER_ID).orElseThrow();
         assertThat(found.recordId()).isEqualTo(recordId);
         assertThat(found.userId()).isEqualTo(USER_ID);
         assertThat(found.serviceTypes()).containsExactlyInAnyOrder(ServiceType.COLOR, ServiceType.PERM);
@@ -73,7 +73,7 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
         TreatmentPhoto after = adapter.insertPhoto(
                 TreatmentPhoto.create(saved.recordId(), newFile(), ImageType.AFTER));
 
-        TreatmentRecord found = adapter.findById(saved.recordId()).orElseThrow();
+        TreatmentRecord found = adapter.findByIdAndUserId(saved.recordId(), USER_ID).orElseThrow();
 
         assertThat(found.photos())
                 .extracting(TreatmentPhoto::photoId)
@@ -90,7 +90,8 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
                 USER_ID, Set.of(ServiceType.OTHER), "", "  ", PERFORMED_AT,
                 null, null, null, null);
 
-        TreatmentRecord found = adapter.findById(adapter.insert(record).recordId()).orElseThrow();
+        TreatmentRecord found = adapter
+                .findByIdAndUserId(adapter.insert(record).recordId(), USER_ID).orElseThrow();
 
         assertThat(found.salonName()).isNull();
         assertThat(found.designerName()).isNull();
@@ -116,7 +117,18 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
 
     @Test
     void returnsEmptyOptionalForUnknownRecord() {
-        assertThat(adapter.findById(UUID.randomUUID())).isEmpty();
+        assertThat(adapter.findByIdAndUserId(UUID.randomUUID(), USER_ID)).isEmpty();
+    }
+
+    /** 소유자 조건은 질의에 실린다 — 남의 기록은 사진을 읽기도 전에 빈 값이 된다. */
+    @Test
+    void returnsEmptyOptionalWhenTheRecordBelongsToSomeoneElse() {
+        TreatmentRecord saved = adapter.insert(TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
+                null, null, null, null));
+        adapter.insertPhoto(TreatmentPhoto.create(saved.recordId(), newFile(), ImageType.BEFORE));
+
+        assertThat(adapter.findByIdAndUserId(saved.recordId(), UUID.randomUUID())).isEmpty();
     }
 
     // ------------------------------------------------------------------ 참조 무결성

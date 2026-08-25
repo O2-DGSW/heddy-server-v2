@@ -7,10 +7,13 @@ import com.heddy.domain.treatment.exception.TreatmentError;
 import com.heddy.domain.treatment.exception.TreatmentException;
 import com.heddy.domain.treatment.model.ImageType;
 import com.heddy.domain.treatment.model.ServiceType;
+import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
 import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase.Command;
+import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase.Query;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
+import com.heddy.domain.file.port.out.FileStoragePort;
 import com.heddy.global.error.ApplicationException;
 import com.heddy.global.error.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -41,12 +45,14 @@ class TreatmentRecordServiceTest {
 
     @Mock TreatmentRecordRepositoryPort recordRepositoryPort;
     @Mock FileRepositoryPort fileRepositoryPort;
+    @Mock FileStoragePort fileStoragePort;
 
     private TreatmentRecordService service;
 
     @BeforeEach
     void setUp() {
-        service = new TreatmentRecordService(recordRepositoryPort, fileRepositoryPort);
+        service = new TreatmentRecordService(
+                recordRepositoryPort, fileRepositoryPort, fileStoragePort);
     }
 
     // ------------------------------------------------------------------ 등록
@@ -62,6 +68,7 @@ class TreatmentRecordServiceTest {
         assertThat(saved.serviceTypes()).containsExactlyInAnyOrder(ServiceType.CUT, ServiceType.COLOR);
         assertThat(saved.photos()).isEmpty();
         verify(recordRepositoryPort).insert(saved);
+        verifyNoInteractions(fileStoragePort);
     }
 
     @Test
@@ -77,6 +84,7 @@ class TreatmentRecordServiceTest {
         assertThat(saved.photos()).hasSize(1);
         assertThat(saved.photos().get(0).fileId()).isEqualTo(fileId);
         assertThat(saved.photos().get(0).imageType()).isEqualTo(ImageType.BEFORE);
+        verifyNoInteractions(fileStoragePort);
     }
 
     @Test
@@ -137,6 +145,92 @@ class TreatmentRecordServiceTest {
         verify(recordRepositoryPort, never()).insert(any());
     }
 
+    // ------------------------------------------------------------------ 조회
+
+    @Test
+    void loadsOwnRecordAndSignsFreshDownloadUrlsPerPhoto() {
+        UUID recordId = UUID.randomUUID();
+        // 사진의 record_id 는 기록 식별자와 같아야 한다(도메인 불변식).
+        TreatmentPhoto photo = new TreatmentPhoto(UUID.randomUUID(), recordId,
+                UUID.randomUUID(), ImageType.AFTER, Instant.now());
+        TreatmentRecord record = new TreatmentRecord(recordId, USER_ID,
+                Set.of(ServiceType.CUT), null, null, PERFORMED_AT, null, null, null, null,
+                List.of(photo), Instant.now());
+        URI signed = URI.create("https://bucket.s3.example/signed?X-Amz-Signature=s");
+        given(recordRepositoryPort.findByIdAndUserId(record.recordId(), USER_ID))
+                .willReturn(Optional.of(record));
+        given(fileRepositoryPort.findById(photo.fileId()))
+                .willReturn(Optional.of(readyFile(photo.fileId())));
+        given(fileStoragePort.createDownloadUrl(any())).willReturn(signed);
+
+        var result = service.get(new Query(USER_ID, record.recordId()));
+
+        assertThat(result.record().recordId()).isEqualTo(record.recordId());
+        assertThat(result.photoUrls()).containsEntry(photo.photoId(), signed);
+        verify(fileStoragePort).createDownloadUrl(any());
+    }
+
+    /**
+     * 남의 기록은 없는 기록과 똑같이 RESOURCE_NOT_FOUND 다. 존재 여부를 노출하지 않는다(#31).
+     * 소유자 조건이 조회에 실려 나가므로 사진·파일은 아예 읽히지 않는다.
+     */
+    @Test
+    void answersResourceNotFoundForAnotherUsersRecord() {
+        UUID recordId = UUID.randomUUID();
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.get(new Query(USER_ID, recordId)))
+                .isInstanceOf(ApplicationException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
+        verifyNoInteractions(fileRepositoryPort);
+        verifyNoInteractions(fileStoragePort);
+    }
+
+    /** 소유권을 메모리에서 거르지 않는다 — 요청자 식별자가 조회 조건으로 그대로 넘어가야 한다. */
+    @Test
+    void asksTheRepositoryForTheRecordScopedToTheRequester() {
+        UUID recordId = UUID.randomUUID();
+        TreatmentRecord record = new TreatmentRecord(recordId, USER_ID,
+                Set.of(ServiceType.CUT), null, null, PERFORMED_AT, null, null, null, null,
+                List.of(), Instant.now());
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
+
+        service.get(new Query(USER_ID, recordId));
+
+        verify(recordRepositoryPort).findByIdAndUserId(recordId, USER_ID);
+    }
+
+    /** 파일이 READY 가 아니면 URL 자리를 비워 둔다 — 사진 자체는 응답에서 사라지지 않는다. */
+    @Test
+    void leavesTheUrlEmptyForAPhotoWhoseFileIsNotReady() {
+        UUID recordId = UUID.randomUUID();
+        TreatmentPhoto photo = new TreatmentPhoto(UUID.randomUUID(), recordId,
+                UUID.randomUUID(), ImageType.AFTER, Instant.now());
+        TreatmentRecord record = new TreatmentRecord(recordId, USER_ID,
+                Set.of(ServiceType.CUT), null, null, PERFORMED_AT, null, null, null, null,
+                List.of(photo), Instant.now());
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
+        given(fileRepositoryPort.findById(photo.fileId()))
+                .willReturn(Optional.of(fileInStatus(photo.fileId(), FileStatus.DELETED)));
+
+        var result = service.get(new Query(USER_ID, recordId));
+
+        assertThat(result.photoUrls()).containsEntry(photo.photoId(), null);
+        verifyNoInteractions(fileStoragePort);
+    }
+
+    @Test
+    void answersResourceNotFoundForUnknownRecordId() {
+        given(recordRepositoryPort.findByIdAndUserId(any(), any())).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.get(new Query(USER_ID, UUID.randomUUID())))
+                .isInstanceOf(ApplicationException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
+    }
+
     // ------------------------------------------------------------------ 헬퍼
 
     private Command command(Instant performedAt, List<Command.Photo> photos) {
@@ -151,6 +245,12 @@ class TreatmentRecordServiceTest {
     private StoredFile readyFileOwnedBy(UUID fileId, UUID userId) {
         return new StoredFile(fileId, UUID.randomUUID(), userId, FilePurpose.TREATMENT_PHOTO,
                 FileStatus.READY, "TREATMENT_PHOTO/k", "image/jpeg", "a.jpg", 10, null,
+                null, null, Instant.now().plusSeconds(300), Instant.now());
+    }
+
+    private StoredFile fileInStatus(UUID fileId, FileStatus status) {
+        return new StoredFile(fileId, UUID.randomUUID(), USER_ID, FilePurpose.TREATMENT_PHOTO,
+                status, "TREATMENT_PHOTO/k", "image/jpeg", "a.jpg", 10, null,
                 null, null, Instant.now().plusSeconds(300), Instant.now());
     }
 }

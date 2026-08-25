@@ -59,9 +59,10 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase, Get
 
     @Override
     public Result get(Query query) {
-        // 소유자 필터를 조회와 한 묶음으로 둔다. 남의 기록은 없는 기록과 같은 404 다(#31).
-        TreatmentRecord record = recordRepositoryPort.findById(query.recordId())
-                .filter(found -> found.userId().equals(query.requesterId()))
+        // 소유자 조건을 질의에 함께 실어 사진을 읽기 전에 DB 에서 거른다. 남의 기록은 없는 기록과
+        // 같은 404 이고, 질의 횟수도 없는 기록과 같아야 존재 여부가 새지 않는다(#31).
+        TreatmentRecord record = recordRepositoryPort
+                .findByIdAndUserId(query.recordId(), query.requesterId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
         Map<UUID, URI> photoUrls = new HashMap<>();
         for (TreatmentPhoto photo : record.photos()) {

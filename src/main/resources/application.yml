@@ -64,6 +64,9 @@ app:
     pending-grace-seconds: ${FILE_CLEANUP_PENDING_GRACE_SECONDS:60}
     ready-grace-seconds: ${FILE_CLEANUP_READY_GRACE_SECONDS:86400}
     batch-size: ${FILE_CLEANUP_BATCH_SIZE:100}
+  share:
+    # 공유 링크의 앞부분. 발급한 토큰 원문을 붙여 201 응답으로 딱 한 번 내보낸다.
+    public-base-url: ${SHARE_PUBLIC_BASE_URL:https://heddy.example.com/s}
   account-deletion:
     worker-delay-ms: ${ACCOUNT_DELETION_WORKER_DELAY_MS:5000}
     worker-initial-delay-ms: ${ACCOUNT_DELETION_WORKER_INITIAL_DELAY_MS:60000}

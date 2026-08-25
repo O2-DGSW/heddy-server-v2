@@ -37,7 +37,7 @@ public class AccountPersistenceAdapter implements
         AccountEntity entity = accountJpaRepository.findById(account.userId())
                 .orElseGet(() -> new AccountEntity(account));
         entity.update(account);
-        return accountJpaRepository.save(entity).toDomain();
+        return accountJpaRepository.saveAndFlush(entity).toDomain();
     }
 
     @Override

@@ -57,6 +57,13 @@ app:
     download-url-ttl-seconds: 60
     # 업로드 세션 수명. presign 부터 complete 까지 클라이언트가 직접 올릴 시간을 준다.
     upload-session-ttl-seconds: ${UPLOAD_SESSION_TTL_SECONDS:600}
+  file-cleanup:
+    enabled: ${FILE_CLEANUP_ENABLED:true}
+    interval-ms: ${FILE_CLEANUP_INTERVAL_MS:60000}
+    initial-delay-ms: ${FILE_CLEANUP_INITIAL_DELAY_MS:60000}
+    pending-grace-seconds: ${FILE_CLEANUP_PENDING_GRACE_SECONDS:60}
+    ready-grace-seconds: ${FILE_CLEANUP_READY_GRACE_SECONDS:86400}
+    batch-size: ${FILE_CLEANUP_BATCH_SIZE:100}
   ai:
     base-url: ${AI_SERVER_URL:http://localhost:8000}
     connect-timeout-seconds: 3

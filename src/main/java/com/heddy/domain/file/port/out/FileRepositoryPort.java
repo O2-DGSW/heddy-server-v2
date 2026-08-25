@@ -41,4 +41,9 @@ public interface FileRepositoryPort {
     void markReclaimed(UUID fileId, Instant reclaimedAt);
 
     List<StoredFile> findAllByUserId(UUID userId);
+
+    List<StoredFile> findCleanupCandidates(
+            Instant pendingExpiredBefore, Instant readyCreatedBefore, int limit);
+    boolean tryAcquireCleanupLock();
+    void deleteMetadata(UUID fileId);
 }

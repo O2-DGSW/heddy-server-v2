@@ -77,4 +77,23 @@ interface FileJpaRepository extends JpaRepository<FileEntity, UUID> {
     int markReclaimed(@Param("fileId") UUID fileId, @Param("now") Instant now);
 
     List<FileEntity> findAllByUserId(UUID userId);
+
+    @Query(value = """
+            SELECT f.* FROM files f
+            WHERE (f.status = 'DELETED' AND f.expires_at <= :pendingExpiredBefore)
+               OR (f.status = 'PENDING' AND f.expires_at <= :pendingExpiredBefore)
+               OR (f.status = 'READY' AND f.created_at <= :readyCreatedBefore
+                   AND NOT EXISTS (
+                       SELECT 1 FROM treatment_record_photos photo
+                       WHERE photo.file_id = f.file_id
+                   ))
+            ORDER BY f.updated_at, f.file_id
+            """, nativeQuery = true)
+    List<FileEntity> findCleanupCandidates(
+            @Param("pendingExpiredBefore") Instant pendingExpiredBefore,
+            @Param("readyCreatedBefore") Instant readyCreatedBefore,
+            Pageable pageable);
+
+    @Query(value = "SELECT pg_try_advisory_xact_lock(470047)", nativeQuery = true)
+    boolean tryAcquireCleanupLock();
 }

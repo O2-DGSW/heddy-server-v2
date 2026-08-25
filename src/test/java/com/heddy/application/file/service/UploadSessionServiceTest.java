@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -35,6 +36,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -268,21 +270,38 @@ class UploadSessionServiceTest {
     // ------------------------------------------------------------------ cancel
 
     /**
-     * 취소는 객체를 먼저 지우고 행을 DELETED 로 전이한다. 순서가 바뀌면 행 전이 뒤 객체 삭제가
-     * 실패했을 때 아무 기록도 객체를 가리키지 않아 개인정보가 회수 불가능한 고아로 남는다.
+     * 취소는 PENDING 을 기대 상태로 건 조건부 갱신으로 행을 <em>먼저</em> 선점하고 그다음 객체를
+     * 지운다. 같은 행을 노리는 complete 의 PENDING → READY 전이와 DB 에서 직렬화하기 위해서다.
      */
     @Test
-    void deletesTheStoredObjectBeforeTransitioningTheRowToDeletedOnCancellation() {
+    void claimsTheRowBeforeDeletingTheStoredObjectOnCancellation() {
         StoredFile pending = insertPending();
         given(fileRepositoryPort.transition(any(), any()))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
         service.cancel(new CancelUploadCommand(USER_ID, pending.uploadId()));
 
-        verify(fileStoragePort).deleteObject(pending.objectKey());
         ArgumentCaptor<StoredFile> captor = ArgumentCaptor.forClass(StoredFile.class);
-        verify(fileRepositoryPort).transition(captor.capture(), eq(FileStatus.PENDING));
+        InOrder inOrder = inOrder(fileRepositoryPort, fileStoragePort);
+        inOrder.verify(fileRepositoryPort).transition(captor.capture(), eq(FileStatus.PENDING));
+        inOrder.verify(fileStoragePort).deleteObject(pending.objectKey());
         assertThat(captor.getValue().status()).isEqualTo(FileStatus.DELETED);
+    }
+
+    /**
+     * complete 와 cancel 이 둘 다 PENDING 을 읽고, complete 의 PENDING → READY 가 먼저 이긴 순서.
+     * 선점이 0 행으로 실패하므로 스토리지에는 손을 대지 않는다 — 여기서 객체를 지워버리면 트랜잭션
+     * 롤백이 그 삭제를 되돌리지 못해 "READY 행 + 없는 객체"가 남는다.
+     */
+    @Test
+    void doesNotTouchStorageWhenCompleteAlreadyWonTheRow() {
+        StoredFile pending = insertPending();
+        given(fileRepositoryPort.transition(any(), eq(FileStatus.PENDING)))
+                .willThrow(new FileException(FileError.CONCURRENT_MODIFICATION));
+
+        assertCancelError(pending.uploadId(), FileError.CONCURRENT_MODIFICATION);
+
+        verify(fileStoragePort, never()).deleteObject(any());
     }
 
     @Test
@@ -323,17 +342,23 @@ class UploadSessionServiceTest {
         verify(fileRepositoryPort, never()).transition(any(), any());
     }
 
+    /**
+     * 선점 뒤 스토리지 삭제가 실패하면 예외를 그대로 올린다. 트랜잭션이 롤백돼 행이 PENDING 으로
+     * 돌아가므로 클라이언트가 재시도할 수 있고, 롤백되지 않고 DELETED 로 남더라도 회수 표시가
+     * 비어 있어 만료 이후 회수 경로가 같은 키를 다시 지운다.
+     */
     @Test
-    void propagatesStorageFailureAndLeavesTheRowUntouchedForRetry() {
+    void propagatesStorageFailureAfterClaimingTheRow() {
         StoredFile pending = insertPending();
-        // 포트가 던지는 구체 타입은 어댑터의 몫이다. 단위 테스트는 전파와 행 무결성만 본다.
+        given(fileRepositoryPort.transition(any(), any()))
+                .willAnswer(invocation -> invocation.getArgument(0));
+        // 포트가 던지는 구체 타입은 어댑터의 몫이다. 단위 테스트는 전파만 본다.
         RuntimeException storageFailure = new RuntimeException("storage down");
         doThrow(storageFailure).when(fileStoragePort).deleteObject(pending.objectKey());
 
         assertThatThrownBy(() -> service.cancel(
                 new CancelUploadCommand(USER_ID, pending.uploadId())))
                 .isSameAs(storageFailure);
-        verify(fileRepositoryPort, never()).transition(any(), any());
     }
 
     // ------------------------------------------------------------------ 헬퍼

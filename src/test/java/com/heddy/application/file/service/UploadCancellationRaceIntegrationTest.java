@@ -170,6 +170,11 @@ class UploadCancellationRaceIntegrationTest extends PostgresIntegrationTest {
         public void markReclaimed(UUID fileId, Instant reclaimedAt) {
             delegate.markReclaimed(fileId, reclaimedAt);
         }
+
+        @Override
+        public List<StoredFile> findAllByUserId(UUID userId) {
+            return delegate.findAllByUserId(userId);
+        }
     }
 
     /** 삭제 호출만 기록한다. 이 테스트가 보는 것은 "스토리지를 건드렸는가"다. */

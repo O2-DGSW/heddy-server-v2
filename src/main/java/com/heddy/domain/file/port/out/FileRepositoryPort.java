@@ -27,7 +27,6 @@ public interface FileRepositoryPort {
 
     /** presign 응답과 complete 요청이 쓰는 업로드 세션 식별자로 조회한다. */
     Optional<StoredFile> findByUploadId(UUID uploadId);
-
     /**
      * 만료 이후 스토리지 객체를 다시 지워야 하는 취소 세션들. 취소가 지운 객체는 발급된
      * presigned PUT URL 이 살아 있는 동안 되살아날 수 있어, DELETED 라는 이유로 정리 대상에서
@@ -40,4 +39,6 @@ public interface FileRepositoryPort {
 
     /** 스토리지 객체를 최종 회수했다고 표시한다. 이미 표시된 행은 건드리지 않는다. */
     void markReclaimed(UUID fileId, Instant reclaimedAt);
+
+    List<StoredFile> findAllByUserId(UUID userId);
 }

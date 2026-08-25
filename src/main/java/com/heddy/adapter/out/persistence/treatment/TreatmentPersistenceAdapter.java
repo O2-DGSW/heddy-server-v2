@@ -97,6 +97,12 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
         return deleted;
     }
 
+    @Override
+    public void deleteAllByUserId(UUID userId) {
+        recordRepository.deleteAllByUserId(userId);
+        recordRepository.flush();
+    }
+
     private List<TreatmentPhoto> photosOf(UUID recordId) {
         return photoRepository.findByRecordIdOrderBySortOrderAscCreatedAtAscPhotoIdAsc(recordId).stream()
                 .map(TreatmentPhotoEntity::toDomain)

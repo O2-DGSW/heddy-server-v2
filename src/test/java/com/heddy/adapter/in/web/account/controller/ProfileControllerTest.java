@@ -11,6 +11,9 @@ import com.heddy.domain.account.model.HairProfile.HairThickness;
 import com.heddy.domain.account.model.HairProfile.HairType;
 import com.heddy.domain.account.port.in.MyProfileResult;
 import com.heddy.domain.account.port.in.ProfileUseCase;
+import com.heddy.domain.account.port.in.RequestAccountDeletionUseCase;
+import com.heddy.domain.account.model.AccountDeletionRequest;
+import com.heddy.domain.account.model.AccountDeletionStatus;
 import com.heddy.domain.account.port.out.AuthTokenPort;
 import com.heddy.global.error.GlobalExceptionHandler;
 import com.heddy.global.filter.RequestIdFilter;
@@ -34,6 +37,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,11 +53,32 @@ class ProfileControllerTest {
     @Autowired MockMvc mockMvc;
     @MockitoBean ProfileUseCase profileUseCase;
     @MockitoBean AuthTokenPort authTokenPort;
+    @MockitoBean RequestAccountDeletionUseCase requestAccountDeletionUseCase;
 
     @Test
     void requiresAuthentication() throws Exception {
         mockMvc.perform(get("/me"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void acceptsAccountDeletionRequest() throws Exception {
+        UUID requestId = UUID.randomUUID();
+        given(requestAccountDeletionUseCase.request(any())).willReturn(
+                new AccountDeletionRequest(requestId, USER_ID, AccountDeletionStatus.PROCESSING,
+                        "더 이상 사용하지 않음", NOW, null));
+
+        mockMvc.perform(delete("/me")
+                        .with(authentication(userAuthentication()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"reauthentication_token":"one-time-token",
+                                 "reason":"더 이상 사용하지 않음"}
+                                """))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.deletion_request_id").value(requestId.toString()))
+                .andExpect(jsonPath("$.data.status").value("PROCESSING"))
+                .andExpect(jsonPath("$.data.requested_at").value(NOW.toString()));
     }
 
     @Test

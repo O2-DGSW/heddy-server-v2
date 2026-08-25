@@ -48,6 +48,17 @@ public record Account(
         return status == AccountStatus.DELETED || status == AccountStatus.DELETION_PENDING;
     }
 
+    public Account markDeletionPending() {
+        return new Account(userId, email, passwordHash, authProvider, providerSubject,
+                AccountStatus.DELETION_PENDING, 0, null, createdAt, updatedAt);
+    }
+
+    /** 동의 증적의 user_id는 보존하면서 로그인 식별정보를 제거한다. */
+    public Account anonymizeAsDeleted() {
+        return new Account(userId, null, null, authProvider, null,
+                AccountStatus.DELETED, 0, null, createdAt, updatedAt);
+    }
+
     public Account unlockIfExpired(Instant now) {
         if (status == AccountStatus.LOCKED && (lockedUntil == null || !now.isBefore(lockedUntil))) {
             return new Account(userId, email, passwordHash, authProvider, providerSubject,

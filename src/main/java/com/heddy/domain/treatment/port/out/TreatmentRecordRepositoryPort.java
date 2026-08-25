@@ -46,4 +46,7 @@ public interface TreatmentRecordRepositoryPort {
 
     /** 하드 삭제한다. 연결 사진 행은 데이터베이스 CASCADE가 함께 삭제한다. */
     boolean deleteById(UUID recordId);
+
+    /** 계정 탈퇴 정리에서 사용자의 모든 기록을 하드 삭제한다. */
+    void deleteAllByUserId(UUID userId);
 }

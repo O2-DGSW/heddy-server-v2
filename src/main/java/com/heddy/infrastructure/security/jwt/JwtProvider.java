@@ -1,6 +1,7 @@
 package com.heddy.infrastructure.security.jwt;
 
 import com.heddy.domain.account.model.AuthPrincipal;
+import com.heddy.domain.account.model.ReauthenticationPrincipal;
 import com.heddy.domain.account.port.out.AuthTokenPort;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -67,6 +68,18 @@ public class JwtProvider implements AuthTokenPort {
 
     @Override
     public Optional<AuthPrincipal> parseAccessToken(String token) {
+        return parseToken(token, JwtTokenType.ACCESS)
+                .map(claims -> new AuthPrincipal(UUID.fromString(claims.getSubject())));
+    }
+
+    @Override
+    public Optional<ReauthenticationPrincipal> parseReauthenticationToken(String token) {
+        return parseToken(token, JwtTokenType.REAUTHENTICATION)
+                .map(claims -> new ReauthenticationPrincipal(
+                        UUID.fromString(claims.getSubject()), UUID.fromString(claims.getId())));
+    }
+
+    private Optional<Claims> parseToken(String token, JwtTokenType expectedType) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(signingKey)
@@ -74,10 +87,12 @@ public class JwtProvider implements AuthTokenPort {
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            if (!JwtTokenType.ACCESS.value().equals(claims.get(TYPE_CLAIM, String.class))) {
+            if (!expectedType.value().equals(claims.get(TYPE_CLAIM, String.class))) {
                 return Optional.empty();
             }
-            return Optional.of(new AuthPrincipal(UUID.fromString(claims.getSubject())));
+            UUID.fromString(claims.getSubject());
+            UUID.fromString(claims.getId());
+            return Optional.of(claims);
         } catch (JwtException | IllegalArgumentException exception) {
             return Optional.empty();
         }

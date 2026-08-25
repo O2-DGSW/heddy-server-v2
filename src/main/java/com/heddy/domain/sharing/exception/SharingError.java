@@ -6,7 +6,10 @@ public enum SharingError {
     EXPIRES_AT_REQUIRED("SHARING_EXPIRES_AT_REQUIRED", "공유 만료 시각은 필수입니다."),
     EXPIRES_AT_NOT_FUTURE("SHARING_EXPIRES_AT_NOT_FUTURE", "공유 만료 시각은 미래여야 합니다."),
     EXPIRES_IN_DAYS_INVALID("SHARING_EXPIRES_IN_DAYS_INVALID", "유효기간은 1일 이상이어야 합니다."),
-    FIELD_UNKNOWN("SHARING_FIELD_UNKNOWN", "저장된 공유 항목 값을 읽을 수 없습니다.");
+    FIELD_UNKNOWN("SHARING_FIELD_UNKNOWN", "저장된 공유 항목 값을 읽을 수 없습니다."),
+    TOKEN_INVALID("SHARE_TOKEN_INVALID", "유효하지 않은 공유 링크입니다."),
+    EXPIRED("SHARE_EXPIRED", "만료된 공유 링크입니다."),
+    REVOKED("SHARE_REVOKED", "철회된 공유 링크입니다.");
 
     private final String code;
     private final String message;

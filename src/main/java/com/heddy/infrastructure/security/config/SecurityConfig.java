@@ -53,7 +53,10 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/auth/email-availability").permitAll()
+                                "/auth/email-availability",
+                                // 무인증 공유 링크(스펙 11.6). 토큰 해시 대조와 철회·만료 검증은
+                                // 유스케이스가 매 요청 한다.
+                                "/public/shares/*").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/auth/signup/email",
                                 "/auth/signup/social",

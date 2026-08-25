@@ -23,6 +23,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -159,6 +160,11 @@ class UploadCancellationRaceIntegrationTest extends PostgresIntegrationTest {
         @Override
         public Optional<StoredFile> findById(UUID fileId) {
             return delegate.findById(fileId);
+        }
+
+        @Override
+        public List<StoredFile> findAllById(Collection<UUID> fileIds) {
+            return delegate.findAllById(fileIds);
         }
 
         @Override

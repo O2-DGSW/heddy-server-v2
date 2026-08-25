@@ -4,6 +4,7 @@ import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.model.StoredFile;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +25,12 @@ public interface FileRepositoryPort {
     StoredFile transition(StoredFile file, FileStatus expectedStatus);
 
     Optional<StoredFile> findById(UUID fileId);
+
+    /**
+     * 여러 파일을 질의 한 번(IN 조회)으로 읽는다. 시술기록 목록처럼 페이지를 조립하며 파일을
+     * 건별로 다시 읽던 N+1(#66)을 끊는 용도다. 없는 식별자는 결과에 나오지 않는다.
+     */
+    List<StoredFile> findAllById(Collection<UUID> fileIds);
 
     /** presign 응답과 complete 요청이 쓰는 업로드 세션 식별자로 조회한다. */
     Optional<StoredFile> findByUploadId(UUID uploadId);

@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 시술기록 등록·단건 조회. 등록 때는 첨부 file_id 가 READY 인 요청자 소유인지 확인하고
@@ -131,9 +133,10 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                 normalizeFilter(query.salonName()), query.from(), query.to(), query.page(), query.size(),
                 SORT_ASCENDING.equals(query.sort()));
         TreatmentRecordPage page = recordRepositoryPort.findPage(filter);
+        Map<UUID, URI> thumbnails = thumbnailsFor(page.items());
         List<ListTreatmentRecordsUseCase.Item> items = page.items().stream()
                 .map(record -> new ListTreatmentRecordsUseCase.Item(
-                        record, thumbnailUrl(record), null))
+                        record, thumbnails.get(record.recordId()), null))
                 .toList();
         return new ListTreatmentRecordsUseCase.Result(
                 items, query.page(), query.size(), page.totalElements());
@@ -301,15 +304,37 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         return value.strip();
     }
 
-    /** 목록 대표 이미지는 생성 순서상 첫 번째로 조회 가능한 사진을 사용한다. */
-    private URI thumbnailUrl(TreatmentRecord record) {
-        for (TreatmentPhoto photo : record.photos()) {
-            URI url = downloadUrl(photo);
-            if (url != null) {
-                return url;
+    /**
+     * 페이지 전체의 대표 사진 파일을 질의 한 번으로 읽고 같은 파일은 한 번만 서명한다. 기록마다
+     * 파일을 다시 읽고 presigned URL 을 다시 발급하던 N+1(#66)을 쿼리·서명 횟수 고정으로 끊는다.
+     * 대표 사진은 생성 순서상 첫 번째로 조회 가능한 사진이라는 기존 규칙을 그대로 둔다.
+     */
+    private Map<UUID, URI> thumbnailsFor(List<TreatmentRecord> records) {
+        List<UUID> fileIds = records.stream()
+                .flatMap(record -> record.photos().stream())
+                .map(TreatmentPhoto::fileId)
+                .distinct()
+                .toList();
+        if (fileIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, StoredFile> files = fileRepositoryPort.findAllById(fileIds).stream()
+                .collect(Collectors.toMap(StoredFile::fileId, Function.identity()));
+        Map<UUID, URI> signedUrls = new HashMap<>();
+        Map<UUID, URI> thumbnails = new HashMap<>();
+        for (TreatmentRecord record : records) {
+            for (TreatmentPhoto photo : record.photos()) {
+                StoredFile file = files.get(photo.fileId());
+                if (file == null || !file.isReady()) {
+                    continue;
+                }
+                // 같은 파일이 여러 기록의 대표 사진이어도 서명은 한 번만 발급한다.
+                thumbnails.put(record.recordId(), signedUrls.computeIfAbsent(
+                        photo.fileId(), fileId -> fileStoragePort.createDownloadUrl(file)));
+                break;
             }
         }
-        return null;
+        return thumbnails;
     }
 
     /**

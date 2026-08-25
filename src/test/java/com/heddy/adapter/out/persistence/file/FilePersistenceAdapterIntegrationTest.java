@@ -217,7 +217,7 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
-    void findsExpiredPendingUnlinkedReadyAndDeletedCleanupCandidates() {
+    void findsExpiredPendingUnlinkedReadyAndExpiredDeletedCleanupCandidates() {
         Instant now = Instant.now();
         StoredFile expiredPending = adapter.insert(new StoredFile(
                 UUID.randomUUID(), UUID.randomUUID(), USER_ID, FilePurpose.TREATMENT_PHOTO,
@@ -230,15 +230,21 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
                 FileStatus.PENDING);
         jdbcTemplate.update("UPDATE files SET created_at = ? WHERE file_id = ?",
                 Timestamp.from(now.minusSeconds(172_800)), orphanReady.fileId());
-        StoredFile deleted = adapter.insert(pendingPhoto("deleted.jpg"));
+        StoredFile deleted = adapter.insert(StoredFile.pending(
+                USER_ID, FilePurpose.TREATMENT_PHOTO,
+                "TREATMENT_PHOTO/" + USER_ID + "/deleted.jpg",
+                "image/jpeg", "deleted.jpg", 1_024, DECLARED_SHA256,
+                now.minusSeconds(120)));
         adapter.transition(deleted.markDeleted(), FileStatus.PENDING);
+        StoredFile freshDeleted = adapter.insert(pendingPhoto("fresh-deleted.jpg"));
+        adapter.transition(freshDeleted.markDeleted(), FileStatus.PENDING);
 
         List<StoredFile> candidates = adapter.findCleanupCandidates(
                 now.minusSeconds(60), now.minusSeconds(86_400), 100);
 
         assertThat(candidates).extracting(StoredFile::fileId)
                 .contains(expiredPending.fileId(), orphanReady.fileId(), deleted.fileId())
-                .doesNotContain(freshPending.fileId());
+                .doesNotContain(freshPending.fileId(), freshDeleted.fileId());
     }
 
     // ------------------------------------------------------------------ 스키마 대조

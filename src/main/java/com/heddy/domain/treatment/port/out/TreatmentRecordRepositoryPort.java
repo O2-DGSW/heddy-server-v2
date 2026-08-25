@@ -2,6 +2,8 @@ package com.heddy.domain.treatment.port.out;
 
 import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
+import com.heddy.domain.treatment.model.TreatmentRecordFilter;
+import com.heddy.domain.treatment.model.TreatmentRecordPage;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -26,4 +28,7 @@ public interface TreatmentRecordRepositoryPort {
      * 질의 횟수로 존재 여부가 새어 나간다. 그래서 포트 자체가 소유자 조건을 받는다.
      */
     Optional<TreatmentRecord> findByIdAndUserId(UUID recordId, UUID userId);
+
+    /** 소유자 조건을 항상 포함해 필터·페이지 조건에 맞는 기록을 조회한다. */
+    TreatmentRecordPage findPage(TreatmentRecordFilter filter);
 }

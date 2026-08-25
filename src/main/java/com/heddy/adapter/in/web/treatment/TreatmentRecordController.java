@@ -1,14 +1,20 @@
 package com.heddy.adapter.in.web.treatment;
 
 import com.heddy.adapter.in.web.treatment.dto.CreateTreatmentRecordRequest;
+import com.heddy.adapter.in.web.treatment.dto.AddTreatmentPhotoRequest;
+import com.heddy.adapter.in.web.treatment.dto.PhotoComparisonResponse;
 import com.heddy.adapter.in.web.treatment.dto.TreatmentRecordResponse;
+import com.heddy.adapter.in.web.treatment.dto.TreatmentPhotoResponse;
 import com.heddy.adapter.in.web.treatment.dto.TreatmentRecordSummaryResponse;
 import com.heddy.adapter.in.web.treatment.dto.UpdateTreatmentRecordRequest;
+import com.heddy.adapter.in.web.treatment.dto.UpdateTreatmentPhotoRequest;
 import com.heddy.domain.treatment.model.ServiceType;
 import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.in.DeleteTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase;
+import com.heddy.domain.treatment.port.in.GetPhotoComparisonUseCase;
 import com.heddy.domain.treatment.port.in.ListTreatmentRecordsUseCase;
+import com.heddy.domain.treatment.port.in.ManageTreatmentPhotosUseCase;
 import com.heddy.domain.treatment.port.in.UpdateTreatmentRecordUseCase;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
@@ -46,6 +52,8 @@ public class TreatmentRecordController {
     private final ListTreatmentRecordsUseCase listTreatmentRecordsUseCase;
     private final UpdateTreatmentRecordUseCase updateTreatmentRecordUseCase;
     private final DeleteTreatmentRecordUseCase deleteTreatmentRecordUseCase;
+    private final ManageTreatmentPhotosUseCase manageTreatmentPhotosUseCase;
+    private final GetPhotoComparisonUseCase getPhotoComparisonUseCase;
 
     @PostMapping("/treatment-records")
     @Operation(summary = "시술기록 등록",
@@ -135,5 +143,63 @@ public class TreatmentRecordController {
         deleteTreatmentRecordUseCase.delete(
                 new DeleteTreatmentRecordUseCase.Command(userId, recordId));
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/treatment-records/{recordId}/photos")
+    @Operation(summary = "시술기록 사진 추가",
+            description = "READY 상태인 요청자 소유 파일을 연결합니다. 기록당 최대 10장입니다.")
+    public ResponseEntity<ApiResponse<TreatmentPhotoResponse>> addPhoto(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID recordId,
+            @Valid @RequestBody AddTreatmentPhotoRequest request,
+            HttpServletRequest servletRequest
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
+                TreatmentPhotoResponse.from(
+                        manageTreatmentPhotosUseCase.add(request.toCommand(userId, recordId))),
+                RequestIdFilter.get(servletRequest)));
+    }
+
+    @PatchMapping("/treatment-records/{recordId}/photos/{photoId}")
+    @Operation(summary = "시술기록 사진 정보 수정",
+            description = "사진 유형이나 표시 순서 중 전달한 값을 수정합니다.")
+    public ApiResponse<TreatmentPhotoResponse> updatePhoto(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID recordId,
+            @PathVariable UUID photoId,
+            @Valid @RequestBody UpdateTreatmentPhotoRequest request,
+            HttpServletRequest servletRequest
+    ) {
+        return ApiResponse.success(
+                TreatmentPhotoResponse.from(manageTreatmentPhotosUseCase.update(
+                        request.toCommand(userId, recordId, photoId))),
+                RequestIdFilter.get(servletRequest));
+    }
+
+    @DeleteMapping("/treatment-records/{recordId}/photos/{photoId}")
+    @Operation(summary = "시술기록 사진 삭제",
+            description = "사진 연결을 삭제하고 연결 파일을 비동기 회수 대상 상태로 전이합니다.")
+    public ResponseEntity<Void> deletePhoto(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID recordId,
+            @PathVariable UUID photoId
+    ) {
+        manageTreatmentPhotosUseCase.delete(
+                new ManageTreatmentPhotosUseCase.DeleteCommand(userId, recordId, photoId));
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/treatment-records/{recordId}/photo-comparison")
+    @Operation(summary = "시술 전후 사진 비교 조회",
+            description = "BEFORE와 AFTER 사진이 모두 있어야 하며, 한쪽이라도 없으면 422를 반환합니다.")
+    public ApiResponse<PhotoComparisonResponse> getPhotoComparison(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID recordId,
+            HttpServletRequest servletRequest
+    ) {
+        return ApiResponse.success(
+                PhotoComparisonResponse.from(getPhotoComparisonUseCase.getPhotoComparison(
+                        new GetPhotoComparisonUseCase.Query(userId, recordId))),
+                RequestIdFilter.get(servletRequest));
     }
 }

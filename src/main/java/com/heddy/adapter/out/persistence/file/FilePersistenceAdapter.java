@@ -6,9 +6,12 @@ import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.model.StoredFile;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,5 +40,59 @@ public class FilePersistenceAdapter implements FileRepositoryPort {
     @Override
     public Optional<StoredFile> findById(UUID fileId) {
         return repository.findById(fileId).map(FileEntity::toDomain);
+    }
+
+    @Override
+    public List<StoredFile> findAllById(Collection<UUID> fileIds) {
+        // 빈 IN 절은 질의를 날리지 않는다 — 목록의 빈 페이지가 파일 조회 없이 끝난다.
+        if (fileIds.isEmpty()) {
+            return List.of();
+        }
+        return repository.findAllById(fileIds).stream().map(FileEntity::toDomain).toList();
+    }
+
+    @Override
+    public Optional<StoredFile> findByUploadId(UUID uploadId) {
+        return repository.findByUploadId(uploadId).map(FileEntity::toDomain);
+    }
+
+    @Override
+    public List<StoredFile> findReclaimTargets(Instant now, int limit) {
+        return repository
+                .findReclaimTargets(FileStatus.DELETED, now, PageRequest.of(0, limit))
+                .stream()
+                .map(FileEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public void markReclaimed(UUID fileId, Instant reclaimedAt) {
+        repository.markReclaimed(fileId, reclaimedAt);
+    }
+
+    @Override
+    public List<StoredFile> findAllByUserId(UUID userId) {
+        return repository.findAllByUserId(userId).stream().map(FileEntity::toDomain).toList();
+    }
+
+    @Override
+    public List<StoredFile> findCleanupCandidates(
+            Instant pendingExpiredBefore, Instant readyCreatedBefore, int limit
+    ) {
+        return repository.findCleanupCandidates(
+                        pendingExpiredBefore, readyCreatedBefore, PageRequest.of(0, limit)).stream()
+                .map(FileEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public boolean tryAcquireCleanupLock() {
+        return repository.tryAcquireCleanupLock();
+    }
+
+    @Override
+    public void deleteMetadata(UUID fileId) {
+        repository.deleteById(fileId);
+        repository.flush();
     }
 }

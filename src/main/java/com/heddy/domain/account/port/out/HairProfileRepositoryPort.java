@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface HairProfileRepositoryPort {
     Optional<HairProfile> findByUserId(UUID userId);
     HairProfile save(HairProfile hairProfile);
+    void deleteByUserId(UUID userId);
 }

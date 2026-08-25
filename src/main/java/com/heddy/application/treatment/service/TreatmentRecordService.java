@@ -1,0 +1,363 @@
+package com.heddy.application.treatment.service;
+
+import com.heddy.domain.file.model.StoredFile;
+import com.heddy.domain.file.model.FileStatus;
+import com.heddy.domain.file.port.out.FileRepositoryPort;
+import com.heddy.domain.file.port.out.FileStoragePort;
+import com.heddy.domain.analysis.port.out.AnalysisStalenessPort;
+import com.heddy.domain.treatment.exception.TreatmentError;
+import com.heddy.domain.treatment.exception.TreatmentException;
+import com.heddy.domain.treatment.model.ImageType;
+import com.heddy.domain.treatment.model.TreatmentPhoto;
+import com.heddy.domain.treatment.model.TreatmentRecord;
+import com.heddy.domain.treatment.model.TreatmentRecordFilter;
+import com.heddy.domain.treatment.model.TreatmentRecordPage;
+import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase;
+import com.heddy.domain.treatment.port.in.DeleteTreatmentRecordUseCase;
+import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase;
+import com.heddy.domain.treatment.port.in.GetPhotoComparisonUseCase;
+import com.heddy.domain.treatment.port.in.ListTreatmentRecordsUseCase;
+import com.heddy.domain.treatment.port.in.ManageTreatmentPhotosUseCase;
+import com.heddy.domain.treatment.port.in.UpdateTreatmentRecordUseCase;
+import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
+import com.heddy.global.error.ApplicationException;
+import com.heddy.global.error.ErrorCode;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+/**
+ * 시술기록 등록·단건 조회. 등록 때는 첨부 file_id 가 READY 인 요청자 소유인지 확인하고
+ * (#28 의 완료 검증을 통과한 파일만 존재한다), 조회 때만 사진의 Presigned GET URL 을
+ * 발급한다 — URL 은 어디에도 저장하지 않는다.
+ */
+@Service
+@Transactional(readOnly = true)
+public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
+        GetTreatmentRecordUseCase, ListTreatmentRecordsUseCase,
+        UpdateTreatmentRecordUseCase, DeleteTreatmentRecordUseCase,
+        ManageTreatmentPhotosUseCase, GetPhotoComparisonUseCase {
+
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final String SORT_ASCENDING = "performedAt,asc";
+    private static final String SORT_DESCENDING = "performedAt,desc";
+
+    private final TreatmentRecordRepositoryPort recordRepositoryPort;
+    private final FileRepositoryPort fileRepositoryPort;
+    private final FileStoragePort fileStoragePort;
+    private final AnalysisStalenessPort analysisStalenessPort;
+
+    @Autowired
+    public TreatmentRecordService(
+            TreatmentRecordRepositoryPort recordRepositoryPort,
+            FileRepositoryPort fileRepositoryPort,
+            FileStoragePort fileStoragePort,
+            ObjectProvider<AnalysisStalenessPort> analysisStalenessPortProvider
+    ) {
+        this.recordRepositoryPort = recordRepositoryPort;
+        this.fileRepositoryPort = fileRepositoryPort;
+        this.fileStoragePort = fileStoragePort;
+        this.analysisStalenessPort = analysisStalenessPortProvider.getIfAvailable(() -> recordId -> { });
+    }
+
+    /** 분석 도메인이 없는 단위 테스트와의 호환을 위한 생성자. */
+    TreatmentRecordService(
+            TreatmentRecordRepositoryPort recordRepositoryPort,
+            FileRepositoryPort fileRepositoryPort,
+            FileStoragePort fileStoragePort
+    ) {
+        this.recordRepositoryPort = recordRepositoryPort;
+        this.fileRepositoryPort = fileRepositoryPort;
+        this.fileStoragePort = fileStoragePort;
+        this.analysisStalenessPort = recordId -> { };
+    }
+
+    TreatmentRecordService(
+            TreatmentRecordRepositoryPort recordRepositoryPort,
+            FileRepositoryPort fileRepositoryPort,
+            FileStoragePort fileStoragePort,
+            AnalysisStalenessPort analysisStalenessPort
+    ) {
+        this.recordRepositoryPort = recordRepositoryPort;
+        this.fileRepositoryPort = fileRepositoryPort;
+        this.fileStoragePort = fileStoragePort;
+        this.analysisStalenessPort = analysisStalenessPort;
+    }
+
+    @Override
+    @Transactional
+    public TreatmentRecord create(CreateTreatmentRecordUseCase.Command command) {
+        // 도메인 팩터리가 불변식을 먼저 통과시킨다. attachPhoto 가 사진 장수 상한을 재검증한다.
+        TreatmentRecord record = TreatmentRecord.create(
+                command.userId(), command.serviceTypes(), command.salonName(), command.designerName(),
+                command.performedAt(), command.satisfaction(), command.priceAmount(),
+                command.priceCurrency(), command.appointmentId(), command.memo(),
+                command.nextVisitCautions());
+        for (CreateTreatmentRecordUseCase.Command.Photo photo : command.photos()) {
+            requireOwnedReadyFile(command.userId(), photo.fileId());
+            record = record.attachPhoto(
+                    TreatmentPhoto.create(record.recordId(), photo.fileId(),
+                            photo.imageType(), photo.sortOrder()));
+        }
+        return recordRepositoryPort.insert(record);
+    }
+
+    @Override
+    public GetTreatmentRecordUseCase.Result get(GetTreatmentRecordUseCase.Query query) {
+        // 소유자 조건을 질의에 함께 실어 사진을 읽기 전에 DB 에서 거른다. 남의 기록은 없는 기록과
+        // 같은 404 이고, 질의 횟수도 없는 기록과 같아야 존재 여부가 새지 않는다(#31).
+        TreatmentRecord record = recordRepositoryPort
+                .findByIdAndUserId(query.recordId(), query.requesterId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+        Map<UUID, URI> photoUrls = new HashMap<>();
+        for (TreatmentPhoto photo : record.photos()) {
+            photoUrls.put(photo.photoId(), downloadUrl(photo));
+        }
+        return new GetTreatmentRecordUseCase.Result(record, photoUrls);
+    }
+
+    @Override
+    public ListTreatmentRecordsUseCase.Result list(ListTreatmentRecordsUseCase.Query query) {
+        validateListQuery(query);
+        TreatmentRecordFilter filter = new TreatmentRecordFilter(
+                query.requesterId(), query.serviceType(), normalizeFilter(query.designerName()),
+                normalizeFilter(query.salonName()), query.from(), query.to(), query.page(), query.size(),
+                SORT_ASCENDING.equals(query.sort()));
+        TreatmentRecordPage page = recordRepositoryPort.findPage(filter);
+        Map<UUID, URI> thumbnails = thumbnailsFor(page.items());
+        List<ListTreatmentRecordsUseCase.Item> items = page.items().stream()
+                .map(record -> new ListTreatmentRecordsUseCase.Item(
+                        record, thumbnails.get(record.recordId()), null))
+                .toList();
+        return new ListTreatmentRecordsUseCase.Result(
+                items, query.page(), query.size(), page.totalElements());
+    }
+
+    @Override
+    @Transactional
+    public TreatmentRecord update(UpdateTreatmentRecordUseCase.Command command) {
+        TreatmentRecord current = ownedRecord(command.requesterId(), command.recordId());
+        TreatmentRecord updated = current.update(
+                command.serviceTypes().orElse(current.serviceTypes()),
+                command.salonName().orElse(current.salonName()),
+                command.designerName().orElse(current.designerName()),
+                command.performedAt().orElse(current.performedAt()),
+                command.satisfaction().orElse(current.satisfaction()),
+                command.priceAmount().orElse(current.priceAmount()),
+                command.priceCurrency().orElse(current.priceCurrency()),
+                command.appointmentId().orElse(current.appointmentId()),
+                command.memo().orElse(current.memo()),
+                command.nextVisitCautions().orElse(current.nextVisitCautions()));
+        return recordRepositoryPort.update(updated)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional
+    public void delete(DeleteTreatmentRecordUseCase.Command command) {
+        TreatmentRecord record = ownedRecord(command.requesterId(), command.recordId());
+        for (TreatmentPhoto photo : record.photos()) {
+            fileRepositoryPort.findById(photo.fileId()).ifPresent(file -> {
+                if (file.status() != FileStatus.DELETED) {
+                    fileRepositoryPort.transition(file.markDeleted(), file.status());
+                }
+            });
+        }
+        // 공개 API에 소프트 삭제 개념이 없으므로 기록은 하드 삭제하고 사진 행은 FK CASCADE에 맡긴다.
+        if (!recordRepositoryPort.deleteById(record.recordId())) {
+            throw new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+    }
+
+    @Override
+    @Transactional
+    public ManageTreatmentPhotosUseCase.Result add(ManageTreatmentPhotosUseCase.AddCommand command) {
+        TreatmentRecord record = ownedLockedRecord(command.requesterId(), command.recordId());
+        TreatmentPhoto photo = TreatmentPhoto.create(
+                record.recordId(), command.fileId(), command.imageType(), command.sortOrder());
+        record.attachPhoto(photo);
+        requireOwnedReadyFile(command.requesterId(), command.fileId());
+        TreatmentPhoto saved = recordRepositoryPort.insertPhoto(photo);
+        if (saved.imageType() == ImageType.AFTER) {
+            analysisStalenessPort.markLatestStale(record.recordId());
+        }
+        return new ManageTreatmentPhotosUseCase.Result(saved, downloadUrl(saved));
+    }
+
+    @Override
+    @Transactional
+    public ManageTreatmentPhotosUseCase.Result update(ManageTreatmentPhotosUseCase.UpdateCommand command) {
+        TreatmentRecord record = ownedRecord(command.requesterId(), command.recordId());
+        TreatmentPhoto current = ownedPhoto(record, command.photoId());
+        if (command.imageType() == null && command.sortOrder() == null) {
+            throw new ApplicationException(ErrorCode.INVALID_REQUEST);
+        }
+        ImageType imageType = command.imageType() == null ? current.imageType() : command.imageType();
+        int sortOrder = command.sortOrder() == null ? current.sortOrder() : command.sortOrder();
+        TreatmentPhoto updated = current.update(imageType, sortOrder);
+        TreatmentPhoto saved = recordRepositoryPort.updatePhoto(updated)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+        if (current.imageType() != saved.imageType()
+                && (current.imageType() == ImageType.AFTER || saved.imageType() == ImageType.AFTER)) {
+            analysisStalenessPort.markLatestStale(record.recordId());
+        }
+        return new ManageTreatmentPhotosUseCase.Result(saved, downloadUrl(saved));
+    }
+
+    @Override
+    @Transactional
+    public void delete(ManageTreatmentPhotosUseCase.DeleteCommand command) {
+        TreatmentRecord record = ownedRecord(command.requesterId(), command.recordId());
+        TreatmentPhoto photo = ownedPhoto(record, command.photoId());
+        StoredFile file = fileRepositoryPort.findById(photo.fileId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+        if (!recordRepositoryPort.deletePhoto(photo.photoId())) {
+            throw new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+        if (file.status() != FileStatus.DELETED) {
+            fileRepositoryPort.transition(file.markDeleted(), file.status());
+        }
+        if (photo.imageType() == ImageType.AFTER) {
+            analysisStalenessPort.markLatestStale(record.recordId());
+        }
+    }
+
+    @Override
+    public GetPhotoComparisonUseCase.Result getPhotoComparison(
+            GetPhotoComparisonUseCase.Query query
+    ) {
+        TreatmentRecord record = ownedRecord(query.requesterId(), query.recordId());
+        List<GetPhotoComparisonUseCase.Photo> before = comparisonPhotos(record, ImageType.BEFORE);
+        List<GetPhotoComparisonUseCase.Photo> after = comparisonPhotos(record, ImageType.AFTER);
+        if (before.isEmpty() || after.isEmpty()) {
+            throw new TreatmentException(TreatmentError.PHOTO_COMPARISON_NOT_AVAILABLE);
+        }
+        return new GetPhotoComparisonUseCase.Result(
+                record.recordId(), before, after,
+                new GetPhotoComparisonUseCase.TreatmentSummary(
+                        record.serviceTypes(), record.satisfaction(), record.nextVisitCautions()));
+    }
+
+    private TreatmentRecord ownedRecord(UUID requesterId, UUID recordId) {
+        return recordRepositoryPort.findByIdAndUserId(recordId, requesterId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    private TreatmentRecord ownedLockedRecord(UUID requesterId, UUID recordId) {
+        return recordRepositoryPort.findByIdForUpdate(recordId)
+                .filter(record -> record.userId().equals(requesterId))
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    private TreatmentPhoto ownedPhoto(TreatmentRecord record, UUID photoId) {
+        return record.photos().stream()
+                .filter(photo -> photo.photoId().equals(photoId))
+                .findFirst()
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    private List<GetPhotoComparisonUseCase.Photo> comparisonPhotos(
+            TreatmentRecord record, ImageType imageType
+    ) {
+        return record.photos().stream()
+                .filter(photo -> photo.imageType() == imageType)
+                .map(photo -> {
+                    URI url = downloadUrl(photo);
+                    return url == null ? null
+                            : new GetPhotoComparisonUseCase.Photo(
+                                    photo.photoId(), photo.sortOrder(), url);
+                })
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
+
+    private void validateListQuery(ListTreatmentRecordsUseCase.Query query) {
+        boolean invalidRange = query.from() != null && query.to() != null
+                && query.from().isAfter(query.to());
+        boolean invalidPage = query.page() < 0 || query.size() < 1 || query.size() > MAX_PAGE_SIZE;
+        boolean invalidSort = !SORT_ASCENDING.equals(query.sort())
+                && !SORT_DESCENDING.equals(query.sort());
+        boolean invalidDesigner = exceedsLength(query.designerName(), 30);
+        boolean invalidSalon = exceedsLength(query.salonName(), 50);
+        if (invalidRange || invalidPage || invalidSort || invalidDesigner || invalidSalon) {
+            throw new ApplicationException(ErrorCode.INVALID_REQUEST);
+        }
+    }
+
+    private boolean exceedsLength(String value, int maximum) {
+        return value != null && value.strip().length() > maximum;
+    }
+
+    private String normalizeFilter(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.strip();
+    }
+
+    /**
+     * 페이지 전체의 대표 사진 파일을 질의 한 번으로 읽고 같은 파일은 한 번만 서명한다. 기록마다
+     * 파일을 다시 읽고 presigned URL 을 다시 발급하던 N+1(#66)을 쿼리·서명 횟수 고정으로 끊는다.
+     * 대표 사진은 생성 순서상 첫 번째로 조회 가능한 사진이라는 기존 규칙을 그대로 둔다.
+     */
+    private Map<UUID, URI> thumbnailsFor(List<TreatmentRecord> records) {
+        List<UUID> fileIds = records.stream()
+                .flatMap(record -> record.photos().stream())
+                .map(TreatmentPhoto::fileId)
+                .distinct()
+                .toList();
+        if (fileIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, StoredFile> files = fileRepositoryPort.findAllById(fileIds).stream()
+                .collect(Collectors.toMap(StoredFile::fileId, Function.identity()));
+        Map<UUID, URI> signedUrls = new HashMap<>();
+        Map<UUID, URI> thumbnails = new HashMap<>();
+        for (TreatmentRecord record : records) {
+            for (TreatmentPhoto photo : record.photos()) {
+                StoredFile file = files.get(photo.fileId());
+                if (file == null || !file.isReady()) {
+                    continue;
+                }
+                // 같은 파일이 여러 기록의 대표 사진이어도 서명은 한 번만 발급한다.
+                thumbnails.put(record.recordId(), signedUrls.computeIfAbsent(
+                        photo.fileId(), fileId -> fileStoragePort.createDownloadUrl(file)));
+                break;
+            }
+        }
+        return thumbnails;
+    }
+
+    /**
+     * 첨부 가능한 파일인지 #28 이 정리해둔 세 가지로 좁혀 본다. 오류 코드는 파일 도메인과 공유한다 —
+     * 없으면 RESOURCE_NOT_FOUND, 남의 파일이면 FORBIDDEN_RESOURCE, 아직 업로드가 끝나지 않았으면
+     * FILE_INVALID_STATE 로 답한다.
+     */
+    private void requireOwnedReadyFile(UUID requesterId, UUID fileId) {
+        StoredFile file = fileRepositoryPort.findById(fileId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+        if (!file.userId().equals(requesterId)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+        if (!file.isReady()) {
+            throw new ApplicationException(ErrorCode.FILE_INVALID_STATE);
+        }
+    }
+
+    /** 파일 행이 준비 상태가 아니면(지워졌거나 미완료) URL 자리를 비워 둔다. */
+    private URI downloadUrl(TreatmentPhoto photo) {
+        return fileRepositoryPort.findById(photo.fileId())
+                .filter(StoredFile::isReady)
+                .map(fileStoragePort::createDownloadUrl)
+                .orElse(null);
+    }
+}

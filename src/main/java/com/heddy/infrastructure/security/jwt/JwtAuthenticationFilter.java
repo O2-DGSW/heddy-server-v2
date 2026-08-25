@@ -2,11 +2,12 @@ package com.heddy.infrastructure.security.jwt;
 
 import com.heddy.domain.account.model.AuthPrincipal;
 import com.heddy.domain.account.port.out.AuthTokenPort;
+import com.heddy.domain.account.port.out.AccountRepositoryPort;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,10 +19,18 @@ import java.io.IOException;
 import java.util.List;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final AuthTokenPort authTokenPort;
+    private final ObjectProvider<AccountRepositoryPort> accountRepositoryPortProvider;
+
+    public JwtAuthenticationFilter(
+            AuthTokenPort authTokenPort,
+            ObjectProvider<AccountRepositoryPort> accountRepositoryPortProvider
+    ) {
+        this.authTokenPort = authTokenPort;
+        this.accountRepositoryPortProvider = accountRepositoryPortProvider;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -37,6 +46,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void authenticate(AuthPrincipal principal) {
+        AccountRepositoryPort accountRepositoryPort = accountRepositoryPortProvider.getIfAvailable();
+        if (accountRepositoryPort != null && accountRepositoryPort.findById(principal.userId())
+                .map(account -> account.isDeleted())
+                .orElse(true)) {
+            return;
+        }
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
                         principal.userId(),

@@ -8,4 +8,5 @@ import java.util.UUID;
 interface UserProfileJpaRepository extends JpaRepository<UserProfileEntity, UUID> {
     Optional<UserProfileEntity> findByPhone(String phone);
     boolean existsByPhone(String phone);
+    long deleteByUserId(UUID userId);
 }

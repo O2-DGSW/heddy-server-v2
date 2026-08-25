@@ -34,6 +34,11 @@ class JwtProviderTest {
     void reauthenticationTokenCannotAuthenticateApiRequest() {
         String token = provider.createReauthenticationToken(USER_ID);
         assertThat(provider.parseAccessToken(token)).isEmpty();
+        assertThat(provider.parseReauthenticationToken(token))
+                .hasValueSatisfying(principal -> {
+                    assertThat(principal.userId()).isEqualTo(USER_ID);
+                    assertThat(principal.tokenId()).isNotNull();
+                });
     }
 
     @Test

@@ -10,4 +10,5 @@ public interface UserProfileRepositoryPort {
     Optional<UserProfile> findByUserId(UUID userId);
     Optional<UUID> findUserIdByPhone(String phone);
     boolean existsByPhone(String phone);
+    void deleteByUserId(UUID userId);
 }

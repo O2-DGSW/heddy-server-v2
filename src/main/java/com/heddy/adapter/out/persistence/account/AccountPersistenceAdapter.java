@@ -37,7 +37,7 @@ public class AccountPersistenceAdapter implements
         AccountEntity entity = accountJpaRepository.findById(account.userId())
                 .orElseGet(() -> new AccountEntity(account));
         entity.update(account);
-        return accountJpaRepository.save(entity).toDomain();
+        return accountJpaRepository.saveAndFlush(entity).toDomain();
     }
 
     @Override
@@ -95,6 +95,12 @@ public class AccountPersistenceAdapter implements
     @Override
     public boolean existsByPhone(String phone) {
         return userProfileJpaRepository.existsByPhone(phone);
+    }
+
+    @Override
+    public void deleteByUserId(UUID userId) {
+        userProfileJpaRepository.deleteByUserId(userId);
+        userProfileJpaRepository.flush();
     }
 
     @Override

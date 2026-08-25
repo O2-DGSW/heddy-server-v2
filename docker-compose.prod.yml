@@ -1,0 +1,76 @@
+# 운영 전용 구성 — EC2 의 배포 디렉터리에 docker-compose.yml 로 업로드되고
+# 같은 디렉터리의 .env (시크릿 PROD_ENV) 에서 값을 읽는다.
+#
+# 필수 변수 누락 시 컨테이너 기동 전에 compose 가 즉시 실패한다 (${VAR:?}).
+# 애플리케이션의 로컬 기본값이 조용히 적용되는 것을 배포 시점에 막는 장치다.
+services:
+  app:
+    image: ghcr.io/o2-dgsw/heddy-server-v2:${APP_IMAGE_TAG:?APP_IMAGE_TAG is required}
+    container_name: heddy-v2-app
+    restart: unless-stopped
+    # 선택 변수(소셜 로그인·SMS 등)는 .env 에 있으면 그대로 컨테이너로 전달한다.
+    env_file:
+      - .env
+    environment:
+      # 운영 필수 12종 — .env 에 하나라도 빠지면 up 이 실패한다.
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      DB_URL: ${DB_URL:?DB_URL is required}
+      DB_USERNAME: ${DB_USERNAME:?DB_USERNAME is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      REDIS_HOST: ${REDIS_HOST:?REDIS_HOST is required}
+      REDIS_PORT: ${REDIS_PORT:?REDIS_PORT is required}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:?AWS_S3_BUCKET is required}
+      AWS_S3_REGION: ${AWS_S3_REGION:?AWS_S3_REGION is required}
+      AWS_S3_ACCESS_KEY: ${AWS_S3_ACCESS_KEY:?AWS_S3_ACCESS_KEY is required}
+      AWS_S3_SECRET_KEY: ${AWS_S3_SECRET_KEY:?AWS_S3_SECRET_KEY is required}
+      # 실제 S3 를 쓰므로 운영 값은 빈 문자열이다. unset 만 아니면 통과시킨다.
+      AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: heddy-v2-postgres
+    restart: unless-stopped
+    # DB 이름은 고정(heddy_v2)이고 계정·비밀번호는 app 의 DB_USERNAME · DB_PASSWORD 와
+    # 같은 변수를 쓰므로 양쪽 값이 어긋날 수 없다. DB_URL 은
+    # jdbc:postgresql://postgres:5432/heddy_v2 여야 한다 (docs/deploy-setup.md).
+    environment:
+      POSTGRES_DB: heddy_v2
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - heddy-v2-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: heddy-v2-redis
+    restart: unless-stopped
+    volumes:
+      - heddy-v2-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  heddy-v2-postgres-data:
+  heddy-v2-redis-data:

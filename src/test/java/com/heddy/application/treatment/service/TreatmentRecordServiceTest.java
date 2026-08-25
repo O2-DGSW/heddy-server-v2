@@ -9,8 +9,11 @@ import com.heddy.domain.treatment.model.ImageType;
 import com.heddy.domain.treatment.model.ServiceType;
 import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
+import com.heddy.domain.treatment.model.TreatmentRecordFilter;
+import com.heddy.domain.treatment.model.TreatmentRecordPage;
 import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase.Command;
 import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase.Query;
+import com.heddy.domain.treatment.port.in.ListTreatmentRecordsUseCase;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
 import com.heddy.domain.file.port.out.FileStoragePort;
@@ -20,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.net.URI;
@@ -229,6 +233,76 @@ class TreatmentRecordServiceTest {
         assertThatThrownBy(() -> service.get(new Query(USER_ID, UUID.randomUUID())))
                 .isInstanceOf(ApplicationException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    // ------------------------------------------------------------------ 목록
+
+    @Test
+    void listsFilteredRecordsAndSignsTheFirstAvailableThumbnail() {
+        UUID recordId = UUID.randomUUID();
+        TreatmentPhoto photo = new TreatmentPhoto(UUID.randomUUID(), recordId,
+                UUID.randomUUID(), ImageType.AFTER, Instant.now());
+        TreatmentRecord record = new TreatmentRecord(recordId, USER_ID,
+                Set.of(ServiceType.CUT), "준헤어", "김실장", PERFORMED_AT, 5,
+                null, null, null, List.of(photo), Instant.now());
+        given(recordRepositoryPort.findPage(any()))
+                .willReturn(new TreatmentRecordPage(List.of(record), 3));
+        given(fileRepositoryPort.findById(photo.fileId()))
+                .willReturn(Optional.of(readyFile(photo.fileId())));
+        URI signed = URI.create("https://bucket.s3.example/thumbnail?X-Amz-Signature=s");
+        given(fileStoragePort.createDownloadUrl(any())).willReturn(signed);
+
+        var result = service.list(new ListTreatmentRecordsUseCase.Query(
+                USER_ID, ServiceType.CUT, "  김실장 ", " 준헤어  ",
+                PERFORMED_AT.minusSeconds(60), PERFORMED_AT.plusSeconds(60),
+                1, 2, "performedAt,asc"));
+
+        assertThat(result.items()).hasSize(1);
+        assertThat(result.items().get(0).thumbnailUrl()).isEqualTo(signed);
+        assertThat(result.page()).isEqualTo(1);
+        assertThat(result.size()).isEqualTo(2);
+        assertThat(result.totalElements()).isEqualTo(3);
+        ArgumentCaptor<TreatmentRecordFilter> filter =
+                ArgumentCaptor.forClass(TreatmentRecordFilter.class);
+        verify(recordRepositoryPort).findPage(filter.capture());
+        assertThat(filter.getValue().designerName()).isEqualTo("김실장");
+        assertThat(filter.getValue().salonName()).isEqualTo("준헤어");
+        assertThat(filter.getValue().ascending()).isTrue();
+    }
+
+    @Test
+    void returnsAnEmptyPageWithoutTouchingFileStorage() {
+        given(recordRepositoryPort.findPage(any()))
+                .willReturn(new TreatmentRecordPage(List.of(), 0));
+
+        var result = service.list(new ListTreatmentRecordsUseCase.Query(
+                USER_ID, null, null, null, null, null,
+                0, 20, "performedAt,desc"));
+
+        assertThat(result.items()).isEmpty();
+        assertThat(result.totalElements()).isZero();
+        verifyNoInteractions(fileRepositoryPort, fileStoragePort);
+    }
+
+    @Test
+    void rejectsInvalidListConditionsBeforeTouchingTheRepository() {
+        List<ListTreatmentRecordsUseCase.Query> invalidQueries = List.of(
+                new ListTreatmentRecordsUseCase.Query(USER_ID, null, null, null,
+                        PERFORMED_AT, PERFORMED_AT.minusSeconds(1), 0, 20, "performedAt,desc"),
+                new ListTreatmentRecordsUseCase.Query(USER_ID, null, null, null,
+                        null, null, -1, 20, "performedAt,desc"),
+                new ListTreatmentRecordsUseCase.Query(USER_ID, null, null, null,
+                        null, null, 0, 0, "performedAt,desc"),
+                new ListTreatmentRecordsUseCase.Query(USER_ID, null, null, null,
+                        null, null, 0, 101, "performedAt,desc"),
+                new ListTreatmentRecordsUseCase.Query(USER_ID, null, null, null,
+                        null, null, 0, 20, "createdAt,desc")
+        );
+
+        invalidQueries.forEach(query -> assertThatThrownBy(() -> service.list(query))
+                .isInstanceOf(ApplicationException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_REQUEST));
+        verifyNoInteractions(recordRepositoryPort);
     }
 
     // ------------------------------------------------------------------ 헬퍼

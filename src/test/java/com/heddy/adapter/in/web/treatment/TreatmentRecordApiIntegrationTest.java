@@ -18,6 +18,8 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -206,6 +208,96 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
     // ------------------------------------------------------------------ 조회
 
     @Test
+    void listsOnlyOwnRecordsMatchingAllFiltersWithStablePagination() throws Exception {
+        UUID older = insertRecord(USER_ID, "[\"CUT\"]", "준헤어", "김실장",
+                "2026-08-10T10:00:00Z");
+        UUID newer = insertRecord(USER_ID, "[\"CUT\",\"COLOR\"]", "준헤어", "김실장",
+                "2026-08-20T10:00:00Z");
+        insertRecord(USER_ID, "[\"PERM\"]", "준헤어", "김실장",
+                "2026-08-15T10:00:00Z");
+        insertRecord(USER_ID, "[\"CUT\"]", "다른미용실", "김실장",
+                "2026-08-15T10:00:00Z");
+        insertRecord(USER_ID, "[\"CUT\"]", "준헤어", "다른디자이너",
+                "2026-08-15T10:00:00Z");
+        insertRecord(USER_ID, "[\"CUT\"]", "준헤어", "김실장",
+                "2026-07-01T10:00:00Z");
+        insertRecord(OTHER_USER_ID, "[\"CUT\"]", "준헤어", "김실장",
+                "2026-08-22T10:00:00Z");
+
+        mockMvc.perform(get("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .param("service_type", "CUT")
+                        .param("designer_name", "김실장")
+                        .param("salon_name", "준헤어")
+                        .param("from", "2026-08-01T00:00:00Z")
+                        .param("to", "2026-08-31T23:59:59Z")
+                        .param("page", "0")
+                        .param("size", "1")
+                        .param("sort", "performedAt,desc")
+                        .header("X-Request-Id", "request-32"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items", hasSize(1)))
+                .andExpect(jsonPath("$.data.items[0].record_id").value(newer.toString()))
+                .andExpect(jsonPath("$.data.items[0].service_types",
+                        containsInAnyOrder("CUT", "COLOR")))
+                .andExpect(jsonPath("$.data.page.number").value(0))
+                .andExpect(jsonPath("$.data.page.size").value(1))
+                .andExpect(jsonPath("$.data.page.total_elements").value(2))
+                .andExpect(jsonPath("$.data.page.total_pages").value(2))
+                .andExpect(jsonPath("$.data.page.has_next").value(true))
+                .andExpect(jsonPath("$.request_id").value("request-32"));
+
+        mockMvc.perform(get("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .param("service_type", "CUT")
+                        .param("designer_name", "김실장")
+                        .param("salon_name", "준헤어")
+                        .param("from", "2026-08-01T00:00:00Z")
+                        .param("to", "2026-08-31T23:59:59Z")
+                        .param("page", "1")
+                        .param("size", "1")
+                        .param("sort", "performedAt,desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].record_id").value(older.toString()))
+                .andExpect(jsonPath("$.data.page.has_next").value(false));
+    }
+
+    @Test
+    void answersAnEmptyPageInsteadOfNotFound() throws Exception {
+        mockMvc.perform(get("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items").isEmpty())
+                .andExpect(jsonPath("$.data.page.number").value(0))
+                .andExpect(jsonPath("$.data.page.size").value(20))
+                .andExpect(jsonPath("$.data.page.total_elements").value(0))
+                .andExpect(jsonPath("$.data.page.total_pages").value(0))
+                .andExpect(jsonPath("$.data.page.has_next").value(false));
+    }
+
+    @Test
+    void rejectsInvalidListRangePageAndSortAsBadRequest() throws Exception {
+        mockMvc.perform(get("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .param("from", "2026-08-20T00:00:00Z")
+                        .param("to", "2026-08-01T00:00:00Z"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+
+        mockMvc.perform(get("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+
+        mockMvc.perform(get("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .param("sort", "createdAt,desc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
     void readsBackOwnRecordWithSignedPhotoUrlsIssuedAtReadTime() throws Exception {
         UUID before = readyFile(USER_ID);
         String created = mockMvc.perform(post("/treatment-records")
@@ -275,13 +367,16 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
-    void requiresAuthenticationForBothEndpoints() throws Exception {
+    void requiresAuthenticationForAllEndpoints() throws Exception {
         mockMvc.perform(post("/treatment-records")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createBody("2026-08-01T10:00:00Z", "[]")))
                 .andExpect(status().isUnauthorized());
 
         mockMvc.perform(get("/treatment-records/" + UUID.randomUUID()))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/treatment-records"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -292,6 +387,8 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$['paths']['/treatment-records']['post']"
+                        + "['security'][0]['bearerAuth']").isArray())
+                .andExpect(jsonPath("$['paths']['/treatment-records']['get']"
                         + "['security'][0]['bearerAuth']").isArray())
                 .andExpect(jsonPath("$['paths']['/treatment-records/{recordId}']['get']"
                         + "['security'][0]['bearerAuth']").isArray())
@@ -353,6 +450,23 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                     user_id, email, password_hash, auth_provider, status, login_fail_count
                 ) VALUES (?, ?, ?, 'EMAIL', 'ACTIVE', 0)
                 """, userId, userId + "@example.com", "hash");
+    }
+
+    private UUID insertRecord(
+            UUID userId,
+            String serviceTypes,
+            String salonName,
+            String designerName,
+            String performedAt
+    ) {
+        UUID recordId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO treatment_records (
+                    record_id, user_id, service_types, salon_name, designer_name, performed_at
+                ) VALUES (?, ?, CAST(? AS jsonb), ?, ?, ?)
+                """, recordId, userId, serviceTypes, salonName, designerName,
+                Timestamp.from(Instant.parse(performedAt)));
+        return recordId;
     }
 
     private UUID readyFile(UUID ownerId) {

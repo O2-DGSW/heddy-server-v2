@@ -64,6 +64,16 @@ app:
     pending-grace-seconds: ${FILE_CLEANUP_PENDING_GRACE_SECONDS:60}
     ready-grace-seconds: ${FILE_CLEANUP_READY_GRACE_SECONDS:86400}
     batch-size: ${FILE_CLEANUP_BATCH_SIZE:100}
+  account-deletion:
+    worker-delay-ms: ${ACCOUNT_DELETION_WORKER_DELAY_MS:5000}
+    worker-initial-delay-ms: ${ACCOUNT_DELETION_WORKER_INITIAL_DELAY_MS:60000}
+    # FAILED 재처리 정책. 최대 시도 횟수와 재시도 간격(백오프)을 분리해 설정한다.
+    max-attempts: ${ACCOUNT_DELETION_MAX_ATTEMPTS:5}
+    retry-backoff-seconds: ${ACCOUNT_DELETION_RETRY_BACKOFF_SECONDS:300}
+    # 사용 완료 재인증 토큰 보존 기간과 purge 주기.
+    used-token-retention-days: ${USED_REAUTHENTICATION_TOKEN_RETENTION_DAYS:30}
+    token-purge-interval-ms: ${USED_REAUTHENTICATION_TOKEN_PURGE_INTERVAL_MS:3600000}
+    token-purge-initial-delay-ms: ${USED_REAUTHENTICATION_TOKEN_PURGE_INITIAL_DELAY_MS:60000}
   ai:
     base-url: ${AI_SERVER_URL:http://localhost:8000}
     connect-timeout-seconds: 3

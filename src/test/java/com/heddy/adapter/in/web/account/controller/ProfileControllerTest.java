@@ -66,7 +66,7 @@ class ProfileControllerTest {
         UUID requestId = UUID.randomUUID();
         given(requestAccountDeletionUseCase.request(any())).willReturn(
                 new AccountDeletionRequest(requestId, USER_ID, AccountDeletionStatus.PROCESSING,
-                        "더 이상 사용하지 않음", NOW, null));
+                        "더 이상 사용하지 않음", NOW, null, 0));
 
         mockMvc.perform(delete("/me")
                         .with(authentication(userAuthentication()))

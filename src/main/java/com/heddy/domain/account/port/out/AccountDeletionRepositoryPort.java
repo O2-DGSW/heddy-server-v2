@@ -15,5 +15,9 @@ public interface AccountDeletionRepositoryPort {
 
     List<AccountDeletionRequest> findProcessingBatch(int limit);
 
+    List<AccountDeletionRequest> findFailedBatch(int limit, int maxAttempts, Instant retryCutoff);
+
     boolean consumeReauthenticationToken(UUID tokenId, UUID userId, Instant usedAt);
+
+    int deleteUsedTokensBefore(Instant threshold);
 }

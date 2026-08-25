@@ -145,6 +145,12 @@ public class UploadSessionService implements PresignUploadUseCase, CompleteUploa
      * 참조할 수 있는 파일이고, 그 삭제는 업로드 취소가 아니라 파일 삭제 기능의 몫이다. 반대로
      * 이미 DELETED 인 세션에 대한 재요청은 DELETE 의 멱등성에 따라 성공으로 답한다 — 취소 응답을
      * 잃고 재시도한 클라이언트까지 거부하면 이미 끝난 취소가 실패로 기록된다.
+     *
+     * <p>여기서 지운 객체는 최종 회수가 아니다. 이미 발급된 presigned PUT URL 은 세션 만료까지
+     * 유효해서, 취소와 겹쳐 전송 중이던 PUT 이나 클라이언트 재시도가 객체를 되살릴 수 있다.
+     * 그래서 {@code reclaimed_at} 을 채우지 않고 남겨, 만료 이후
+     * {@link com.heddy.domain.file.port.in.ReclaimUploadObjectsUseCase} 가 같은 키를 한 번 더
+     * 지우고 그때 회수를 확정한다.
      */
     @Override
     @Transactional
@@ -165,10 +171,15 @@ public class UploadSessionService implements PresignUploadUseCase, CompleteUploa
     }
 
     private void cancelPending(StoredFile pending) {
-        // 객체를 먼저 지운다. 행부터 DELETED 로 바꾸면 그 뒤 객체 삭제가 실패했을 때 어떤 기록도
-        // 객체를 가리키지 않아, 지워야 할 개인정보가 영영 회수되지 않는 고아가 된다. 객체 삭제가
-        // 실패하면 예외가 그대로 올라가 행 전이도 일어나지 않으므로 클라이언트가 재시도할 수 있다.
-        fileStoragePort.deleteObject(pending.objectKey());
-        fileRepositoryPort.transition(pending.markDeleted(), FileStatus.PENDING);
+        // 행을 먼저 선점한다. 기대 상태를 PENDING 으로 건 조건부 갱신이라 같은 행을 노리는
+        // complete 의 PENDING → READY 전이와 DB 에서 직렬화된다. 순서가 반대면(객체 삭제 → 행 전이)
+        // complete 가 먼저 READY 로 이겼을 때 이 전이만 0 행으로 실패하고, 트랜잭션 롤백은 이미
+        // 끝난 스토리지 삭제를 되돌리지 못해 "READY 행 + 없는 객체"로 끝난다. 선점에 실패하면
+        // 아무것도 지우지 않고 FILE_CONCURRENT_MODIFICATION 으로 올라간다.
+        StoredFile deleted = fileRepositoryPort.transition(pending.markDeleted(), FileStatus.PENDING);
+        // 선점 뒤 삭제가 실패하면 예외가 트랜잭션을 되돌려 행이 PENDING 으로 남고 재시도할 수 있다.
+        // 되돌리지 못하고 DELETED 로 커밋된 경우에도 reclaimed_at 이 비어 있으므로, 만료 이후
+        // 회수 경로(ReclaimUploadObjectsUseCase)가 같은 키를 다시 지운다.
+        fileStoragePort.deleteObject(deleted.objectKey());
     }
 }

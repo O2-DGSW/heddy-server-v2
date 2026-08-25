@@ -220,6 +220,15 @@ class TreatmentRecordTest {
     }
 
     @Test
+    void refusesNegativePhotoSortOrder() {
+        assertThatThrownBy(() -> TreatmentPhoto.create(
+                UUID.randomUUID(), UUID.randomUUID(), ImageType.OTHER, -1))
+                .isInstanceOf(TreatmentException.class)
+                .extracting(error -> ((TreatmentException) error).error())
+                .isEqualTo(TreatmentError.PHOTO_SORT_ORDER_NEGATIVE);
+    }
+
+    @Test
     void refusesRehydratedRecordCarryingMoreThanTenPhotos() {
         TreatmentRecord source = fullTenPhotos();
         List<TreatmentPhoto> eleven = new java.util.ArrayList<>(source.photos());

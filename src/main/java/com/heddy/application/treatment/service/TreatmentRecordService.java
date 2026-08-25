@@ -79,6 +79,18 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         this.analysisStalenessPort = recordId -> { };
     }
 
+    TreatmentRecordService(
+            TreatmentRecordRepositoryPort recordRepositoryPort,
+            FileRepositoryPort fileRepositoryPort,
+            FileStoragePort fileStoragePort,
+            AnalysisStalenessPort analysisStalenessPort
+    ) {
+        this.recordRepositoryPort = recordRepositoryPort;
+        this.fileRepositoryPort = fileRepositoryPort;
+        this.fileStoragePort = fileStoragePort;
+        this.analysisStalenessPort = analysisStalenessPort;
+    }
+
     @Override
     @Transactional
     public TreatmentRecord create(CreateTreatmentRecordUseCase.Command command) {

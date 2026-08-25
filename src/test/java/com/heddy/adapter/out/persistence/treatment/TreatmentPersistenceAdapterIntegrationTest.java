@@ -69,10 +69,10 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
                 USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
                 null, null, null, null);
         TreatmentRecord saved = adapter.insert(record);
-        TreatmentPhoto before = adapter.insertPhoto(
-                TreatmentPhoto.create(saved.recordId(), newFile(), ImageType.BEFORE));
         TreatmentPhoto after = adapter.insertPhoto(
-                TreatmentPhoto.create(saved.recordId(), newFile(), ImageType.AFTER));
+                TreatmentPhoto.create(saved.recordId(), newFile(), ImageType.AFTER, 5));
+        TreatmentPhoto before = adapter.insertPhoto(
+                TreatmentPhoto.create(saved.recordId(), newFile(), ImageType.BEFORE, 1));
 
         TreatmentRecord found = adapter.findByIdAndUserId(saved.recordId(), USER_ID).orElseThrow();
 
@@ -82,7 +82,31 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
         assertThat(found.photos())
                 .extracting(TreatmentPhoto::imageType)
                 .containsExactly(ImageType.BEFORE, ImageType.AFTER);
+        assertThat(found.photos())
+                .extracting(TreatmentPhoto::sortOrder)
+                .containsExactly(1, 5);
         assertThat(found.photos().get(0).createdAt()).isNotNull();
+    }
+
+    @Test
+    void updatesAndDeletesPhotoIndependently() {
+        TreatmentRecord record = adapter.insert(TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
+                null, null, null, null));
+        TreatmentPhoto photo = adapter.insertPhoto(TreatmentPhoto.create(
+                record.recordId(), newFile(), ImageType.BEFORE, 0));
+
+        TreatmentPhoto updated = adapter.updatePhoto(
+                photo.update(ImageType.AFTER, 7)).orElseThrow();
+
+        assertThat(updated.imageType()).isEqualTo(ImageType.AFTER);
+        assertThat(updated.sortOrder()).isEqualTo(7);
+        assertThat(adapter.findById(record.recordId()).orElseThrow().photos())
+                .extracting(TreatmentPhoto::sortOrder)
+                .containsExactly(7);
+        assertThat(adapter.deletePhoto(photo.photoId())).isTrue();
+        assertThat(adapter.findById(record.recordId()).orElseThrow().photos()).isEmpty();
+        assertThat(adapter.deletePhoto(photo.photoId())).isFalse();
     }
 
     @Test
@@ -266,6 +290,7 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
         assertColumn("treatment_record_photos", "record_id", "uuid", null, false);
         assertColumn("treatment_record_photos", "file_id", "uuid", null, false);
         assertColumn("treatment_record_photos", "image_type", "character varying", 20, false);
+        assertColumn("treatment_record_photos", "sort_order", "integer", null, false);
         assertColumn("treatment_record_photos", "created_at", "timestamp with time zone", null, false);
         assertColumn("treatment_record_photos", "updated_at", "timestamp with time zone", null, false);
     }
@@ -278,7 +303,8 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
 
         assertThat(jdbcTemplate.queryForList(
                 "SELECT indexname FROM pg_indexes WHERE tablename = 'treatment_record_photos'", String.class))
-                .contains("idx_treatment_record_photos_record_id", "idx_treatment_record_photos_file_id");
+                .contains("idx_treatment_record_photos_record_id", "idx_treatment_record_photos_file_id",
+                        "idx_treatment_record_photos_record_sort");
 
         // 시술 종류 필터 질의가 GIN 을 타는지 — 인덱스 방식까지 확인한다.
         String accessMethod = jdbcTemplate.queryForObject("""

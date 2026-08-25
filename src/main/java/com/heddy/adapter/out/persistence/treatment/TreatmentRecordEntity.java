@@ -63,6 +63,12 @@ class TreatmentRecordEntity extends BaseEntity {
 
     private UUID appointmentId;
 
+    @Column(columnDefinition = "text")
+    private String memo;
+
+    @Column(name = "next_visit_cautions", columnDefinition = "text")
+    private String nextVisitCautions;
+
     protected TreatmentRecordEntity() {
     }
 
@@ -79,6 +85,8 @@ class TreatmentRecordEntity extends BaseEntity {
         priceAmount = record.priceAmount();
         priceCurrency = record.priceCurrency();
         appointmentId = record.appointmentId();
+        memo = record.memo();
+        nextVisitCautions = record.nextVisitCautions();
     }
 
     TreatmentRecord toDomain(List<TreatmentPhoto> photos) {
@@ -88,12 +96,27 @@ class TreatmentRecordEntity extends BaseEntity {
         return new TreatmentRecord(
                 recordId, userId, parsedServiceTypes, salonName, designerName, performedAt,
                 satisfaction == null ? null : satisfaction.intValue(),
-                priceAmount, priceCurrency, appointmentId,
+                priceAmount, priceCurrency, appointmentId, memo, nextVisitCautions,
                 photos, getCreatedAt());
     }
 
     UUID recordId() {
         return recordId;
+    }
+
+    void update(TreatmentRecord record) {
+        serviceTypes = record.serviceTypes().stream()
+                .map(ServiceType::name)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        salonName = record.salonName();
+        designerName = record.designerName();
+        performedAt = record.performedAt();
+        satisfaction = record.satisfaction() == null ? null : record.satisfaction().shortValue();
+        priceAmount = record.priceAmount();
+        priceCurrency = record.priceCurrency();
+        appointmentId = record.appointmentId();
+        memo = record.memo();
+        nextVisitCautions = record.nextVisitCautions();
     }
 
     private static ServiceType parseServiceType(String name) {

@@ -14,6 +14,8 @@ import com.heddy.domain.treatment.model.TreatmentRecordPage;
 import com.heddy.domain.treatment.port.in.CreateTreatmentRecordUseCase.Command;
 import com.heddy.domain.treatment.port.in.GetTreatmentRecordUseCase.Query;
 import com.heddy.domain.treatment.port.in.ListTreatmentRecordsUseCase;
+import com.heddy.domain.treatment.port.in.DeleteTreatmentRecordUseCase;
+import com.heddy.domain.treatment.port.in.UpdateTreatmentRecordUseCase;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
 import com.heddy.domain.file.port.out.FileStoragePort;
@@ -305,11 +307,122 @@ class TreatmentRecordServiceTest {
         verifyNoInteractions(recordRepositoryPort);
     }
 
+    // ------------------------------------------------------------------ 수정·삭제
+
+    @Test
+    void updatesOnlyPresentedFieldsAndClearsExplicitNulls() {
+        TreatmentRecord current = TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), "준헤어", "김실장", PERFORMED_AT,
+                3, 100_000L, "KRW", UUID.randomUUID(), "기존 메모", "기존 주의사항");
+        given(recordRepositoryPort.findById(current.recordId())).willReturn(Optional.of(current));
+        given(recordRepositoryPort.update(any())).willAnswer(invocation ->
+                Optional.of(invocation.getArgument(0)));
+
+        var absentString = UpdateTreatmentRecordUseCase.Patch.<String>absent();
+        var command = new UpdateTreatmentRecordUseCase.Command(
+                USER_ID, current.recordId(),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                absentString,
+                absentString,
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.present(5),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.present("  새 메모  "),
+                UpdateTreatmentRecordUseCase.Patch.present(null));
+
+        TreatmentRecord updated = service.update(command);
+
+        assertThat(updated.serviceTypes()).isEqualTo(current.serviceTypes());
+        assertThat(updated.salonName()).isEqualTo(current.salonName());
+        assertThat(updated.satisfaction()).isEqualTo(5);
+        assertThat(updated.memo()).isEqualTo("새 메모");
+        assertThat(updated.nextVisitCautions()).isNull();
+        verify(recordRepositoryPort).update(updated);
+    }
+
+    @Test
+    void rejectsFuturePerformedAtDuringUpdate() {
+        TreatmentRecord current = TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
+                null, null, null, null);
+        given(recordRepositoryPort.findById(current.recordId())).willReturn(Optional.of(current));
+        var command = updateOnlyPerformedAt(
+                current.recordId(), Instant.now().plusSeconds(86_400));
+
+        assertThatThrownBy(() -> service.update(command))
+                .isInstanceOf(TreatmentException.class)
+                .hasFieldOrPropertyWithValue("error", TreatmentError.PERFORMED_AT_IN_FUTURE);
+        verify(recordRepositoryPort, never()).update(any());
+    }
+
+    @Test
+    void deletesOwnRecordAfterMarkingEveryAttachedFileDeleted() {
+        UUID recordId = UUID.randomUUID();
+        UUID fileId = UUID.randomUUID();
+        TreatmentPhoto photo = new TreatmentPhoto(
+                UUID.randomUUID(), recordId, fileId, ImageType.AFTER, Instant.now());
+        TreatmentRecord record = new TreatmentRecord(
+                recordId, USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
+                null, null, null, null, List.of(photo), Instant.now());
+        StoredFile file = readyFile(fileId);
+        given(recordRepositoryPort.findById(recordId)).willReturn(Optional.of(record));
+        given(fileRepositoryPort.findById(fileId)).willReturn(Optional.of(file));
+        given(fileRepositoryPort.transition(any(), any())).willAnswer(invocation ->
+                invocation.getArgument(0));
+        given(recordRepositoryPort.deleteById(recordId)).willReturn(true);
+
+        service.delete(new DeleteTreatmentRecordUseCase.Command(USER_ID, recordId));
+
+        verify(fileRepositoryPort).transition(file.markDeleted(), FileStatus.READY);
+        verify(recordRepositoryPort).deleteById(recordId);
+    }
+
+    @Test
+    void hidesAnotherUsersRecordForUpdateAndDelete() {
+        TreatmentRecord foreign = TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
+                null, null, null, null);
+        given(recordRepositoryPort.findById(foreign.recordId()))
+                .willReturn(Optional.of(foreign));
+
+        assertThatThrownBy(() -> service.update(updateOnlyPerformedAt(
+                foreign.recordId(), PERFORMED_AT.minusSeconds(1))))
+                .isInstanceOf(ApplicationException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
+        assertThatThrownBy(() -> service.delete(
+                new DeleteTreatmentRecordUseCase.Command(USER_ID, foreign.recordId())))
+                .isInstanceOf(ApplicationException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
+        verifyNoInteractions(fileRepositoryPort, fileStoragePort);
+        verify(recordRepositoryPort, never()).update(any());
+        verify(recordRepositoryPort, never()).deleteById(any());
+    }
+
     // ------------------------------------------------------------------ 헬퍼
 
     private Command command(Instant performedAt, List<Command.Photo> photos) {
         return new Command(USER_ID, Set.of(ServiceType.CUT, ServiceType.COLOR), null, null,
                 performedAt, null, null, null, null, photos);
+    }
+
+    private UpdateTreatmentRecordUseCase.Command updateOnlyPerformedAt(
+            UUID recordId,
+            Instant performedAt
+    ) {
+        return new UpdateTreatmentRecordUseCase.Command(
+                USER_ID, recordId,
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.present(performedAt),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.absent(),
+                UpdateTreatmentRecordUseCase.Patch.absent());
     }
 
     private StoredFile readyFile(UUID fileId) {

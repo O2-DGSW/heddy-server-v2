@@ -32,9 +32,12 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -93,6 +96,8 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.satisfaction").value(4))
                 .andExpect(jsonPath("$.data.price.amount").value(120_000))
                 .andExpect(jsonPath("$.data.price.currency").value("KRW"))
+                .andExpect(jsonPath("$.data.memo").value("기존 메모"))
+                .andExpect(jsonPath("$.data.next_visit_cautions").value("기존 주의사항"))
                 .andExpect(jsonPath("$.data.photos").isEmpty())
                 .andExpect(jsonPath("$.request_id").value("request-31"));
 
@@ -297,6 +302,102 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
     }
 
+    // ------------------------------------------------------------------ 수정·삭제
+
+    @Test
+    void patchesOnlyPresentedFieldsAndClearsExplicitNulls() throws Exception {
+        String recordId = createRecord(USER_ID);
+
+        mockMvc.perform(patch("/treatment-records/" + recordId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"satisfaction":5,"memo":"  새 메모  ",
+                                 "next_visit_cautions":null}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.record_id").value(recordId))
+                .andExpect(jsonPath("$.data.salon_name").value("준헤어"))
+                .andExpect(jsonPath("$.data.designer_name").value("김실장"))
+                .andExpect(jsonPath("$.data.satisfaction").value(5))
+                .andExpect(jsonPath("$.data.memo").value("새 메모"))
+                .andExpect(jsonPath("$.data.next_visit_cautions").doesNotExist());
+
+        var stored = jdbcTemplate.queryForMap("""
+                SELECT salon_name, designer_name, satisfaction, memo, next_visit_cautions
+                FROM treatment_records WHERE record_id = ?
+                """, UUID.fromString(recordId));
+        assertThat(stored.get("salon_name")).isEqualTo("준헤어");
+        assertThat(stored.get("designer_name")).isEqualTo("김실장");
+        assertThat((Number) stored.get("satisfaction")).hasToString("5");
+        assertThat(stored.get("memo")).isEqualTo("새 메모");
+        assertThat(stored.get("next_visit_cautions")).isNull();
+    }
+
+    @Test
+    void rejectsFuturePerformedAtAndHidesForeignRecordDuringPatch() throws Exception {
+        String ownRecordId = createRecord(USER_ID);
+        mockMvc.perform(patch("/treatment-records/" + ownRecordId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"performed_at":"2099-01-01T00:00:00Z"}
+                                """))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code")
+                        .value("TREATMENT_PERFORMED_AT_IN_FUTURE"));
+
+        String foreignRecordId = createRecord(OTHER_USER_ID);
+        mockMvc.perform(patch("/treatment-records/" + foreignRecordId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"memo\":\"볼 수 없어야 함\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
+    void deletesOwnRecordAndMarksItsFilesForCleanup() throws Exception {
+        UUID fileId = readyFile(USER_ID);
+        String created = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody("2026-08-01T10:00:00Z", photoRefs(fileId))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        UUID recordId = UUID.fromString(new ObjectMapper()
+                .readTree(created).path("data").path("record_id").asText());
+
+        mockMvc.perform(delete("/treatment-records/" + recordId)
+                .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM treatment_records WHERE record_id = ?",
+                Integer.class, recordId)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM treatment_record_photos WHERE record_id = ?",
+                Integer.class, recordId)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM files WHERE file_id = ?", String.class, fileId))
+                .isEqualTo("DELETED");
+    }
+
+    @Test
+    void hidesForeignRecordDuringDelete() throws Exception {
+        String foreignRecordId = createRecord(OTHER_USER_ID);
+
+        mockMvc.perform(delete("/treatment-records/" + foreignRecordId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM treatment_records WHERE record_id = ?",
+                Integer.class, UUID.fromString(foreignRecordId))).isEqualTo(1);
+    }
+
     @Test
     void readsBackOwnRecordWithSignedPhotoUrlsIssuedAtReadTime() throws Exception {
         UUID before = readyFile(USER_ID);
@@ -378,6 +479,14 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
 
         mockMvc.perform(get("/treatment-records"))
                 .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(patch("/treatment-records/" + UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(delete("/treatment-records/" + UUID.randomUUID()))
+                .andExpect(status().isUnauthorized());
     }
 
     // ------------------------------------------------------------------ 문서화
@@ -391,6 +500,10 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$['paths']['/treatment-records']['get']"
                         + "['security'][0]['bearerAuth']").isArray())
                 .andExpect(jsonPath("$['paths']['/treatment-records/{recordId}']['get']"
+                        + "['security'][0]['bearerAuth']").isArray())
+                .andExpect(jsonPath("$['paths']['/treatment-records/{recordId}']['patch']"
+                        + "['security'][0]['bearerAuth']").isArray())
+                .andExpect(jsonPath("$['paths']['/treatment-records/{recordId}']['delete']"
                         + "['security'][0]['bearerAuth']").isArray())
                 .andExpect(jsonPath("$.components.schemas.CreateTreatmentRecordRequest"
                         + ".properties.service_types.description").value(containsString("CUT")))
@@ -423,7 +536,8 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
         return """
                 {"service_types":["CUT","COLOR"],"performed_at":"%s",
                  "salon_name":"준헤어","designer_name":"김실장","satisfaction":4,
-                 "price_amount":120000,"price_currency":"KRW","photos":%s}
+                 "price_amount":120000,"price_currency":"KRW",
+                 "memo":"기존 메모","next_visit_cautions":"기존 주의사항","photos":%s}
                 """.formatted(performedAt, photosJson);
     }
 

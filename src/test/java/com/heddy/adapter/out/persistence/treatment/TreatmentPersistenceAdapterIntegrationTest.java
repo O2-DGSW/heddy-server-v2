@@ -160,6 +160,46 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
                 .containsExactly(older.recordId());
     }
 
+    @Test
+    void updatesMutableFieldsAndKeepsPhotosAttached() {
+        TreatmentRecord saved = adapter.insert(TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), "기존 미용실", "기존 디자이너",
+                PERFORMED_AT, 3, 100_000L, "KRW", null, "기존 메모", "기존 주의사항"));
+        TreatmentPhoto photo = adapter.insertPhoto(
+                TreatmentPhoto.create(saved.recordId(), newFile(), ImageType.AFTER));
+        TreatmentRecord withPhoto = adapter.findById(saved.recordId()).orElseThrow();
+        TreatmentRecord changed = withPhoto.update(
+                Set.of(ServiceType.COLOR), "새 미용실", "새 디자이너",
+                PERFORMED_AT.minusSeconds(60), 5, null, null, null,
+                "새 메모", null);
+
+        TreatmentRecord updated = adapter.update(changed).orElseThrow();
+
+        assertThat(updated.serviceTypes()).containsExactly(ServiceType.COLOR);
+        assertThat(updated.salonName()).isEqualTo("새 미용실");
+        assertThat(updated.designerName()).isEqualTo("새 디자이너");
+        assertThat(updated.satisfaction()).isEqualTo(5);
+        assertThat(updated.priceAmount()).isNull();
+        assertThat(updated.memo()).isEqualTo("새 메모");
+        assertThat(updated.nextVisitCautions()).isNull();
+        assertThat(updated.photos()).extracting(TreatmentPhoto::photoId)
+                .containsExactly(photo.photoId());
+    }
+
+    @Test
+    void hardDeletesRecordAndCascadesPhotos() {
+        TreatmentRecord saved = adapter.insert(TreatmentRecord.create(
+                USER_ID, Set.of(ServiceType.CUT), null, null, PERFORMED_AT,
+                null, null, null, null));
+        adapter.insertPhoto(TreatmentPhoto.create(
+                saved.recordId(), newFile(), ImageType.AFTER));
+
+        assertThat(adapter.deleteById(saved.recordId())).isTrue();
+        assertThat(adapter.findById(saved.recordId())).isEmpty();
+        assertThat(photoCountOf(saved.recordId())).isZero();
+        assertThat(adapter.deleteById(saved.recordId())).isFalse();
+    }
+
     // ------------------------------------------------------------------ 참조 무결성
 
     @Test
@@ -213,6 +253,8 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
         assertColumn("treatment_records", "price_amount", "bigint", null, true);
         assertColumn("treatment_records", "price_currency", "character varying", 3, true);
         assertColumn("treatment_records", "appointment_id", "uuid", null, true);
+        assertColumn("treatment_records", "memo", "text", null, true);
+        assertColumn("treatment_records", "next_visit_cautions", "text", null, true);
         assertColumn("treatment_records", "created_at", "timestamp with time zone", null, false);
         assertColumn("treatment_records", "updated_at", "timestamp with time zone", null, false);
     }

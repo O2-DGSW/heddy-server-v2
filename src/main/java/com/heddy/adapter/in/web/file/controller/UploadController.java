@@ -3,6 +3,8 @@ package com.heddy.adapter.in.web.file.controller;
 import com.heddy.adapter.in.web.file.dto.PresignUploadRequest;
 import com.heddy.adapter.in.web.file.dto.PresignUploadResponse;
 import com.heddy.adapter.in.web.file.dto.CompleteUploadResponse;
+import com.heddy.domain.file.port.in.CancelUploadCommand;
+import com.heddy.domain.file.port.in.CancelUploadUseCase;
 import com.heddy.domain.file.port.in.CompleteUploadCommand;
 import com.heddy.domain.file.port.in.CompleteUploadUseCase;
 import com.heddy.domain.file.port.in.PresignUploadUseCase;
@@ -17,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,6 +35,7 @@ public class UploadController {
 
     private final PresignUploadUseCase presignUploadUseCase;
     private final CompleteUploadUseCase completeUploadUseCase;
+    private final CancelUploadUseCase cancelUploadUseCase;
 
     @PostMapping("/uploads/presign")
     @Operation(summary = "업로드 세션 발급",
@@ -61,5 +65,18 @@ public class UploadController {
                 CompleteUploadResponse.from(completeUploadUseCase.complete(
                         new CompleteUploadCommand(userId, uploadId))),
                 RequestIdFilter.get(servletRequest));
+    }
+
+    @DeleteMapping("/uploads/{uploadId}")
+    @Operation(summary = "업로드 세션 취소",
+            description = "PENDING 인 업로드 세션을 취소해 스토리지 객체와 세션 행을 함께 정리한다. "
+                    + "READY 세션은 취소할 수 없고, 이미 취소된 세션에 대한 재요청은 멱등하게 204 로 답한다.")
+    public ResponseEntity<Void> cancel(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID uploadId
+    ) {
+        // 결과 본문이 없는 삭제 API 라 logout 처럼 204 로 답한다.
+        cancelUploadUseCase.cancel(new CancelUploadCommand(userId, uploadId));
+        return ResponseEntity.noContent().build();
     }
 }

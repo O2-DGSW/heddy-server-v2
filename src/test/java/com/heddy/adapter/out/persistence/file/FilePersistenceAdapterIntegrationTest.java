@@ -147,6 +147,63 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
                 .isInstanceOf(FileException.class);
     }
 
+    // ------------------------------------------------------------------ 취소 객체 회수
+
+    /**
+     * 취소가 지운 객체는 발급된 presigned PUT URL 이 살아 있는 동안 되살아날 수 있어 최종 회수가
+     * 아니다. 그래서 만료된 DELETED 행은 회수 표시가 채워질 때까지 계속 대상으로 남는다.
+     */
+    @Test
+    void listsExpiredCancelledSessionsAsReclaimTargetsUntilTheyAreMarked() {
+        StoredFile cancelled = adapter.insert(expiredPendingPhoto("reclaim-me.jpg"));
+        adapter.transition(cancelled.markDeleted(), FileStatus.PENDING);
+
+        assertThat(adapter.findReclaimTargets(Instant.now(), 10))
+                .extracting(StoredFile::fileId)
+                .contains(cancelled.fileId());
+
+        adapter.markReclaimed(cancelled.fileId(), Instant.now());
+
+        assertThat(adapter.findReclaimTargets(Instant.now(), 10))
+                .extracting(StoredFile::fileId)
+                .doesNotContain(cancelled.fileId());
+    }
+
+    /** 아직 만료되지 않은 취소 세션은 대상이 아니다. URL 이 살아 있는 동안은 다시 지워도 소용없다. */
+    @Test
+    void skipsCancelledSessionsWhoseUploadUrlIsStillValid() {
+        StoredFile cancelled = adapter.insert(pendingPhoto("still-valid.jpg"));
+        adapter.transition(cancelled.markDeleted(), FileStatus.PENDING);
+
+        assertThat(adapter.findReclaimTargets(Instant.now(), 10))
+                .extracting(StoredFile::fileId)
+                .doesNotContain(cancelled.fileId());
+    }
+
+    /** 취소되지 않은 세션은 상태와 무관하게 이 경로가 건드리지 않는다. */
+    @Test
+    void skipsSessionsThatWereNeverCancelled() {
+        StoredFile pending = adapter.insert(expiredPendingPhoto("expired-pending.jpg"));
+        StoredFile readySource = adapter.insert(expiredPendingPhoto("expired-ready.jpg"));
+        adapter.transition(
+                readySource.markReady(new VerifiedContent("image/jpeg", 1_024, SHA256, 800, 600)),
+                FileStatus.PENDING);
+
+        assertThat(adapter.findReclaimTargets(Instant.now(), 10))
+                .extracting(StoredFile::fileId)
+                .doesNotContain(pending.fileId(), readySource.fileId());
+    }
+
+    @Test
+    void honoursTheReclaimBatchLimit() {
+        adapter.transition(
+                adapter.insert(expiredPendingPhoto("batch-1.jpg")).markDeleted(), FileStatus.PENDING);
+        adapter.transition(
+                adapter.insert(expiredPendingPhoto("batch-2.jpg")).markDeleted(), FileStatus.PENDING);
+
+        assertThat(adapter.findReclaimTargets(Instant.now(), 1)).hasSize(1);
+    }
+
     @Test
     void bumpsUpdatedAtOnTransitionEvenThoughAuditingIsBypassed() {
         StoredFile pending = adapter.insert(pendingPhoto("touched.jpg"));
@@ -174,6 +231,7 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
         assertColumn("width", "integer", null, true);
         assertColumn("height", "integer", null, true);
         assertColumn("expires_at", "timestamp with time zone", null, false);
+        assertColumn("reclaimed_at", "timestamp with time zone", null, true);
         assertColumn("created_at", "timestamp with time zone", null, false);
         assertColumn("updated_at", "timestamp with time zone", null, false);
     }
@@ -183,7 +241,8 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
         assertThat(jdbcTemplate.queryForList(
                 "SELECT indexname FROM pg_indexes WHERE tablename = 'files'", String.class))
                 .contains("uk_files_upload_id", "uk_files_object_key",
-                        "idx_files_user_id", "idx_files_status_expires_at");
+                        "idx_files_user_id", "idx_files_status_expires_at",
+                        "idx_files_reclaim_targets");
     }
 
     @Test
@@ -203,6 +262,13 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
                 USER_ID, FilePurpose.TREATMENT_PHOTO, "TREATMENT_PHOTO/" + USER_ID + "/" + name,
                 "image/jpeg", name, 1_024, DECLARED_SHA256,
                 Instant.now().plus(5, ChronoUnit.MINUTES));
+    }
+
+    private static StoredFile expiredPendingPhoto(String name) {
+        return StoredFile.pending(
+                USER_ID, FilePurpose.TREATMENT_PHOTO, "TREATMENT_PHOTO/" + USER_ID + "/" + name,
+                "image/jpeg", name, 1_024, DECLARED_SHA256,
+                Instant.now().minus(1, ChronoUnit.MINUTES));
     }
 
     private void insertUser(UUID userId, String email) {

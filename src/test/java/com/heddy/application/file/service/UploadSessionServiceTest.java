@@ -7,6 +7,7 @@ import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.model.PresignedUpload;
 import com.heddy.domain.file.model.StorageObject;
 import com.heddy.domain.file.model.StoredFile;
+import com.heddy.domain.file.port.in.CancelUploadCommand;
 import com.heddy.domain.file.port.in.CompleteUploadCommand;
 import com.heddy.domain.file.port.in.PresignUploadCommand;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -33,6 +35,8 @@ import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -263,6 +267,100 @@ class UploadSessionServiceTest {
         verifyNoInteractions(fileStoragePort);
     }
 
+    // ------------------------------------------------------------------ cancel
+
+    /**
+     * 취소는 PENDING 을 기대 상태로 건 조건부 갱신으로 행을 <em>먼저</em> 선점하고 그다음 객체를
+     * 지운다. 같은 행을 노리는 complete 의 PENDING → READY 전이와 DB 에서 직렬화하기 위해서다.
+     */
+    @Test
+    void claimsTheRowBeforeDeletingTheStoredObjectOnCancellation() {
+        StoredFile pending = insertPending();
+        given(fileRepositoryPort.transition(any(), any()))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        service.cancel(new CancelUploadCommand(USER_ID, pending.uploadId()));
+
+        ArgumentCaptor<StoredFile> captor = ArgumentCaptor.forClass(StoredFile.class);
+        InOrder inOrder = inOrder(fileRepositoryPort, fileStoragePort);
+        inOrder.verify(fileRepositoryPort).transition(captor.capture(), eq(FileStatus.PENDING));
+        inOrder.verify(fileStoragePort).deleteObject(pending.objectKey());
+        assertThat(captor.getValue().status()).isEqualTo(FileStatus.DELETED);
+    }
+
+    /**
+     * complete 와 cancel 이 둘 다 PENDING 을 읽고, complete 의 PENDING → READY 가 먼저 이긴 순서.
+     * 선점이 0 행으로 실패하므로 스토리지에는 손을 대지 않는다 — 여기서 객체를 지워버리면 트랜잭션
+     * 롤백이 그 삭제를 되돌리지 못해 "READY 행 + 없는 객체"가 남는다.
+     */
+    @Test
+    void doesNotTouchStorageWhenCompleteAlreadyWonTheRow() {
+        StoredFile pending = insertPending();
+        given(fileRepositoryPort.transition(any(), eq(FileStatus.PENDING)))
+                .willThrow(new FileException(FileError.CONCURRENT_MODIFICATION));
+
+        assertCancelError(pending.uploadId(), FileError.CONCURRENT_MODIFICATION);
+
+        verify(fileStoragePort, never()).deleteObject(any());
+    }
+
+    @Test
+    void reportsUnknownSessionsAsResourceNotFoundWhenCancelling() {
+        given(fileRepositoryPort.findByUploadId(any())).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.cancel(
+                new CancelUploadCommand(USER_ID, UUID.randomUUID())))
+                .isInstanceOfSatisfying(ApplicationException.class, exception ->
+                        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND));
+        verifyNoInteractions(fileStoragePort);
+    }
+
+    /**
+     * READY 는 완료 검증을 통과해 다른 도메인이 참조할 수 있는 파일이다. 그 삭제는 업로드 취소가
+     * 아니라 파일 삭제 기능의 몫이므로 취소 경로에서 거부한다.
+     */
+    @Test
+    void rejectsCancellingAReadySession() {
+        StoredFile ready = pendingPhoto(1_024)
+                .markReady(new StorageObject("image/jpeg", 1_024));
+        given(fileRepositoryPort.findByUploadId(ready.uploadId())).willReturn(Optional.of(ready));
+
+        assertCancelError(ready.uploadId(), FileError.INVALID_STATE_TRANSITION);
+        verifyNoInteractions(fileStoragePort);
+        verify(fileRepositoryPort, never()).transition(any(), any());
+    }
+
+    /** 이미 DELETED 인 세션은 정리가 끝난 뒤다. 멱등하게 성공으로 답한다. */
+    @Test
+    void answersRepeatedCancellationWithIdempotentSuccessWithoutTouchingAnything() {
+        StoredFile deleted = insertPending().markDeleted();
+        given(fileRepositoryPort.findByUploadId(deleted.uploadId())).willReturn(Optional.of(deleted));
+
+        service.cancel(new CancelUploadCommand(USER_ID, deleted.uploadId()));
+
+        verifyNoInteractions(fileStoragePort);
+        verify(fileRepositoryPort, never()).transition(any(), any());
+    }
+
+    /**
+     * 선점 뒤 스토리지 삭제가 실패하면 예외를 그대로 올린다. 트랜잭션이 롤백돼 행이 PENDING 으로
+     * 돌아가므로 클라이언트가 재시도할 수 있고, 롤백되지 않고 DELETED 로 남더라도 회수 표시가
+     * 비어 있어 만료 이후 회수 경로가 같은 키를 다시 지운다.
+     */
+    @Test
+    void propagatesStorageFailureAfterClaimingTheRow() {
+        StoredFile pending = insertPending();
+        given(fileRepositoryPort.transition(any(), any()))
+                .willAnswer(invocation -> invocation.getArgument(0));
+        // 포트가 던지는 구체 타입은 어댑터의 몫이다. 단위 테스트는 전파만 본다.
+        RuntimeException storageFailure = new RuntimeException("storage down");
+        doThrow(storageFailure).when(fileStoragePort).deleteObject(pending.objectKey());
+
+        assertThatThrownBy(() -> service.cancel(
+                new CancelUploadCommand(USER_ID, pending.uploadId())))
+                .isSameAs(storageFailure);
+    }
+
     // ------------------------------------------------------------------ 헬퍼
 
     private static PresignUploadCommand command(
@@ -307,6 +405,12 @@ class UploadSessionServiceTest {
 
     private void assertCompleteError(UUID uploadId, FileError expected) {
         assertThatThrownBy(() -> service.complete(new CompleteUploadCommand(USER_ID, uploadId)))
+                .isInstanceOfSatisfying(FileException.class, exception ->
+                        assertThat(exception.error()).isEqualTo(expected));
+    }
+
+    private void assertCancelError(UUID uploadId, FileError expected) {
+        assertThatThrownBy(() -> service.cancel(new CancelUploadCommand(USER_ID, uploadId)))
                 .isInstanceOfSatisfying(FileException.class, exception ->
                         assertThat(exception.error()).isEqualTo(expected));
     }

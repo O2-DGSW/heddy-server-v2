@@ -42,19 +42,21 @@ public record Share(
     public Share {
         Objects.requireNonNull(shareId, "shareId");
         Objects.requireNonNull(userId, "userId");
-        if (tokenHash == null || tokenHash.isBlank()) {
-            throw new SharingException(SharingError.TOKEN_HASH_REQUIRED);
-        }
         Objects.requireNonNull(status, "status");
 
         recordIds = Set.copyOf(recordIds);
         savedStyleIds = Set.copyOf(savedStyleIds);
         fields = Set.copyOf(fields);
+        // 스펙 오류(SHARE_EMPTY_SELECTION)가 기술 전제(TOKEN_HASH_REQUIRED)에 가려지지 않게
+        // 선택 불변식을 먼저 본다.
         if (recordIds.isEmpty() && savedStyleIds.isEmpty()) {
             throw new SharingException(SharingError.EMPTY_SELECTION);
         }
         if (fields.isEmpty()) {
             throw new SharingException(SharingError.EMPTY_SELECTION);
+        }
+        if (tokenHash == null || tokenHash.isBlank()) {
+            throw new SharingException(SharingError.TOKEN_HASH_REQUIRED);
         }
 
         Objects.requireNonNull(expiresAt, "expiresAt");

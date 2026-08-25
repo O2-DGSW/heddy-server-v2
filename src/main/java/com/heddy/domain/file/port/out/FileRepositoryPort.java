@@ -49,6 +49,13 @@ public interface FileRepositoryPort {
 
     List<StoredFile> findAllByUserId(UUID userId);
 
+    /**
+     * 만료 세션과 READY 고아를 정리 대상으로 꺼낸다.
+     *
+     * <p>DELETED 행은 {@code reclaimedAt} 이 이미 차 있을 수 있다. 회수 경로가 객체만 지우고
+     * 표시를 남긴 상태이므로, 후보를 받아 처리하는 쪽은 스토리지를 다시 건드리지 말고
+     * 메타데이터만 마무리해야 한다.
+     */
     List<StoredFile> findCleanupCandidates(
             Instant pendingExpiredBefore, Instant readyCreatedBefore, int limit);
     boolean tryAcquireCleanupLock();

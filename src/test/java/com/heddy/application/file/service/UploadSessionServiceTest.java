@@ -203,7 +203,7 @@ class UploadSessionServiceTest {
                 UUID.randomUUID(), UUID.randomUUID(), USER_ID, FilePurpose.TREATMENT_PHOTO,
                 FileStatus.PENDING, "TREATMENT_PHOTO/" + USER_ID + "/expired.jpg",
                 "image/jpeg", "expired.jpg", 1_024, null, null, null,
-                NOW.minusSeconds(1), null);
+                NOW.minusSeconds(1), null, null);
         given(fileRepositoryPort.findByUploadId(expired.uploadId())).willReturn(Optional.of(expired));
 
         assertCompleteError(expired.uploadId(), FileError.UPLOAD_EXPIRED);

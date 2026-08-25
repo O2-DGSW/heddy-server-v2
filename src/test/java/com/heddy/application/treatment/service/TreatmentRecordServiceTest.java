@@ -461,7 +461,8 @@ class TreatmentRecordServiceTest {
         TreatmentPhoto photo = new TreatmentPhoto(
                 UUID.randomUUID(), recordId, UUID.randomUUID(), ImageType.BEFORE, 1, Instant.now());
         TreatmentRecord record = recordWithPhotos(recordId, List.of(photo));
-        given(recordRepositoryPort.findById(recordId)).willReturn(Optional.of(record));
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
         given(recordRepositoryPort.updatePhoto(any())).willAnswer(invocation ->
                 Optional.of(invocation.getArgument(0)));
         given(fileRepositoryPort.findById(photo.fileId()))
@@ -484,7 +485,8 @@ class TreatmentRecordServiceTest {
                 UUID.randomUUID(), recordId, UUID.randomUUID(), ImageType.AFTER, 0, Instant.now());
         TreatmentRecord record = recordWithPhotos(recordId, List.of(photo));
         StoredFile file = readyFile(photo.fileId());
-        given(recordRepositoryPort.findById(recordId)).willReturn(Optional.of(record));
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
         given(fileRepositoryPort.findById(photo.fileId())).willReturn(Optional.of(file));
         given(recordRepositoryPort.deletePhoto(photo.photoId())).willReturn(true);
         given(fileRepositoryPort.transition(any(), any())).willAnswer(invocation ->
@@ -506,7 +508,8 @@ class TreatmentRecordServiceTest {
         TreatmentPhoto after = new TreatmentPhoto(
                 UUID.randomUUID(), recordId, UUID.randomUUID(), ImageType.AFTER, 2, Instant.now());
         TreatmentRecord record = recordWithPhotos(recordId, List.of(before, after));
-        given(recordRepositoryPort.findById(recordId)).willReturn(Optional.of(record));
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
         given(fileRepositoryPort.findById(before.fileId()))
                 .willReturn(Optional.of(readyFile(before.fileId())));
         given(fileRepositoryPort.findById(after.fileId()))
@@ -523,7 +526,7 @@ class TreatmentRecordServiceTest {
                 .containsExactly(after.photoId());
 
         TreatmentRecord incomplete = recordWithPhotos(UUID.randomUUID(), List.of());
-        given(recordRepositoryPort.findById(incomplete.recordId()))
+        given(recordRepositoryPort.findByIdAndUserId(incomplete.recordId(), USER_ID))
                 .willReturn(Optional.of(incomplete));
         assertThatThrownBy(() -> service.getPhotoComparison(
                 new GetPhotoComparisonUseCase.Query(USER_ID, incomplete.recordId())))

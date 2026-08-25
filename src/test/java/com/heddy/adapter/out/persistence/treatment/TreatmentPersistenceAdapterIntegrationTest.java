@@ -101,11 +101,12 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
 
         assertThat(updated.imageType()).isEqualTo(ImageType.AFTER);
         assertThat(updated.sortOrder()).isEqualTo(7);
-        assertThat(adapter.findById(record.recordId()).orElseThrow().photos())
+        assertThat(adapter.findByIdAndUserId(record.recordId(), USER_ID).orElseThrow().photos())
                 .extracting(TreatmentPhoto::sortOrder)
                 .containsExactly(7);
         assertThat(adapter.deletePhoto(photo.photoId())).isTrue();
-        assertThat(adapter.findById(record.recordId()).orElseThrow().photos()).isEmpty();
+        assertThat(adapter.findByIdAndUserId(record.recordId(), USER_ID).orElseThrow().photos())
+                .isEmpty();
         assertThat(adapter.deletePhoto(photo.photoId())).isFalse();
     }
 

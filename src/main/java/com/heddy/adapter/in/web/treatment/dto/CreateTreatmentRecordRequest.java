@@ -21,7 +21,7 @@ import java.util.UUID;
 public record CreateTreatmentRecordRequest(
         @NotEmpty
         @Schema(description = "시술 종류. CUT PERM COLOR BLEACH CLINIC STYLING OTHER 중 1개 이상")
-        @JsonProperty("service_types") Set<ServiceType> serviceTypes,
+        @JsonProperty("service_types") Set<@NotNull ServiceType> serviceTypes,
 
         @NotNull
         @Schema(description = "시술일시(ISO-8601). 미래일 수 없다")
@@ -47,7 +47,7 @@ public record CreateTreatmentRecordRequest(
 
         @Valid
         @Schema(description = "첨부 사진. READY 인 요청자 소유 파일만 가리키며 최대 10장")
-        @JsonProperty("photos") List<PhotoRequest> photos
+        @JsonProperty("photos") List<@NotNull @Valid PhotoRequest> photos
 ) {
 
     public record PhotoRequest(

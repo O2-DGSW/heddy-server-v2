@@ -19,11 +19,15 @@ gh secret set PROD_ENV   --body "$(cat ./prod.env)"             # 아래 2번 �
 - `EC2_SSH_KEY` 는 EC2 인스턴스에 SSH 로 접속 가능한 키의 **전체 내용**(헤더 포함)이어야 한다.
 - 워크플로가 쓰는 배포 디렉터리는 `/home/<EC2_USER>/heddy-server-v2` 다. v1 의 디렉터리와 섞이지 않게 별도 경로를 쓴다.
 
-## 2. `PROD_ENV` 필수 값 체크리스트 (12종)
+## 2. `PROD_ENV` 필수 값 체크리스트 (10종 + S3 자격증명 페어)
 
-아래 12개가 하나라도 빠지면 `docker compose up` 이 즉시 실패한다
+아래 10개가 하나라도 빠지면 `docker compose up` 이 즉시 실패한다
 (`docker-compose.prod.yml` 의 `${VAR:?}` 가드). 빈 값으로 남겨야 하는 변수도
 **키 자체는 반드시 있어야** 한다.
+
+`AWS_S3_ACCESS_KEY` · `AWS_S3_SECRET_KEY` 는 가드 대상이 아니다 — **둘 다 비워
+두면** AWS 기본 자격증명 체인(EC2 인스턴스 역할)을 사용한다. IAM 키를 직접 쓰려면
+둘 다 채운다. 한쪽만 채우면 기동 시점에 막힌다.
 
 ```dotenv
 JWT_SECRET=<64자 이상 랜덤 문자열>
@@ -34,8 +38,8 @@ REDIS_HOST=redis
 REDIS_PORT=6379
 AWS_S3_BUCKET=<운영 S3 버킷명>
 AWS_S3_REGION=ap-northeast-2
-AWS_S3_ACCESS_KEY=<IAM 액세스 키>
-AWS_S3_SECRET_KEY=<IAM 시크릿 키>
+AWS_S3_ACCESS_KEY=            # 인스턴스 역할 쓰면 비움, 아니면 IAM 액세스 키
+AWS_S3_SECRET_KEY=            # 위와 항상 함께 (둘 다 비움 or 둘 다 채움)
 AWS_S3_ENDPOINT=
 CORS_ALLOWED_ORIGINS=https://<실제 클라이언트 도메인>
 ```
@@ -45,6 +49,7 @@ CORS_ALLOWED_ORIGINS=https://<실제 클라이언트 도메인>
 | `DB_URL` | 호스트는 반드시 compose 서비스명 `postgres`. `localhost` 는 컨테이너 자기 자신이다 |
 | `DB_USERNAME` · `DB_PASSWORD` | postgres 서비스의 `POSTGRES_USER` · `POSTGRES_PASSWORD` 와 같은 변수를 공유하므로 compose 가 일치를 보장한다 |
 | `REDIS_HOST` | compose 서비스명 `redis`. `REDIS_PORT` 는 컨테이너 내부 포트 `6379` |
+| `AWS_S3_ACCESS_KEY` · `AWS_S3_SECRET_KEY` | 둘 다 비우면 인스턴스 역할로 인증한다. 배포 전에 인스턴스에 역할이 붙어 있는지 확인한다 |
 | `AWS_S3_ENDPOINT` | **빈 값 유지** — 실제 AWS S3 를 쓴다 (MinIO 엔드포인트를 넣지 않는다) |
 | `JWT_SECRET` | 기본값이 없는 유일한 변수. 없으면 부팅 자체가 실패한다 |
 

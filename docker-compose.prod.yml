@@ -12,7 +12,8 @@ services:
     env_file:
       - .env
     environment:
-      # 운영 필수 12종 — .env 에 하나라도 빠지면 up 이 실패한다.
+      # 운영 필수 10종 — .env 에 하나라도 빠지면 up 이 실패한다.
+      # S3 자격증명 페어(AWS_S3_ACCESS_KEY/SECRET_KEY)는 비움 허용(인스턴스 역할 인증).
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       DB_URL: ${DB_URL:?DB_URL is required}
       DB_USERNAME: ${DB_USERNAME:?DB_USERNAME is required}
@@ -21,8 +22,10 @@ services:
       REDIS_PORT: ${REDIS_PORT:?REDIS_PORT is required}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:?AWS_S3_BUCKET is required}
       AWS_S3_REGION: ${AWS_S3_REGION:?AWS_S3_REGION is required}
-      AWS_S3_ACCESS_KEY: ${AWS_S3_ACCESS_KEY:?AWS_S3_ACCESS_KEY is required}
-      AWS_S3_SECRET_KEY: ${AWS_S3_SECRET_KEY:?AWS_S3_SECRET_KEY is required}
+      # 자격증명 페어는 비워 두면 AWS 기본 자격증명 체인(EC2 인스턴스 역할)을 쓴다.
+      # 키만 있고 값이 비면 정상 시나리오이므로 unset 검사는 하지 않는다.
+      AWS_S3_ACCESS_KEY: ${AWS_S3_ACCESS_KEY:-}
+      AWS_S3_SECRET_KEY: ${AWS_S3_SECRET_KEY:-}
       # 실제 S3 를 쓰므로 운영 값은 빈 문자열이다. unset 만 아니면 통과시킨다.
       AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT:-}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required}

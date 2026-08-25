@@ -120,6 +120,30 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
+    void rejectsNullServiceTypeElementAsClientError() throws Exception {
+        mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"service_types":[null],"performed_at":"2026-08-01T10:00:00Z"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void rejectsNullPhotoElementAsFieldValidation() throws Exception {
+        mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody("2026-08-01T10:00:00Z", "[null]")))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.error.field_errors[0].field",
+                        containsString("photos")));
+    }
+
+    @Test
     void refusesPhotoFileOwnedBySomeoneElse() throws Exception {
         UUID foreignFile = readyFile(OTHER_USER_ID);
 

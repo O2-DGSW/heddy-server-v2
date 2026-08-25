@@ -27,6 +27,11 @@ import java.util.UUID;
  * 믿지 않는다. 내용 해시·치수가 <em>실측</em>으로 바뀌는 지점은 객체를 내려받아 확인하는
  * {@link #markReady(VerifiedContent)} 전이다. HEAD 만으로 전이하는 {@link #markReady(StorageObject)} 는
  * 선언 해시를 그대로 둔다(HEAD 로는 내용을 알 수 없다).
+ *
+ * <p>{@code reclaimedAt} 은 업로드 객체가 최종 회수된 시각이다. 취소 시점의 삭제는 살아 있는
+ * presigned PUT URL 때문에 되돌려질 수 있어 채우지 않고, URL 이 못 미치는 만료 이후 회수 경로가
+ * 지워서 채운다. 이 값이 있는 DELETED 행은 객체가 이미 없다는 뜻이라 정리 경로에서 스토리지를
+ * 다시 건드려서는 안 된다.
  */
 public record StoredFile(
         UUID fileId,
@@ -42,7 +47,8 @@ public record StoredFile(
         Integer width,
         Integer height,
         Instant expiresAt,
-        Instant createdAt
+        Instant createdAt,
+        Instant reclaimedAt
 ) {
     public StoredFile {
         Objects.requireNonNull(fileId, "fileId");
@@ -80,7 +86,7 @@ public record StoredFile(
         return new StoredFile(
                 UUID.randomUUID(), UUID.randomUUID(), userId, purpose, FileStatus.PENDING,
                 objectKey, contentType, fileName, fileSize, declaredSha256, null, null,
-                expiresAt, null);
+                expiresAt, null, null);
     }
 
     /**
@@ -100,7 +106,7 @@ public record StoredFile(
         return new StoredFile(
                 fileId, uploadId, userId, purpose, FileStatus.READY, objectKey,
                 object.contentType(), fileName, object.byteSize(), sha256, width, height,
-                expiresAt, createdAt);
+                expiresAt, createdAt, null);
     }
 
     /**
@@ -114,7 +120,7 @@ public record StoredFile(
         return new StoredFile(
                 fileId, uploadId, userId, purpose, FileStatus.READY, objectKey,
                 verified.contentType(), fileName, verified.fileSize(), verified.sha256(),
-                verified.width(), verified.height(), expiresAt, createdAt);
+                verified.width(), verified.height(), expiresAt, createdAt, null);
     }
 
     /** 회수 대상으로 표시한다. 실제 스토리지 객체 삭제는 정리 작업이 맡는다. */
@@ -124,7 +130,7 @@ public record StoredFile(
         }
         return new StoredFile(
                 fileId, uploadId, userId, purpose, FileStatus.DELETED, objectKey,
-                contentType, fileName, fileSize, sha256, width, height, expiresAt, createdAt);
+                contentType, fileName, fileSize, sha256, width, height, expiresAt, createdAt, null);
     }
 
     public boolean isReady() {

@@ -134,7 +134,7 @@ class TreatmentRecordServiceTest {
         StoredFile pending = new StoredFile(pendingFileId, UUID.randomUUID(), USER_ID,
                 FilePurpose.TREATMENT_PHOTO, FileStatus.PENDING, "TREATMENT_PHOTO/k",
                 "image/jpeg", "a.jpg", 10, null, null, null,
-                Instant.now().plusSeconds(300), Instant.now());
+                Instant.now().plusSeconds(300), Instant.now(), null);
         given(fileRepositoryPort.findById(pendingFileId)).willReturn(Optional.of(pending));
 
         assertCreateRejected(pendingFileId, ErrorCode.FILE_INVALID_STATE);
@@ -573,12 +573,12 @@ class TreatmentRecordServiceTest {
     private StoredFile readyFileOwnedBy(UUID fileId, UUID userId) {
         return new StoredFile(fileId, UUID.randomUUID(), userId, FilePurpose.TREATMENT_PHOTO,
                 FileStatus.READY, "TREATMENT_PHOTO/k", "image/jpeg", "a.jpg", 10, null,
-                null, null, Instant.now().plusSeconds(300), Instant.now());
+                null, null, Instant.now().plusSeconds(300), Instant.now(), null);
     }
 
     private StoredFile fileInStatus(UUID fileId, FileStatus status) {
         return new StoredFile(fileId, UUID.randomUUID(), USER_ID, FilePurpose.TREATMENT_PHOTO,
                 status, "TREATMENT_PHOTO/k", "image/jpeg", "a.jpg", 10, null,
-                null, null, Instant.now().plusSeconds(300), Instant.now());
+                null, null, Instant.now().plusSeconds(300), Instant.now(), null);
     }
 }

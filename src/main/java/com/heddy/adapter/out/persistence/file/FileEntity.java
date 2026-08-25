@@ -89,6 +89,7 @@ class FileEntity extends BaseEntity {
     StoredFile toDomain() {
         return new StoredFile(
                 fileId, uploadId, userId, purpose, status, objectKey, contentType,
-                fileName, fileSize, sha256, width, height, expiresAt, getCreatedAt());
+                fileName, fileSize, sha256, width, height, expiresAt, getCreatedAt(),
+                reclaimedAt);
     }
 }

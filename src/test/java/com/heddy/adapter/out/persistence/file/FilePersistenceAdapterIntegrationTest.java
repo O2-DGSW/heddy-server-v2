@@ -107,7 +107,7 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
         StoredFile clashing = new StoredFile(
                 UUID.randomUUID(), first.uploadId(), USER_ID, FilePurpose.TREATMENT_PHOTO,
                 FileStatus.PENDING, "TREATMENT_PHOTO/other.jpg", "image/jpeg", "other.jpg",
-                1_024, null, null, null, first.expiresAt(), null);
+                1_024, null, null, null, first.expiresAt(), null, null);
 
         assertThatThrownBy(() -> adapter.insert(clashing))
                 .isInstanceOf(DataIntegrityViolationException.class);
@@ -222,7 +222,7 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
         StoredFile expiredPending = adapter.insert(new StoredFile(
                 UUID.randomUUID(), UUID.randomUUID(), USER_ID, FilePurpose.TREATMENT_PHOTO,
                 FileStatus.PENDING, "TREATMENT_PHOTO/expired.jpg", "image/jpeg", "expired.jpg",
-                100, null, null, null, now.minusSeconds(120), null));
+                100, null, null, null, now.minusSeconds(120), null, null));
         StoredFile freshPending = adapter.insert(pendingPhoto("fresh.jpg"));
         StoredFile orphanReady = adapter.insert(pendingPhoto("orphan.jpg"));
         orphanReady = adapter.transition(

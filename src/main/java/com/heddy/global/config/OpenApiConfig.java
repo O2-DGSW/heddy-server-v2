@@ -22,6 +22,6 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Heddy Customer API")
                         .description("고객 중심 미용 시술기록·스타일 분석 API")
-                        .version("v1"));
+                        .version("v2"));
     }
 }

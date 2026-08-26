@@ -2,6 +2,7 @@ package com.heddy.adapter.in.web.account.controller;
 
 import com.heddy.config.TestSecurityConfig;
 import com.heddy.domain.account.model.AccountStatus;
+import com.heddy.domain.account.model.AuthProvider;
 import com.heddy.domain.account.port.in.AuthResult;
 import com.heddy.domain.account.port.in.AuthTokens;
 import com.heddy.domain.account.port.in.AuthUser;
@@ -119,6 +120,70 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.error.field_errors").isArray())
                 .andExpect(jsonPath("$.request_id").value("request-3"));
+    }
+
+    @Test
+    void emailLoginMapsCurrentRequestContract() throws Exception {
+        given(emailLoginUseCase.login(any())).willReturn(authResult());
+
+        mockMvc.perform(post("/auth/login/email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email":"user@example.com",
+                                  "password":"Password123",
+                                  "device":{
+                                    "device_id":"device-1",
+                                    "platform":"IOS",
+                                    "app_version":"1.0.0"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.user.user_id").value(USER_ID.toString()))
+                .andExpect(jsonPath("$.data.user.email").value("user@example.com"))
+                .andExpect(jsonPath("$.data.tokens.access_token").value("access"));
+
+        verify(emailLoginUseCase).login(org.mockito.ArgumentMatchers.argThat(command ->
+                command.email().equals("user@example.com")
+                        && command.password().equals("Password123")
+                        && command.device().deviceId().equals("device-1")
+                        && command.device().platform().name().equals("IOS")));
+    }
+
+    @Test
+    void emailLoginRequiresDevice() throws Exception {
+        mockMvc.perform(post("/auth/login/email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"user@example.com\",\"password\":\"Password123\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"));
+    }
+
+    @Test
+    void socialLoginMapsCurrentRequestContract() throws Exception {
+        given(socialLoginUseCase.login(any())).willReturn(authResult());
+
+        mockMvc.perform(post("/auth/login/social")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "provider":"GOOGLE",
+                                  "provider_token":"provider-token",
+                                  "device":{
+                                    "device_id":"device-1",
+                                    "platform":"ANDROID",
+                                    "app_version":"1.0.0"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        verify(socialLoginUseCase).login(org.mockito.ArgumentMatchers.argThat(command ->
+                command.provider() == AuthProvider.GOOGLE
+                        && command.providerToken().equals("provider-token")
+                        && command.device().deviceId().equals("device-1")
+                        && command.device().platform().name().equals("ANDROID")));
     }
 
     @Test

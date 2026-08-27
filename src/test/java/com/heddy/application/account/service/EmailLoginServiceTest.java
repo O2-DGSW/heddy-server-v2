@@ -3,7 +3,6 @@ package com.heddy.application.account.service;
 import com.heddy.domain.account.exception.AccountError;
 import com.heddy.domain.account.exception.AccountException;
 import com.heddy.domain.account.model.Account;
-import com.heddy.domain.account.model.DeviceInfo;
 import com.heddy.domain.account.model.UserProfile;
 import com.heddy.domain.account.port.in.EmailLoginCommand;
 import com.heddy.domain.account.port.out.AccountRepositoryPort;
@@ -29,7 +28,6 @@ import static org.mockito.Mockito.verify;
 class EmailLoginServiceTest {
 
     private static final UUID USER_ID = UUID.randomUUID();
-    private static final DeviceInfo DEVICE = new DeviceInfo("device", DeviceInfo.Platform.IOS, "1.0.0");
 
     @Mock AccountRepositoryPort accountRepositoryPort;
     @Mock UserProfileRepositoryPort userProfileRepositoryPort;
@@ -45,7 +43,7 @@ class EmailLoginServiceTest {
     }
 
     @Test
-    void successfulLoginClearsFailureStateAndIssuesDeviceSession() {
+    void successfulLoginClearsFailureStateAndIssuesSession() {
         Account account = Account.email(USER_ID, "user@example.com", "encoded");
         UserProfile profile = UserProfile.signup(USER_ID, "헤디");
         given(accountRepositoryPort.findByEmail("user@example.com")).willReturn(Optional.of(account));
@@ -54,9 +52,9 @@ class EmailLoginServiceTest {
                 .willAnswer(invocation -> invocation.getArgument(0));
         given(userProfileRepositoryPort.findByUserId(USER_ID)).willReturn(Optional.of(profile));
 
-        service.login(new EmailLoginCommand("user@example.com", "Password123", DEVICE));
+        service.login(new EmailLoginCommand("user@example.com", "Password123"));
 
-        verify(sessionTokenService).issue(account.recordLoginSuccess(), profile, DEVICE);
+        verify(sessionTokenService).issue(account.recordLoginSuccess(), profile);
     }
 
     @Test
@@ -67,7 +65,7 @@ class EmailLoginServiceTest {
         given(accountRepositoryPort.findByEmail("user@example.com")).willReturn(Optional.of(account));
         given(passwordEncoderPort.matches("wrong", "encoded")).willReturn(false);
 
-        assertError(() -> service.login(new EmailLoginCommand("user@example.com", "wrong", DEVICE)),
+        assertError(() -> service.login(new EmailLoginCommand("user@example.com", "wrong")),
                 AccountError.ACCOUNT_LOCKED);
 
         ArgumentCaptor<Account> saved = ArgumentCaptor.forClass(Account.class);
@@ -85,7 +83,7 @@ class EmailLoginServiceTest {
         given(accountRepositoryPort.findByEmail("user@example.com")).willReturn(Optional.of(account));
         given(passwordEncoderPort.matches("wrong", "encoded")).willReturn(false);
 
-        assertError(() -> service.login(new EmailLoginCommand("user@example.com", "wrong", DEVICE)),
+        assertError(() -> service.login(new EmailLoginCommand("user@example.com", "wrong")),
                 AccountError.INVALID_CREDENTIALS);
 
         ArgumentCaptor<Account> saved = ArgumentCaptor.forClass(Account.class);

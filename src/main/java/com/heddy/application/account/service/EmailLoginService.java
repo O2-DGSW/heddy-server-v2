@@ -69,6 +69,6 @@ public class EmailLoginService implements EmailLoginUseCase {
         Account active = accountRepositoryPort.save(account.recordLoginSuccess());
         UserProfile profile = userProfileRepositoryPort.findByUserId(active.userId())
                 .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND));
-        return sessionTokenService.issue(active, profile, command.device());
+        return sessionTokenService.issue(active, profile);
     }
 }

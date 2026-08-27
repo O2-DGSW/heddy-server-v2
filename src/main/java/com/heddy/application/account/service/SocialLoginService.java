@@ -46,6 +46,6 @@ public class SocialLoginService implements SocialLoginUseCase {
         }
         UserProfile profile = userProfileRepositoryPort.findByUserId(active.userId())
                 .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND));
-        return sessionTokenService.issue(active, profile, command.device());
+        return sessionTokenService.issue(active, profile);
     }
 }

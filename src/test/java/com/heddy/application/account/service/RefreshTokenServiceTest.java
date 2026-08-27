@@ -2,7 +2,6 @@ package com.heddy.application.account.service;
 
 import com.heddy.domain.account.exception.AccountError;
 import com.heddy.domain.account.exception.AccountException;
-import com.heddy.domain.account.model.DeviceInfo;
 import com.heddy.domain.account.model.Account;
 import com.heddy.domain.account.model.AuthProvider;
 import com.heddy.domain.account.model.AccountStatus;
@@ -51,8 +50,7 @@ class RefreshTokenServiceTest {
 
     @Test
     void rotatesOpaqueRefreshTokenAndStoresOnlyHash() {
-        DeviceInfo device = new DeviceInfo("device", DeviceInfo.Platform.ANDROID, "1.0.0");
-        RefreshSession current = new RefreshSession(CURRENT_ID, USER_ID, "old-hash", device,
+        RefreshSession current = new RefreshSession(CURRENT_ID, USER_ID, "old-hash",
                 Instant.now().plusSeconds(600), null, null, Instant.now());
         given(tokenHasherPort.hash("raw-old")).willReturn("old-hash");
         given(refreshSessionRepositoryPort.findByTokenHashForUpdate("old-hash"))
@@ -77,7 +75,7 @@ class RefreshTokenServiceTest {
 
     @Test
     void rejectsRefreshForDeletionPendingAccountAndRevokesSessions() {
-        RefreshSession current = new RefreshSession(CURRENT_ID, USER_ID, "old-hash", null,
+        RefreshSession current = new RefreshSession(CURRENT_ID, USER_ID, "old-hash",
                 Instant.now().plusSeconds(600), null, null, Instant.now());
         given(tokenHasherPort.hash("raw-old")).willReturn("old-hash");
         given(refreshSessionRepositoryPort.findByTokenHashForUpdate("old-hash"))
@@ -95,7 +93,7 @@ class RefreshTokenServiceTest {
 
     @Test
     void reusedRotatedTokenRevokesEveryActiveSession() {
-        RefreshSession reused = new RefreshSession(CURRENT_ID, USER_ID, "old-hash", null,
+        RefreshSession reused = new RefreshSession(CURRENT_ID, USER_ID, "old-hash",
                 Instant.now().plusSeconds(600), UUID.randomUUID(), Instant.now(), Instant.now());
         given(tokenHasherPort.hash("raw-old")).willReturn("old-hash");
         given(refreshSessionRepositoryPort.findByTokenHashForUpdate("old-hash"))

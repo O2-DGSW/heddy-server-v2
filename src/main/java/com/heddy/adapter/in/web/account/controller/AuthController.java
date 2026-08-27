@@ -25,6 +25,9 @@ import com.heddy.domain.account.port.in.SocialSignupUseCase;
 import com.heddy.domain.account.port.in.VerifySmsCodeUseCase;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -47,6 +50,7 @@ import java.util.UUID;
 @Validated
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "인증", description = "회원가입, 로그인, 토큰, 재인증 및 휴대전화 인증")
 public class AuthController {
 
     private final CheckEmailAvailabilityUseCase checkEmailAvailabilityUseCase;
@@ -91,6 +95,7 @@ public class AuthController {
     }
 
     @GetMapping("/email-availability")
+    @Operation(summary = "이메일 중복 확인")
     public ApiResponse<EmailAvailabilityResponse> emailAvailability(
             @RequestParam @NotBlank @Email @Size(max = 255) String email,
             HttpServletRequest servletRequest
@@ -102,6 +107,10 @@ public class AuthController {
     }
 
     @PostMapping("/signup/email")
+    @Operation(summary = "이메일 회원가입",
+            description = "전화번호를 전달하는 경우 SIGNUP 목적의 SMS 인증이 먼저 완료되어야 합니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "201", description = "회원가입 성공")
     public ResponseEntity<ApiResponse<AuthResponse>> emailSignup(
             @Valid @RequestBody EmailSignupRequest request,
             HttpServletRequest servletRequest
@@ -112,6 +121,10 @@ public class AuthController {
     }
 
     @PostMapping("/signup/social")
+    @Operation(summary = "소셜 회원가입",
+            description = "전화번호를 전달하는 경우 SIGNUP 목적의 SMS 인증이 먼저 완료되어야 합니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "201", description = "회원가입 성공")
     public ResponseEntity<ApiResponse<AuthResponse>> socialSignup(
             @Valid @RequestBody SocialSignupRequest request,
             HttpServletRequest servletRequest
@@ -122,6 +135,8 @@ public class AuthController {
     }
 
     @PostMapping("/login/email")
+    @Operation(summary = "이메일 로그인",
+            description = "device는 Refresh Token 세션을 기기별로 식별하고 관리하기 위해 저장합니다.")
     public ApiResponse<AuthResponse> emailLogin(
             @Valid @RequestBody EmailLoginRequest request,
             HttpServletRequest servletRequest
@@ -132,6 +147,8 @@ public class AuthController {
     }
 
     @PostMapping("/login/social")
+    @Operation(summary = "소셜 로그인",
+            description = "device는 Refresh Token 세션을 기기별로 식별하고 관리하기 위해 저장합니다.")
     public ApiResponse<AuthResponse> socialLogin(
             @Valid @RequestBody SocialLoginRequest request,
             HttpServletRequest servletRequest
@@ -142,6 +159,8 @@ public class AuthController {
     }
 
     @PostMapping("/token/refresh")
+    @Operation(summary = "Access Token 갱신",
+            description = "Refresh Token을 회전하고 새 Access Token과 Refresh Token을 발급합니다.")
     public ApiResponse<AuthResponse.Tokens> refresh(
             @Valid @RequestBody RefreshTokenRequest request,
             HttpServletRequest servletRequest
@@ -152,6 +171,10 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "현재 세션 로그아웃")
+    @SecurityRequirement(name = "bearerAuth")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "204", description = "로그아웃 성공")
     public ResponseEntity<Void> logout(
             @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody RefreshTokenRequest request
@@ -161,6 +184,9 @@ public class AuthController {
     }
 
     @PostMapping("/reauthenticate")
+    @Operation(summary = "민감 작업 재인증",
+            description = "회원 탈퇴 등에 사용할 수 있는 300초 유효 1회용 토큰을 발급합니다.")
+    @SecurityRequirement(name = "bearerAuth")
     public ApiResponse<ReauthenticateResponse> reauthenticate(
             @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody ReauthenticateRequest request,
@@ -172,6 +198,8 @@ public class AuthController {
     }
 
     @PostMapping("/sms/send")
+    @Operation(summary = "SMS 인증번호 발송",
+            description = "SIGNUP, PASSWORD_RESET, PHONE_CHANGE 목적별 인증번호를 발송합니다.")
     public ApiResponse<Void> sendSmsCode(
             @Valid @RequestBody SendSmsCodeRequest request,
             HttpServletRequest servletRequest
@@ -181,6 +209,7 @@ public class AuthController {
     }
 
     @PostMapping("/sms/verify")
+    @Operation(summary = "SMS 인증번호 확인")
     public ApiResponse<Void> verifySmsCode(
             @Valid @RequestBody VerifySmsCodeRequest request,
             HttpServletRequest servletRequest
@@ -190,6 +219,8 @@ public class AuthController {
     }
 
     @PostMapping("/password/reset")
+    @Operation(summary = "비밀번호 재설정",
+            description = "PASSWORD_RESET 목적의 SMS 인증이 완료된 전화번호의 비밀번호를 변경합니다.")
     public ApiResponse<Void> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request,
             HttpServletRequest servletRequest

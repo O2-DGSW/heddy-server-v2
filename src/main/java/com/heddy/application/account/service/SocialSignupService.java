@@ -49,7 +49,7 @@ public class SocialSignupService implements SocialSignupUseCase {
                 UserProfile.signup(userId, command.nickname(), command.phone()));
         consentHistoryRepositoryPort.append(
                 userId, command.agreements(), ConsentSource.SIGNUP, Instant.now());
-        AuthResult result = sessionTokenService.issue(account, profile, null);
+        AuthResult result = sessionTokenService.issue(account, profile);
         signupPhoneVerificationService.consume(command.phone());
         return result;
     }

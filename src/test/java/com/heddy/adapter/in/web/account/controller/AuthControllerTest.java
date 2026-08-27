@@ -131,12 +131,7 @@ class AuthControllerTest {
                         .content("""
                                 {
                                   "email":"user@example.com",
-                                  "password":"Password123",
-                                  "device":{
-                                    "device_id":"device-1",
-                                    "platform":"IOS",
-                                    "app_version":"1.0.0"
-                                  }
+                                  "password":"Password123"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -146,18 +141,7 @@ class AuthControllerTest {
 
         verify(emailLoginUseCase).login(org.mockito.ArgumentMatchers.argThat(command ->
                 command.email().equals("user@example.com")
-                        && command.password().equals("Password123")
-                        && command.device().deviceId().equals("device-1")
-                        && command.device().platform().name().equals("IOS")));
-    }
-
-    @Test
-    void emailLoginRequiresDevice() throws Exception {
-        mockMvc.perform(post("/auth/login/email")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"user@example.com\",\"password\":\"Password123\"}"))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"));
+                        && command.password().equals("Password123")));
     }
 
     @Test
@@ -169,21 +153,14 @@ class AuthControllerTest {
                         .content("""
                                 {
                                   "provider":"GOOGLE",
-                                  "provider_token":"provider-token",
-                                  "device":{
-                                    "device_id":"device-1",
-                                    "platform":"ANDROID",
-                                    "app_version":"1.0.0"
-                                  }
+                                  "provider_token":"provider-token"
                                 }
                                 """))
                 .andExpect(status().isOk());
 
         verify(socialLoginUseCase).login(org.mockito.ArgumentMatchers.argThat(command ->
                 command.provider() == AuthProvider.GOOGLE
-                        && command.providerToken().equals("provider-token")
-                        && command.device().deviceId().equals("device-1")
-                        && command.device().platform().name().equals("ANDROID")));
+                        && command.providerToken().equals("provider-token")));
     }
 
     @Test

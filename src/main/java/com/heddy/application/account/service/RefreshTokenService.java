@@ -69,7 +69,7 @@ public class RefreshTokenService implements RefreshTokenUseCase {
 
         String nextRawToken = secureTokenGeneratorPort.generate();
         RefreshSession next = new RefreshSession(
-                UUID.randomUUID(), current.userId(), tokenHasherPort.hash(nextRawToken), current.device(),
+                UUID.randomUUID(), current.userId(), tokenHasherPort.hash(nextRawToken),
                 now.plusSeconds(refreshTokenSeconds), null, null, now);
         refreshSessionRepositoryPort.save(next);
         refreshSessionRepositoryPort.rotate(current.refreshTokenId(), next.refreshTokenId(), now);

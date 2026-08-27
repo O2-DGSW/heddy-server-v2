@@ -1,7 +1,6 @@
 package com.heddy.application.account.service;
 
 import com.heddy.domain.account.model.Account;
-import com.heddy.domain.account.model.DeviceInfo;
 import com.heddy.domain.account.model.RefreshSession;
 import com.heddy.domain.account.model.UserProfile;
 import com.heddy.domain.account.port.in.AuthResult;
@@ -43,20 +42,19 @@ public class SessionTokenService {
         this.refreshTokenSeconds = refreshTokenSeconds;
     }
 
-    public AuthResult issue(Account account, UserProfile profile, DeviceInfo device) {
+    public AuthResult issue(Account account, UserProfile profile) {
         return new AuthResult(
                 new AuthUser(account.userId(), account.email(), profile.nickname(), account.status()),
-                issueTokens(account.userId(), device));
+                issueTokens(account.userId()));
     }
 
-    public AuthTokens issueTokens(UUID userId, DeviceInfo device) {
+    public AuthTokens issueTokens(UUID userId) {
         Instant now = Instant.now();
         String rawRefreshToken = secureTokenGeneratorPort.generate();
         refreshSessionRepositoryPort.save(new RefreshSession(
                 UUID.randomUUID(),
                 userId,
                 tokenHasherPort.hash(rawRefreshToken),
-                device,
                 now.plusSeconds(refreshTokenSeconds),
                 null,
                 null,

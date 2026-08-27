@@ -7,7 +7,6 @@ public record RefreshSession(
         UUID refreshTokenId,
         UUID userId,
         String tokenHash,
-        DeviceInfo device,
         Instant expiresAt,
         UUID rotatedTo,
         Instant revokedAt,

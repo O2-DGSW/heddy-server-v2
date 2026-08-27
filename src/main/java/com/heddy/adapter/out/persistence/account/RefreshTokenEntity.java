@@ -1,11 +1,8 @@
 package com.heddy.adapter.out.persistence.account;
 
-import com.heddy.domain.account.model.DeviceInfo;
 import com.heddy.domain.account.model.RefreshSession;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -26,16 +23,6 @@ class RefreshTokenEntity {
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash;
 
-    @Column(name = "device_id", length = 100)
-    private String deviceId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 10)
-    private DeviceInfo.Platform platform;
-
-    @Column(name = "app_version", length = 20)
-    private String appVersion;
-
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
@@ -55,11 +42,6 @@ class RefreshTokenEntity {
         refreshTokenId = session.refreshTokenId();
         userId = session.userId();
         tokenHash = session.tokenHash();
-        if (session.device() != null) {
-            deviceId = session.device().deviceId();
-            platform = session.device().platform();
-            appVersion = session.device().appVersion();
-        }
         expiresAt = session.expiresAt();
         rotatedTo = session.rotatedTo();
         revokedAt = session.revokedAt();
@@ -67,9 +49,7 @@ class RefreshTokenEntity {
     }
 
     RefreshSession toDomain() {
-        DeviceInfo device = deviceId == null && platform == null && appVersion == null
-                ? null : new DeviceInfo(deviceId, platform, appVersion);
-        return new RefreshSession(refreshTokenId, userId, tokenHash, device,
+        return new RefreshSession(refreshTokenId, userId, tokenHash,
                 expiresAt, rotatedTo, revokedAt, createdAt);
     }
 

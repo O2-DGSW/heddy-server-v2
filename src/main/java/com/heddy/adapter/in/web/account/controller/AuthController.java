@@ -135,8 +135,7 @@ public class AuthController {
     }
 
     @PostMapping("/login/email")
-    @Operation(summary = "이메일 로그인",
-            description = "device는 Refresh Token 세션을 기기별로 식별하고 관리하기 위해 저장합니다.")
+    @Operation(summary = "이메일 로그인")
     public ApiResponse<AuthResponse> emailLogin(
             @Valid @RequestBody EmailLoginRequest request,
             HttpServletRequest servletRequest
@@ -147,8 +146,7 @@ public class AuthController {
     }
 
     @PostMapping("/login/social")
-    @Operation(summary = "소셜 로그인",
-            description = "device는 Refresh Token 세션을 기기별로 식별하고 관리하기 위해 저장합니다.")
+    @Operation(summary = "소셜 로그인")
     public ApiResponse<AuthResponse> socialLogin(
             @Valid @RequestBody SocialLoginRequest request,
             HttpServletRequest servletRequest

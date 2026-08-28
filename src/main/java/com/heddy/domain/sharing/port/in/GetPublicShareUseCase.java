@@ -16,13 +16,8 @@ public interface GetPublicShareUseCase {
     record Query(String shareToken) {
     }
 
-    /**
-     * @param includesSavedStyles SAVED_STYLES 항목이 선택됐는지. 후보 스타일 도메인이 없어
-     *                            지금은 빈 배열 직렬화 여부만 결정한다
-     */
     record Result(
             Instant expiresAt,
-            boolean includesSavedStyles,
             SharedContentView content
     ) {
     }

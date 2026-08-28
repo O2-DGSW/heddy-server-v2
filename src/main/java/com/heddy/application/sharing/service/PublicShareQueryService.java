@@ -82,7 +82,6 @@ public class PublicShareQueryService implements GetPublicShareUseCase {
             gated.add(gate(record, fields));
         }
         return new Result(share.expiresAt(),
-                fields.contains(ShareFieldType.SAVED_STYLES),
                 new SharedContentView(loaded.ownerDisplayName(), List.copyOf(gated),
                         savedStyles(share, fields)));
     }

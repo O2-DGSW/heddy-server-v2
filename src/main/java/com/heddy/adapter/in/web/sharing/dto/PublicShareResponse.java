@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.heddy.domain.sharing.model.SharedContentView.SharedPhotoView;
 import com.heddy.domain.sharing.model.SharedContentView.SharedRecordView;
+import com.heddy.domain.sharing.model.SharedContentView.SharedSavedStyleView;
 import com.heddy.domain.sharing.port.in.GetPublicShareUseCase;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -23,7 +24,7 @@ public record PublicShareResponse(
         @Schema(description = "공유된 시술기록")
         @JsonProperty("records") List<PublicRecordResponse> records,
 
-        @Schema(description = "공유된 후보 스타일. 항목을 선택했으면 지금은 빈 배열이다")
+        @Schema(description = "공유된 저장 후보 스타일. 항목을 선택하지 않았으면 키를 제외한다")
         @JsonProperty("saved_styles") List<PublicSavedStyleResponse> savedStyles
 ) {
 
@@ -31,7 +32,10 @@ public record PublicShareResponse(
         return new PublicShareResponse(
                 new ShareHeader(result.expiresAt(), result.content().ownerDisplayName()),
                 result.content().records().stream().map(PublicRecordResponse::from).toList(),
-                result.includesSavedStyles() ? List.of() : null);
+                result.content().savedStyles() == null ? null
+                        : result.content().savedStyles().stream()
+                                .map(PublicSavedStyleResponse::from)
+                                .toList());
     }
 
     public record ShareHeader(
@@ -77,8 +81,15 @@ public record PublicShareResponse(
         }
     }
 
-    /** 후보 스타일 도메인(#51 계획의 P4-3)이 자리 잡으면 채워진다. */
     public record PublicSavedStyleResponse(
+            @JsonProperty("style_name") String styleName,
+            @JsonProperty("image_url") String imageUrl,
+            String reason
     ) {
+
+        public static PublicSavedStyleResponse from(SharedSavedStyleView savedStyle) {
+            return new PublicSavedStyleResponse(
+                    savedStyle.styleName(), savedStyle.imageUrl(), savedStyle.reason());
+        }
     }
 }

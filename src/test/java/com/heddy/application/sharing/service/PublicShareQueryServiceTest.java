@@ -18,6 +18,8 @@ import com.heddy.domain.sharing.model.SharedContentView.SharedRecordView;
 import com.heddy.domain.sharing.port.in.GetPublicShareUseCase;
 import com.heddy.domain.sharing.port.out.ShareRepositoryPort;
 import com.heddy.domain.sharing.port.out.SharedContentPort;
+import com.heddy.domain.style.model.SavedStyle;
+import com.heddy.domain.style.port.out.SavedStyleRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,12 +45,14 @@ class PublicShareQueryServiceTest {
     private static final UUID OWNER_ID = UUID.randomUUID();
     private static final UUID RECORD_ID = UUID.randomUUID();
     private static final UUID FILE_ID = UUID.randomUUID();
+    private static final UUID SAVED_STYLE_ID = UUID.randomUUID();
     private static final String RAW_TOKEN = "raw-public-token";
     private static final String TOKEN_HASH = "hash-" + RAW_TOKEN;
     private static final Instant NOW = Instant.now();
 
     @Mock ShareRepositoryPort shareRepositoryPort;
     @Mock SharedContentPort sharedContentPort;
+    @Mock SavedStyleRepositoryPort savedStyleRepositoryPort;
     @Mock FileRepositoryPort fileRepositoryPort;
     @Mock FileStoragePort fileStoragePort;
     @Mock TokenHasherPort tokenHasherPort;
@@ -58,7 +62,7 @@ class PublicShareQueryServiceTest {
     @BeforeEach
     void setUp() {
         service = new PublicShareQueryService(shareRepositoryPort, sharedContentPort,
-                fileRepositoryPort, fileStoragePort, tokenHasherPort);
+                savedStyleRepositoryPort, fileRepositoryPort, fileStoragePort, tokenHasherPort);
     }
 
     @Test
@@ -149,13 +153,15 @@ class PublicShareQueryServiceTest {
         assertThat(record.satisfaction()).isNull();
         assertThat(record.memo()).isNull();
         assertThat(record.nextVisitCautions()).isNull();
-        assertThat(result.includesSavedStyles()).isFalse();
+        assertThat(result.content().savedStyles()).isNull();
     }
 
     @Test
     void issuesShortLivedUrlsOnlyForReadyPhotos() {
         UUID pendingFileId = UUID.randomUUID();
-        stubActiveShare(Set.of(ShareFieldType.PHOTOS, ShareFieldType.SAVED_STYLES));
+        stubActiveShare(
+                Set.of(ShareFieldType.PHOTOS, ShareFieldType.SAVED_STYLES),
+                Set.of(SAVED_STYLE_ID));
         given(sharedContentPort.load(OWNER_ID, Set.of(RECORD_ID)))
                 .willReturn(new SharedContentSnapshot("gangmin", List.of(
                         new RecordSnapshot(NOW, null, null, null, null, null, null,
@@ -165,6 +171,11 @@ class PublicShareQueryServiceTest {
         StoredFile ready = readyFile(FILE_ID);
         given(fileRepositoryPort.findById(FILE_ID)).willReturn(Optional.of(ready));
         given(fileStoragePort.createDownloadUrl(ready)).willReturn(URI.create("https://signed/get"));
+        given(savedStyleRepositoryPort.findAllByUserIdAndIds(
+                OWNER_ID, Set.of(SAVED_STYLE_ID)))
+                .willReturn(List.of(new SavedStyle(
+                        SAVED_STYLE_ID, OWNER_ID, "레이어드 커트",
+                        "https://images.example.com/layered.jpg", "추천 이유", NOW)));
 
         GetPublicShareUseCase.Result result = getOrFail();
 
@@ -172,7 +183,11 @@ class PublicShareQueryServiceTest {
         assertThat(record.photos()).hasSize(1);
         assertThat(record.photos().getFirst().displayUrl())
                 .isEqualTo(URI.create("https://signed/get"));
-        assertThat(result.includesSavedStyles()).isTrue();
+        assertThat(result.content().savedStyles()).singleElement().satisfies(style -> {
+            assertThat(style.styleName()).isEqualTo("레이어드 커트");
+            assertThat(style.imageUrl()).isEqualTo("https://images.example.com/layered.jpg");
+            assertThat(style.reason()).isEqualTo("추천 이유");
+        });
     }
 
     @Test
@@ -202,11 +217,18 @@ class PublicShareQueryServiceTest {
     }
 
     private void stubActiveShare(Set<ShareFieldType> fields) {
+        stubActiveShare(fields, Set.of());
+    }
+
+    private void stubActiveShare(
+            Set<ShareFieldType> fields,
+            Set<UUID> savedStyleIds
+    ) {
         given(tokenHasherPort.hash(RAW_TOKEN)).willReturn(TOKEN_HASH);
         given(shareRepositoryPort.findByTokenHash(TOKEN_HASH)).willReturn(Optional.of(
                 Share.reconstitute(UUID.randomUUID(), OWNER_ID, TOKEN_HASH,
                         ShareStatus.ACTIVE, NOW.plusSeconds(86_400), null,
-                        Set.of(RECORD_ID), fields, Set.of(), NOW)));
+                        Set.of(RECORD_ID), fields, savedStyleIds, NOW)));
     }
 
     private StoredFile readyFile(UUID fileId) {

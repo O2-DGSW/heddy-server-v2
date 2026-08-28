@@ -14,9 +14,12 @@ import com.heddy.domain.sharing.model.SharedContentSnapshot.RecordSnapshot;
 import com.heddy.domain.sharing.model.SharedContentView;
 import com.heddy.domain.sharing.model.SharedContentView.SharedPhotoView;
 import com.heddy.domain.sharing.model.SharedContentView.SharedRecordView;
+import com.heddy.domain.sharing.model.SharedContentView.SharedSavedStyleView;
 import com.heddy.domain.sharing.port.in.GetPublicShareUseCase;
 import com.heddy.domain.sharing.port.out.ShareRepositoryPort;
 import com.heddy.domain.sharing.port.out.SharedContentPort;
+import com.heddy.domain.style.model.SavedStyle;
+import com.heddy.domain.style.port.out.SavedStyleRepositoryPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +41,7 @@ public class PublicShareQueryService implements GetPublicShareUseCase {
 
     private final ShareRepositoryPort shareRepositoryPort;
     private final SharedContentPort sharedContentPort;
+    private final SavedStyleRepositoryPort savedStyleRepositoryPort;
     private final FileRepositoryPort fileRepositoryPort;
     private final FileStoragePort fileStoragePort;
     private final TokenHasherPort tokenHasherPort;
@@ -45,12 +49,14 @@ public class PublicShareQueryService implements GetPublicShareUseCase {
     public PublicShareQueryService(
             ShareRepositoryPort shareRepositoryPort,
             SharedContentPort sharedContentPort,
+            SavedStyleRepositoryPort savedStyleRepositoryPort,
             FileRepositoryPort fileRepositoryPort,
             FileStoragePort fileStoragePort,
             TokenHasherPort tokenHasherPort
     ) {
         this.shareRepositoryPort = shareRepositoryPort;
         this.sharedContentPort = sharedContentPort;
+        this.savedStyleRepositoryPort = savedStyleRepositoryPort;
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.tokenHasherPort = tokenHasherPort;
@@ -76,8 +82,27 @@ public class PublicShareQueryService implements GetPublicShareUseCase {
             gated.add(gate(record, fields));
         }
         return new Result(share.expiresAt(),
-                fields.contains(ShareFieldType.SAVED_STYLES),
-                new SharedContentView(loaded.ownerDisplayName(), List.copyOf(gated)));
+                new SharedContentView(loaded.ownerDisplayName(), List.copyOf(gated),
+                        savedStyles(share, fields)));
+    }
+
+    private List<SharedSavedStyleView> savedStyles(
+            Share share,
+            Set<ShareFieldType> fields
+    ) {
+        if (!fields.contains(ShareFieldType.SAVED_STYLES)) {
+            return null;
+        }
+        return savedStyleRepositoryPort
+                .findAllByUserIdAndIds(share.userId(), share.savedStyleIds())
+                .stream()
+                .map(PublicShareQueryService::toView)
+                .toList();
+    }
+
+    private static SharedSavedStyleView toView(SavedStyle savedStyle) {
+        return new SharedSavedStyleView(
+                savedStyle.styleName(), savedStyle.imageUrl(), savedStyle.reason());
     }
 
     /** 선택 항목이 아닌 값은 버린다. 남아 있는 것은 화면에 나갈 값뿐이다. */

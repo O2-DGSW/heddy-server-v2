@@ -11,6 +11,8 @@ import com.heddy.domain.sharing.port.in.GetShareUseCase;
 import com.heddy.domain.sharing.port.in.ListSharesUseCase;
 import com.heddy.domain.sharing.port.in.UpdateShareUseCase;
 import com.heddy.domain.sharing.port.out.ShareRepositoryPort;
+import com.heddy.domain.style.model.SavedStyle;
+import com.heddy.domain.style.port.out.SavedStyleRepositoryPort;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
 import com.heddy.global.error.ApplicationException;
 import com.heddy.global.error.ErrorCode;
@@ -38,6 +40,7 @@ public class ShareService implements CreateShareUseCase, ListSharesUseCase,
 
     private final ShareRepositoryPort shareRepositoryPort;
     private final TreatmentRecordRepositoryPort treatmentRecordRepositoryPort;
+    private final SavedStyleRepositoryPort savedStyleRepositoryPort;
     private final SecureTokenGeneratorPort tokenGeneratorPort;
     private final TokenHasherPort tokenHasherPort;
     private final String publicBaseUrl;
@@ -45,12 +48,14 @@ public class ShareService implements CreateShareUseCase, ListSharesUseCase,
     public ShareService(
             ShareRepositoryPort shareRepositoryPort,
             TreatmentRecordRepositoryPort treatmentRecordRepositoryPort,
+            SavedStyleRepositoryPort savedStyleRepositoryPort,
             SecureTokenGeneratorPort tokenGeneratorPort,
             TokenHasherPort tokenHasherPort,
             @Value("${app.share.public-base-url}") String publicBaseUrl
     ) {
         this.shareRepositoryPort = shareRepositoryPort;
         this.treatmentRecordRepositoryPort = treatmentRecordRepositoryPort;
+        this.savedStyleRepositoryPort = savedStyleRepositoryPort;
         this.tokenGeneratorPort = tokenGeneratorPort;
         this.tokenHasherPort = tokenHasherPort;
         this.publicBaseUrl = publicBaseUrl.endsWith("/")
@@ -66,6 +71,7 @@ public class ShareService implements CreateShareUseCase, ListSharesUseCase,
         Share share = Share.create(command.userId(), tokenHash(rawToken), command.recordIds(),
                 command.savedStyleIds(), command.fields(), command.expiresInDays(), Instant.now());
         requireOwnedRecords(command.userId(), command.recordIds());
+        requireOwnedSavedStyles(command.userId(), command.savedStyleIds());
         Share saved = shareRepositoryPort.insert(share);
         return new CreateShareUseCase.Result(saved, publicBaseUrl + "/" + rawToken);
     }
@@ -116,6 +122,21 @@ public class ShareService implements CreateShareUseCase, ListSharesUseCase,
         for (UUID recordId : recordIds) {
             treatmentRecordRepositoryPort.findByIdAndUserId(recordId, userId)
                     .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+        }
+    }
+
+    private void requireOwnedSavedStyles(UUID userId, Set<UUID> savedStyleIds) {
+        if (savedStyleIds.isEmpty()) {
+            return;
+        }
+        Set<UUID> ownedIds = savedStyleRepositoryPort
+                .findAllByUserIdAndIds(userId, savedStyleIds)
+                .stream()
+                .map(SavedStyle::savedStyleId)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        if (!ownedIds.equals(savedStyleIds)) {
+            // 없는 후보와 타인의 후보를 구분하지 않아 소유 관계를 숨긴다.
+            throw new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND);
         }
     }
 

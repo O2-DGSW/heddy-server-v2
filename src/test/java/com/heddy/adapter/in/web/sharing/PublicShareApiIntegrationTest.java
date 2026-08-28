@@ -132,6 +132,24 @@ class PublicShareApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
+    void returnsSelectedSavedStyleWithoutInternalIdentifiers() throws Exception {
+        UUID savedStyleId = insertSavedStyle();
+        createShareWithFields("[\"SAVED_STYLES\"]", savedStyleId);
+
+        mockMvc.perform(get("/public/shares/" + rawToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.saved_styles", hasSize(1)))
+                .andExpect(jsonPath("$.data.saved_styles[0].style_name")
+                        .value("레이어드 커트"))
+                .andExpect(jsonPath("$.data.saved_styles[0].image_url")
+                        .value("https://images.example.com/layered.jpg"))
+                .andExpect(jsonPath("$.data.saved_styles[0].reason")
+                        .value("이전 펌 이력 기반 추천"))
+                .andExpect(jsonPath("$.data.saved_styles[0].saved_style_id").doesNotExist())
+                .andExpect(jsonPath("$.data.saved_styles[0].user_id").doesNotExist());
+    }
+
+    @Test
     void hidesNotReadyPhotosFromThePublicResponse() throws Exception {
         createShareWithFields("[\"PHOTOS\"]");
         insertPhoto(false);
@@ -185,6 +203,10 @@ class PublicShareApiIntegrationTest extends PostgresIntegrationTest {
 
     /** 공유를 API 로 만들어 원문 토큰을 필드에 보관한다. 토큰은 이 응답으로만 존재한다. */
     private void createShareWithFields(String fieldsJson) throws Exception {
+        createShareWithFields(fieldsJson, null);
+    }
+
+    private void createShareWithFields(String fieldsJson, UUID savedStyleId) throws Exception {
         UUID recordId = UUID.randomUUID();
         jdbcTemplate.update("""
                 INSERT INTO treatment_records (
@@ -198,12 +220,26 @@ class PublicShareApiIntegrationTest extends PostgresIntegrationTest {
                                 USER_ID, null, List.of())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"record_ids\":[\"" + recordId + "\"],"
+                                + (savedStyleId == null ? ""
+                                        : "\"saved_style_ids\":[\"" + savedStyleId + "\"],")
                                 + "\"fields\":" + fieldsJson + "}"))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         rawToken = new ObjectMapper().readTree(created).path("data").path("share_url")
                 .asText().substring("https://heddy.example.com/s/".length());
         lastRecordId = recordId;
+    }
+
+    private UUID insertSavedStyle() {
+        UUID savedStyleId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO saved_styles (
+                    saved_style_id, user_id, style_name, image_url, reason
+                ) VALUES (?, ?, '레이어드 커트',
+                          'https://images.example.com/layered.jpg',
+                          '이전 펌 이력 기반 추천')
+                """, savedStyleId, USER_ID);
+        return savedStyleId;
     }
 
     /** 사진 파일과 연결을 심는다. ready=false 면 PENDING 이라 공개 응답에서 빠진다. */

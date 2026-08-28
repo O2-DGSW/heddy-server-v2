@@ -167,6 +167,42 @@ class ShareApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
     }
 
+    @Test
+    void createsAStyleOnlyShareForAnOwnedSavedStyle() throws Exception {
+        UUID savedStyleId = insertSavedStyle(USER_ID);
+
+        mockMvc.perform(post("/shares")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"saved_style_ids":["%s"],"fields":["SAVED_STYLES"]}
+                                """.formatted(savedStyleId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.fields[0]").value("SAVED_STYLES"));
+
+        Integer joinCount = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM share_saved_styles WHERE saved_style_id = ?",
+                Integer.class, savedStyleId);
+        assertThat(joinCount).isOne();
+    }
+
+    @Test
+    void hidesForeignSavedStyleBehindResourceNotFound() throws Exception {
+        UUID foreignSavedStyleId = insertSavedStyle(OTHER_USER_ID);
+
+        mockMvc.perform(post("/shares")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"saved_style_ids":["%s"],"fields":["SAVED_STYLES"]}
+                                """.formatted(foreignSavedStyleId)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM shares", Integer.class)).isZero();
+    }
+
     // ------------------------------------------------------------------ 목록
 
     @Test
@@ -439,6 +475,17 @@ class ShareApiIntegrationTest extends PostgresIntegrationTest {
                 ) VALUES (?, ?, ?::jsonb, now())
                 """, recordId, ownerId, "[\"CUT\"]");
         return recordId;
+    }
+
+    private UUID insertSavedStyle(UUID ownerId) {
+        UUID savedStyleId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO saved_styles (
+                    saved_style_id, user_id, style_name, image_url, reason
+                ) VALUES (?, ?, '레이어드 커트',
+                          'https://images.example.com/layered.jpg', '추천 이유')
+                """, savedStyleId, ownerId);
+        return savedStyleId;
     }
 
     private String sha256(String value) throws Exception {

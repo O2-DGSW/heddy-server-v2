@@ -4,7 +4,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * 공개 조회용 읽기 전용 스냅샷. 인증된 소유자 응답과 DTO 를 아예 분리하는 재료다 —
@@ -13,7 +12,8 @@ import java.util.UUID;
  */
 public record SharedContentView(
         String ownerDisplayName,
-        List<SharedRecordView> records
+        List<SharedRecordView> records,
+        List<SharedSavedStyleView> savedStyles
 ) {
 
     /** 선택 항목 게이트를 통과한 값만 채워진다. 나머지는 null 이다. */
@@ -36,6 +36,14 @@ public record SharedContentView(
     public record SharedPhotoView(
             String imageType,
             URI displayUrl
+    ) {
+    }
+
+    /** 공개 화면에 필요한 저장 후보 값만 담고 사용자·저장 스타일 식별자는 제외한다. */
+    public record SharedSavedStyleView(
+            String styleName,
+            String imageUrl,
+            String reason
     ) {
     }
 }

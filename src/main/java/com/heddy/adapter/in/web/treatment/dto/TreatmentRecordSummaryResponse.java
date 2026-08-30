@@ -20,7 +20,11 @@ public record TreatmentRecordSummaryResponse(
         @Schema(description = "대표 사진의 짧은 만료 Presigned GET URL. 사진이 없으면 null")
         @JsonProperty("thumbnail_url") String thumbnailUrl,
         @Schema(description = "최신 분석 상태. 분석 기능 연결 전에는 null")
-        @JsonProperty("analysis_status") String analysisStatus
+        @JsonProperty("analysis_status") String analysisStatus,
+
+        @Schema(description = "지금 공유 중인 기록인지. 철회되지 않고 만료도 되지 않은 공유 링크에 "
+                + "담겨 있으면 true")
+        @JsonProperty("is_shared") boolean shared
 ) {
     public static TreatmentRecordSummaryResponse from(ListTreatmentRecordsUseCase.Item item) {
         var record = item.record();
@@ -28,6 +32,6 @@ public record TreatmentRecordSummaryResponse(
                 record.recordId(), record.performedAt(), record.salonName(), record.designerName(),
                 record.serviceTypes(), record.satisfaction(),
                 item.thumbnailUrl() == null ? null : item.thumbnailUrl().toString(),
-                item.analysisStatus());
+                item.analysisStatus(), item.shared());
     }
 }

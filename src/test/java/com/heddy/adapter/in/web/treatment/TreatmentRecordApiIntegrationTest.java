@@ -336,6 +336,32 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.items[3].is_shared").value(false));
     }
 
+    /**
+     * "분석 완료" 배지. 서버는 상태를 그대로 내려주고 배지 문구는 클라이언트가 정한다 —
+     * 완료는 SUCCEEDED 만 해당하고, 사진이 바뀐 뒤의 STALE 을 완료로 묶으면 옛 결과가
+     * 완료로 보인다.
+     */
+    @Test
+    void listsTheLatestAnalysisStatusOfEachRecord() throws Exception {
+        UUID succeeded = insertRecord(USER_ID, "[\"CUT\"]", null, null, "2026-08-20T10:00:00Z");
+        UUID stale = insertRecord(USER_ID, "[\"CUT\"]", null, null, "2026-08-15T10:00:00Z");
+        UUID neverAnalysed = insertRecord(USER_ID, "[\"CUT\"]", null, null, "2026-08-10T10:00:00Z");
+        insertAnalysisJob(succeeded, "SUCCEEDED");
+        insertAnalysisJob(stale, "STALE");
+
+        mockMvc.perform(get("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .param("sort", "performedAt,desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items", hasSize(3)))
+                .andExpect(jsonPath("$.data.items[0].record_id").value(succeeded.toString()))
+                .andExpect(jsonPath("$.data.items[0].analysis_status").value("SUCCEEDED"))
+                .andExpect(jsonPath("$.data.items[1].record_id").value(stale.toString()))
+                .andExpect(jsonPath("$.data.items[1].analysis_status").value("STALE"))
+                .andExpect(jsonPath("$.data.items[2].record_id").value(neverAnalysed.toString()))
+                .andExpect(jsonPath("$.data.items[2].analysis_status").value(nullValue()));
+    }
+
     @Test
     void rejectsInvalidListRangePageAndSortAsBadRequest() throws Exception {
         mockMvc.perform(get("/treatment-records")
@@ -756,6 +782,20 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                     user_id, email, password_hash, auth_provider, status, login_fail_count
                 ) VALUES (?, ?, ?, 'EMAIL', 'ACTIVE', 0)
                 """, userId, userId + "@example.com", "hash");
+    }
+
+    private void insertAnalysisJob(UUID ownerRecordId, String status) {
+        UUID photoId = readyFile(USER_ID);
+        UUID recordPhotoId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO treatment_record_photos (photo_id, record_id, file_id, image_type)
+                VALUES (?, ?, ?, 'AFTER')
+                """, recordPhotoId, ownerRecordId, photoId);
+        jdbcTemplate.update("""
+                INSERT INTO analysis_jobs (
+                    job_id, user_id, record_id, photo_id, status, progress, attempt_count
+                ) VALUES (?, ?, ?, ?, ?, 100, 1)
+                """, UUID.randomUUID(), USER_ID, ownerRecordId, recordPhotoId, status);
     }
 
     private void insertShare(UUID ownerId, UUID recordId, String status, Instant expiresAt) {

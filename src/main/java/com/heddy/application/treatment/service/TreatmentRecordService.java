@@ -5,6 +5,7 @@ import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
 import com.heddy.domain.file.port.out.FileStoragePort;
 import com.heddy.domain.analysis.port.out.AnalysisStalenessPort;
+import com.heddy.domain.sharing.port.out.SharedRecordLookupPort;
 import com.heddy.domain.treatment.exception.TreatmentError;
 import com.heddy.domain.treatment.exception.TreatmentException;
 import com.heddy.domain.treatment.model.ImageType;
@@ -28,9 +29,11 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -55,18 +58,21 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     private final FileRepositoryPort fileRepositoryPort;
     private final FileStoragePort fileStoragePort;
     private final AnalysisStalenessPort analysisStalenessPort;
+    private final SharedRecordLookupPort sharedRecordLookupPort;
 
     @Autowired
     public TreatmentRecordService(
             TreatmentRecordRepositoryPort recordRepositoryPort,
             FileRepositoryPort fileRepositoryPort,
             FileStoragePort fileStoragePort,
-            ObjectProvider<AnalysisStalenessPort> analysisStalenessPortProvider
+            ObjectProvider<AnalysisStalenessPort> analysisStalenessPortProvider,
+            SharedRecordLookupPort sharedRecordLookupPort
     ) {
         this.recordRepositoryPort = recordRepositoryPort;
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = analysisStalenessPortProvider.getIfAvailable(() -> recordId -> { });
+        this.sharedRecordLookupPort = sharedRecordLookupPort;
     }
 
     /** 분석 도메인이 없는 단위 테스트와의 호환을 위한 생성자. */
@@ -79,18 +85,21 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = recordId -> { };
+        this.sharedRecordLookupPort = (ownerId, recordIds, now) -> Set.of();
     }
 
     TreatmentRecordService(
             TreatmentRecordRepositoryPort recordRepositoryPort,
             FileRepositoryPort fileRepositoryPort,
             FileStoragePort fileStoragePort,
-            AnalysisStalenessPort analysisStalenessPort
+            AnalysisStalenessPort analysisStalenessPort,
+            SharedRecordLookupPort sharedRecordLookupPort
     ) {
         this.recordRepositoryPort = recordRepositoryPort;
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = analysisStalenessPort;
+        this.sharedRecordLookupPort = sharedRecordLookupPort;
     }
 
     @Override
@@ -134,9 +143,15 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                 SORT_ASCENDING.equals(query.sort()));
         TreatmentRecordPage page = recordRepositoryPort.findPage(filter);
         Map<UUID, URI> thumbnails = thumbnailsFor(page.items());
+        // 페이지의 기록을 한 번에 넣고 묻는다. 기록마다 물으면 페이지 크기만큼 왕복이 는다.
+        Set<UUID> sharedRecordIds = sharedRecordLookupPort.findSharedRecordIds(
+                query.requesterId(),
+                page.items().stream().map(TreatmentRecord::recordId).toList(),
+                Instant.now());
         List<ListTreatmentRecordsUseCase.Item> items = page.items().stream()
                 .map(record -> new ListTreatmentRecordsUseCase.Item(
-                        record, thumbnails.get(record.recordId()), null))
+                        record, thumbnails.get(record.recordId()), null,
+                        sharedRecordIds.contains(record.recordId())))
                 .toList();
         return new ListTreatmentRecordsUseCase.Result(
                 items, query.page(), query.size(), page.totalElements());

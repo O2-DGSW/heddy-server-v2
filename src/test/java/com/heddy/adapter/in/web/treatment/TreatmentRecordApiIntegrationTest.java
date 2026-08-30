@@ -307,6 +307,35 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.items[1].thumbnail_url").value(nullValue()));
     }
 
+    /**
+     * "공유중" 배지. 살아 있는 공유에 담긴 기록만 true 이고, 철회·만료된 공유는 배지를 켜지
+     * 못한다 — 만료를 상태로 저장하지 않으므로 status 만 보면 만료된 링크가 남는다.
+     */
+    @Test
+    void listsWhetherEachRecordIsCurrentlyShared() throws Exception {
+        UUID shared = insertRecord(USER_ID, "[\"CUT\"]", null, null, "2026-08-20T10:00:00Z");
+        UUID expired = insertRecord(USER_ID, "[\"CUT\"]", null, null, "2026-08-15T10:00:00Z");
+        UUID revoked = insertRecord(USER_ID, "[\"CUT\"]", null, null, "2026-08-10T10:00:00Z");
+        UUID never = insertRecord(USER_ID, "[\"CUT\"]", null, null, "2026-08-05T10:00:00Z");
+        insertShare(USER_ID, shared, "ACTIVE", Instant.now().plusSeconds(3600));
+        insertShare(USER_ID, expired, "ACTIVE", Instant.now().minusSeconds(1));
+        insertShare(USER_ID, revoked, "REVOKED", Instant.now().plusSeconds(3600));
+
+        mockMvc.perform(get("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .param("sort", "performedAt,desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items", hasSize(4)))
+                .andExpect(jsonPath("$.data.items[0].record_id").value(shared.toString()))
+                .andExpect(jsonPath("$.data.items[0].is_shared").value(true))
+                .andExpect(jsonPath("$.data.items[1].record_id").value(expired.toString()))
+                .andExpect(jsonPath("$.data.items[1].is_shared").value(false))
+                .andExpect(jsonPath("$.data.items[2].record_id").value(revoked.toString()))
+                .andExpect(jsonPath("$.data.items[2].is_shared").value(false))
+                .andExpect(jsonPath("$.data.items[3].record_id").value(never.toString()))
+                .andExpect(jsonPath("$.data.items[3].is_shared").value(false));
+    }
+
     @Test
     void rejectsInvalidListRangePageAndSortAsBadRequest() throws Exception {
         mockMvc.perform(get("/treatment-records")
@@ -727,6 +756,22 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                     user_id, email, password_hash, auth_provider, status, login_fail_count
                 ) VALUES (?, ?, ?, 'EMAIL', 'ACTIVE', 0)
                 """, userId, userId + "@example.com", "hash");
+    }
+
+    private void insertShare(UUID ownerId, UUID recordId, String status, Instant expiresAt) {
+        UUID shareId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO shares (share_id, user_id, token_hash, status, expires_at, revoked_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """, shareId, ownerId, UUID.randomUUID().toString().replace("-", ""),
+                status, Timestamp.from(expiresAt),
+                "REVOKED".equals(status) ? Timestamp.from(Instant.now()) : null);
+        jdbcTemplate.update(
+                "INSERT INTO share_records (share_id, record_id) VALUES (?, ?)",
+                shareId, recordId);
+        jdbcTemplate.update(
+                "INSERT INTO share_fields (share_id, field_type) VALUES (?, 'PHOTOS')",
+                shareId);
     }
 
     private UUID insertRecord(

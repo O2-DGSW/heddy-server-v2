@@ -4,6 +4,7 @@ import com.heddy.domain.file.model.FilePurpose;
 import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.model.StoredFile;
 import com.heddy.domain.analysis.port.out.AnalysisStalenessPort;
+import com.heddy.domain.sharing.port.out.SharedRecordLookupPort;
 import com.heddy.domain.treatment.exception.TreatmentError;
 import com.heddy.domain.treatment.exception.TreatmentException;
 import com.heddy.domain.treatment.model.ImageType;
@@ -33,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -42,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -59,6 +62,7 @@ class TreatmentRecordServiceTest {
     @Mock FileRepositoryPort fileRepositoryPort;
     @Mock FileStoragePort fileStoragePort;
     @Mock AnalysisStalenessPort analysisStalenessPort;
+    @Mock SharedRecordLookupPort sharedRecordLookupPort;
 
     private TreatmentRecordService service;
 
@@ -66,7 +70,7 @@ class TreatmentRecordServiceTest {
     void setUp() {
         service = new TreatmentRecordService(
                 recordRepositoryPort, fileRepositoryPort, fileStoragePort,
-                analysisStalenessPort);
+                analysisStalenessPort, sharedRecordLookupPort);
     }
 
     // ------------------------------------------------------------------ 등록
@@ -342,6 +346,42 @@ class TreatmentRecordServiceTest {
 
         assertThat(result.items().get(0).thumbnailUrl()).isNull();
         verifyNoInteractions(fileStoragePort);
+    }
+
+    /** 공유 도메인이 담아 준 기록만 배지가 켜진다. 판정 자체는 공유 어댑터의 질의가 한다. */
+    @Test
+    void marksOnlyTheRecordsThatSharingReportsAsShared() {
+        UUID sharedId = UUID.randomUUID();
+        UUID notSharedId = UUID.randomUUID();
+        TreatmentRecord shared = recordWithPhotos(sharedId, List.of());
+        TreatmentRecord notShared = recordWithPhotos(notSharedId, List.of());
+        given(recordRepositoryPort.findPage(any()))
+                .willReturn(new TreatmentRecordPage(List.of(shared, notShared), 2));
+        given(sharedRecordLookupPort.findSharedRecordIds(eq(USER_ID), anyCollection(), any()))
+                .willReturn(Set.of(sharedId));
+
+        var result = service.list(listQuery());
+
+        assertThat(result.items()).extracting(ListTreatmentRecordsUseCase.Item::shared)
+                .containsExactly(true, false);
+    }
+
+    /** 페이지 전체를 한 번에 묻는다. 기록별 조회가 남아 있으면 호출 횟수에서 드러난다. */
+    @Test
+    void asksSharingOnceForTheWholePage() {
+        TreatmentRecord first = recordWithPhotos(UUID.randomUUID(), List.of());
+        TreatmentRecord second = recordWithPhotos(UUID.randomUUID(), List.of());
+        given(recordRepositoryPort.findPage(any()))
+                .willReturn(new TreatmentRecordPage(List.of(first, second), 2));
+
+        service.list(listQuery());
+
+        ArgumentCaptor<Collection<UUID>> recordIds = ArgumentCaptor.captor();
+        verify(sharedRecordLookupPort, times(1))
+                .findSharedRecordIds(eq(USER_ID), recordIds.capture(), any());
+        assertThat(recordIds.getValue())
+                .containsExactly(first.recordId(), second.recordId());
+        verifyNoMoreInteractions(sharedRecordLookupPort);
     }
 
     @Test

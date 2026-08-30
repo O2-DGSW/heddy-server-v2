@@ -15,9 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
@@ -151,6 +154,38 @@ class AnalysisJobPersistenceAdapterIntegrationTest extends PostgresIntegrationTe
         entityManager.clear();
 
         assertThat(adapter.findByIdAndUserId(saved.jobId(), USER_ID)).isEmpty();
+    }
+
+    /**
+     * 목록 배지가 쓰는 배치 조회. 기록마다 최신 한 건만 담기고, 분석을 요청한 적 없는 기록은
+     * 아예 담기지 않는다 — 호출부가 그걸 null 로 읽는다.
+     */
+    @Test
+    void reportsTheLatestStatusOfEachRecordInOneQuery() {
+        AnalysisJob older = adapter.insert(AnalysisJob.create(USER_ID, recordId, photoId, NOW));
+        adapter.update(older.start(NOW).fail("AI_TIMEOUT", "시간 초과", NOW));
+        UUID newerPhotoId = insertPhoto(recordId);
+        AnalysisJob newer = adapter.insert(
+                AnalysisJob.create(USER_ID, recordId, newerPhotoId, NOW.plusSeconds(60)));
+        adapter.update(newer.start(NOW).succeed(NOW));
+
+        UUID otherRecordId = insertRecord(USER_ID);
+        adapter.insert(AnalysisJob.create(USER_ID, otherRecordId, insertPhoto(otherRecordId), NOW));
+
+        UUID neverAnalysedId = insertRecord(USER_ID);
+
+        Map<UUID, AnalysisJobStatus> statuses = adapter.findLatestStatuses(
+                List.of(recordId, otherRecordId, neverAnalysedId));
+
+        assertThat(statuses).containsOnly(
+                entry(recordId, AnalysisJobStatus.SUCCEEDED),
+                entry(otherRecordId, AnalysisJobStatus.PENDING));
+    }
+
+    /** 빈 IN 절은 방언에 따라 문법 오류가 된다. 질의 없이 답이 나와야 한다. */
+    @Test
+    void answersLatestStatusesWithoutQueryingForNoRecords() {
+        assertThat(adapter.findLatestStatuses(List.of())).isEmpty();
     }
 
     // ------------------------------------------------------------------ 헬퍼

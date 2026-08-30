@@ -11,6 +11,7 @@ public enum AnalysisError {
     RESULT_METRICS_INCOMPLETE("ANALYSIS_RESULT_METRICS_INCOMPLETE", "분석 지표 4종이 모두 필요합니다."),
     RESULT_MODEL_VERSION_REQUIRED("ANALYSIS_RESULT_MODEL_VERSION_REQUIRED", "분석 모델 버전은 필수입니다."),
     RESULT_GRADE_UNKNOWN("ANALYSIS_RESULT_GRADE_UNKNOWN", "저장된 분석 신뢰도 등급 값을 읽을 수 없습니다."),
+    OVERLAY_TYPE_UNKNOWN("ANALYSIS_OVERLAY_TYPE_UNKNOWN", "저장된 분석 오버레이 종류 값을 읽을 수 없습니다."),
     JOB_STATUS_UNKNOWN("ANALYSIS_JOB_STATUS_UNKNOWN", "저장된 분석 작업 상태 값을 읽을 수 없습니다.");
 
     private final String code;

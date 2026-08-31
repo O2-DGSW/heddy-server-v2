@@ -8,6 +8,7 @@ import com.heddy.domain.style.port.in.StyleUseCase;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,6 +34,7 @@ public class StyleController {
     @GetMapping("/style-tags")
     @Operation(summary = "스타일 태그 조회", description = "카테고리를 생략하면 전체 태그를 조회합니다.")
     public ApiResponse<StyleTagsResponse> getStyleTags(
+            @Parameter(description = "태그 카테고리. 생략하면 전체 태그를 돌려준다")
             @RequestParam(required = false) StyleTagCategory category,
             HttpServletRequest servletRequest
     ) {

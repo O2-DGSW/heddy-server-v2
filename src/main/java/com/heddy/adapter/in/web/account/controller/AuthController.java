@@ -26,6 +26,7 @@ import com.heddy.domain.account.port.in.VerifySmsCodeUseCase;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -97,6 +98,8 @@ public class AuthController {
     @GetMapping("/email-availability")
     @Operation(summary = "이메일 중복 확인")
     public ApiResponse<EmailAvailabilityResponse> emailAvailability(
+            @Parameter(description = "확인할 이메일 주소. 대소문자는 구분하지 않는다 — "
+                    + "서버가 소문자로 맞춰 대조한다", required = true)
             @RequestParam @NotBlank @Email @Size(max = 255) String email,
             HttpServletRequest servletRequest
     ) {

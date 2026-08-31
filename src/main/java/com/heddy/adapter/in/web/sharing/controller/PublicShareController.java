@@ -5,6 +5,7 @@ import com.heddy.domain.sharing.port.in.GetPublicShareUseCase;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,9 @@ public class PublicShareController {
             description = "토큰 원문으로 해시를 대조하고 철회·만료를 매 요청 검증합니다. "
                     + "공유에서 선택하지 않은 항목은 응답 키 자체가 없습니다.")
     public ResponseEntity<ApiResponse<PublicShareResponse>> get(
+            @Parameter(description = "공유 링크의 토큰 원문. 서버는 해시만 저장하므로 이 값이 "
+                    + "링크에 접근할 수 있는 유일한 열쇠다. 철회된 링크는 SHARE_REVOKED, "
+                    + "만료된 링크는 SHARE_EXPIRED 로 구분해 답한다", required = true)
             @PathVariable String shareToken,
             HttpServletRequest servletRequest
     ) {

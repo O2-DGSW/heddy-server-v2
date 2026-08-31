@@ -11,6 +11,7 @@ import com.heddy.domain.file.port.in.PresignUploadUseCase;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -58,6 +59,9 @@ public class UploadController {
                     + "전이한다. 이미 READY 인 세션에 대한 재요청은 저장된 결과를 다시 돌려준다.")
     public ApiResponse<CompleteUploadResponse> complete(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "presign 응답으로 받은 업로드 세션 식별자. 없는 세션은 "
+                    + "404 RESOURCE_NOT_FOUND, 남의 세션은 403 FORBIDDEN_RESOURCE 다 "
+                    + "(시술기록·공유가 남의 리소스를 404 로 감추는 것과 다르다)", required = true)
             @PathVariable UUID uploadId,
             HttpServletRequest servletRequest
     ) {
@@ -73,6 +77,9 @@ public class UploadController {
                     + "READY 세션은 취소할 수 없고, 이미 취소된 세션에 대한 재요청은 멱등하게 204 로 답한다.")
     public ResponseEntity<Void> cancel(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "presign 응답으로 받은 업로드 세션 식별자. 없는 세션은 "
+                    + "404 RESOURCE_NOT_FOUND, 남의 세션은 403 FORBIDDEN_RESOURCE 다 "
+                    + "(시술기록·공유가 남의 리소스를 404 로 감추는 것과 다르다)", required = true)
             @PathVariable UUID uploadId
     ) {
         // 결과 본문이 없는 삭제 API 라 logout 처럼 204 로 답한다.

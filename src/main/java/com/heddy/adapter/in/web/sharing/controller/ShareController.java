@@ -73,7 +73,9 @@ public class ShareController {
             @AuthenticationPrincipal UUID userId,
             @Parameter(description = "상태 필터(ACTIVE/REVOKED). 생략 시 전체")
             @RequestParam(required = false) ShareStatus status,
+            @Parameter(description = "0부터 시작하는 페이지 번호. 음수면 400 INVALID_REQUEST")
             @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "한 페이지 크기. 1~100 이며 벗어나면 400 INVALID_REQUEST")
             @RequestParam(defaultValue = "20") int size,
             HttpServletRequest servletRequest
     ) {
@@ -91,6 +93,8 @@ public class ShareController {
                     + "드러내지 않게 404 로 답한다.")
     public ApiResponse<ShareDetailResponse> get(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "공유 링크 식별자. 남의 공유는 존재 여부를 드러내지 "
+                    + "않게 없는 공유와 같은 404 로 답한다", required = true)
             @PathVariable UUID shareId,
             HttpServletRequest servletRequest
     ) {
@@ -106,6 +110,8 @@ public class ShareController {
                     + "미래여야 하고, 대상(기록·후보)은 수정 범위가 아니다.")
     public ApiResponse<ShareDetailResponse> update(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "공유 링크 식별자. 남의 공유는 존재 여부를 드러내지 "
+                    + "않게 없는 공유와 같은 404 로 답한다", required = true)
             @PathVariable UUID shareId,
             @RequestBody UpdateShareRequest request,
             HttpServletRequest servletRequest
@@ -122,6 +128,8 @@ public class ShareController {
                     + "이미 철회된 공유에 다시 호출해도 204 다.")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "공유 링크 식별자. 남의 공유는 존재 여부를 드러내지 "
+                    + "않게 없는 공유와 같은 404 로 답한다", required = true)
             @PathVariable UUID shareId
     ) {
         deleteShareUseCase.delete(new DeleteShareUseCase.Command(userId, shareId));

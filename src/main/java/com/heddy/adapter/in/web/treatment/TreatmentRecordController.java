@@ -87,9 +87,12 @@ public class TreatmentRecordController {
             @RequestParam(required = false) Instant from,
             @Parameter(description = "시술일 조회 종료(포함), ISO 8601")
             @RequestParam(required = false) Instant to,
+            @Parameter(description = "0부터 시작하는 페이지 번호. 음수면 400 INVALID_REQUEST")
             @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "한 페이지 크기. 1~100 이며 벗어나면 400 INVALID_REQUEST")
             @RequestParam(defaultValue = "20") int size,
-            @Parameter(description = "performedAt,desc 또는 performedAt,asc")
+            @Parameter(description = "정렬 기준. performedAt,desc 또는 performedAt,asc 만 "
+                    + "허용하며 그 밖의 값은 400 INVALID_REQUEST")
             @RequestParam(defaultValue = "performedAt,desc") String sort,
             HttpServletRequest servletRequest
     ) {
@@ -108,6 +111,8 @@ public class TreatmentRecordController {
                     + "아니라 조회 시점에 짧은 만료의 Presigned GET 으로 발급된다.")
     public ApiResponse<TreatmentRecordResponse> get(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "시술기록 식별자. 남의 기록은 존재 여부를 드러내지 않게 "
+                    + "없는 기록과 같은 404 로 답한다")
             @PathVariable UUID recordId,
             HttpServletRequest servletRequest
     ) {
@@ -123,6 +128,8 @@ public class TreatmentRecordController {
             description = "전달한 필드만 수정합니다. nullable 필드에 null을 보내면 값을 삭제합니다.")
     public ApiResponse<TreatmentRecordResponse> update(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "시술기록 식별자. 남의 기록은 존재 여부를 드러내지 않게 "
+                    + "없는 기록과 같은 404 로 답한다")
             @PathVariable UUID recordId,
             @Valid @RequestBody UpdateTreatmentRecordRequest request,
             HttpServletRequest servletRequest
@@ -138,6 +145,8 @@ public class TreatmentRecordController {
             description = "기록과 사진 연결을 삭제하고 연결 파일은 비동기 회수 대상 상태로 전이합니다.")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "시술기록 식별자. 남의 기록은 존재 여부를 드러내지 않게 "
+                    + "없는 기록과 같은 404 로 답한다")
             @PathVariable UUID recordId
     ) {
         deleteTreatmentRecordUseCase.delete(
@@ -150,6 +159,8 @@ public class TreatmentRecordController {
             description = "READY 상태인 요청자 소유 파일을 연결합니다. 기록당 최대 10장입니다.")
     public ResponseEntity<ApiResponse<TreatmentPhotoResponse>> addPhoto(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "시술기록 식별자. 남의 기록은 존재 여부를 드러내지 않게 "
+                    + "없는 기록과 같은 404 로 답한다")
             @PathVariable UUID recordId,
             @Valid @RequestBody AddTreatmentPhotoRequest request,
             HttpServletRequest servletRequest
@@ -165,7 +176,10 @@ public class TreatmentRecordController {
             description = "사진 유형이나 표시 순서 중 전달한 값을 수정합니다.")
     public ApiResponse<TreatmentPhotoResponse> updatePhoto(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "시술기록 식별자. 남의 기록은 존재 여부를 드러내지 않게 "
+                    + "없는 기록과 같은 404 로 답한다")
             @PathVariable UUID recordId,
+            @Parameter(description = "사진 식별자. 위 기록에 속한 사진이어야 하며, 아니면 404")
             @PathVariable UUID photoId,
             @Valid @RequestBody UpdateTreatmentPhotoRequest request,
             HttpServletRequest servletRequest
@@ -181,7 +195,10 @@ public class TreatmentRecordController {
             description = "사진 연결을 삭제하고 연결 파일을 비동기 회수 대상 상태로 전이합니다.")
     public ResponseEntity<Void> deletePhoto(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "시술기록 식별자. 남의 기록은 존재 여부를 드러내지 않게 "
+                    + "없는 기록과 같은 404 로 답한다")
             @PathVariable UUID recordId,
+            @Parameter(description = "사진 식별자. 위 기록에 속한 사진이어야 하며, 아니면 404")
             @PathVariable UUID photoId
     ) {
         manageTreatmentPhotosUseCase.delete(
@@ -194,6 +211,8 @@ public class TreatmentRecordController {
             description = "BEFORE와 AFTER 사진이 모두 있어야 하며, 한쪽이라도 없으면 422를 반환합니다.")
     public ApiResponse<PhotoComparisonResponse> getPhotoComparison(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "시술기록 식별자. 남의 기록은 존재 여부를 드러내지 않게 "
+                    + "없는 기록과 같은 404 로 답한다")
             @PathVariable UUID recordId,
             HttpServletRequest servletRequest
     ) {

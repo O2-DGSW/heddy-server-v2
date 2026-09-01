@@ -45,6 +45,10 @@ public class UpdateTreatmentRecordRequest {
     private boolean appointmentIdPresent;
     private boolean memoPresent;
     private boolean nextVisitCautionsPresent;
+    private Integer durationMinutes;
+    private boolean durationMinutesPresent;
+    private String treatmentContent;
+    private boolean treatmentContentPresent;
 
     @JsonSetter("service_types")
     public void setServiceTypes(Set<ServiceType> serviceTypes) {
@@ -106,6 +110,18 @@ public class UpdateTreatmentRecordRequest {
         nextVisitCautionsPresent = true;
     }
 
+    @JsonSetter("duration_minutes")
+    public void setDurationMinutes(Integer durationMinutes) {
+        this.durationMinutes = durationMinutes;
+        durationMinutesPresent = true;
+    }
+
+    @JsonSetter("treatment_content")
+    public void setTreatmentContent(String treatmentContent) {
+        this.treatmentContent = treatmentContent;
+        treatmentContentPresent = true;
+    }
+
     public UpdateTreatmentRecordUseCase.Command toCommand(UUID requesterId, UUID recordId) {
         return new UpdateTreatmentRecordUseCase.Command(
                 requesterId, recordId,
@@ -118,7 +134,9 @@ public class UpdateTreatmentRecordRequest {
                 patch(priceCurrencyPresent, priceCurrency),
                 patch(appointmentIdPresent, appointmentId),
                 patch(memoPresent, memo),
-                patch(nextVisitCautionsPresent, nextVisitCautions));
+                patch(nextVisitCautionsPresent, nextVisitCautions),
+                patch(durationMinutesPresent, durationMinutes),
+                patch(treatmentContentPresent, treatmentContent));
     }
 
     private <T> UpdateTreatmentRecordUseCase.Patch<T> patch(boolean present, T value) {

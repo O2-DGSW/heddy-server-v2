@@ -10,11 +10,14 @@ public record CompleteUploadResponse(
         @Schema(description = "파일 식별자. 다른 도메인은 READY 인 파일만 참조할 수 있다")
         @JsonProperty("file_id") UUID fileId,
 
+        @Schema(description = "요청한 업로드 세션 식별자")
         @JsonProperty("upload_id") UUID uploadId,
 
         @Schema(description = "전이 결과 상태. 항상 READY 다")
         @JsonProperty("status") String status,
 
+        @Schema(description = "스토리지에서 확인한 실제 Content-Type. presign 때 신고한 값과 "
+                + "다를 수 있어 여기서 다시 내려준다")
         @JsonProperty("content_type") String contentType,
 
         @Schema(description = "스토리지에서 확인한 실제 크기(바이트)")

@@ -11,11 +11,22 @@ import java.util.UUID;
 
 /** 타임라인 목록에 필요한 시술기록 요약 응답. */
 public record TreatmentRecordSummaryResponse(
+        @Schema(description = "기록 식별자")
         @JsonProperty("record_id") UUID recordId,
+
+        @Schema(description = "시술일시")
         @JsonProperty("performed_at") Instant performedAt,
+
+        @Schema(description = "미용실 이름. 입력하지 않았으면 비어 있다")
         @JsonProperty("salon_name") String salonName,
+
+        @Schema(description = "디자이너 이름. 입력하지 않았으면 비어 있다")
         @JsonProperty("designer_name") String designerName,
+
+        @Schema(description = "시술 종류 목록. 항상 1개 이상이다")
         @JsonProperty("service_types") Set<ServiceType> serviceTypes,
+
+        @Schema(description = "만족도(1~5). 입력하지 않았으면 비어 있다")
         Integer satisfaction,
         @Schema(description = "대표 사진의 짧은 만료 Presigned GET URL. 사진이 없으면 null")
         @JsonProperty("thumbnail_url") String thumbnailUrl,

@@ -8,6 +8,7 @@ import com.heddy.adapter.in.web.account.dto.MyProfileResponse;
 import com.heddy.adapter.in.web.account.dto.UpdateMyProfileRequest;
 import com.heddy.domain.account.port.in.ProfileUseCase;
 import com.heddy.domain.account.port.in.RequestAccountDeletionUseCase;
+import com.heddy.global.docs.ApiDocs;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,6 +39,8 @@ public class ProfileController {
     private final RequestAccountDeletionUseCase requestAccountDeletionUseCase;
 
     @GetMapping
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
     @Operation(summary = "내 기본 프로필 조회")
     public ApiResponse<MyProfileResponse> getProfile(
             @AuthenticationPrincipal UUID userId,
@@ -48,6 +51,9 @@ public class ProfileController {
     }
 
     @PatchMapping
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.Validated
     @Operation(summary = "내 기본 프로필 수정")
     public ApiResponse<MyProfileResponse> updateProfile(
             @AuthenticationPrincipal UUID userId,
@@ -60,6 +66,9 @@ public class ProfileController {
     }
 
     @GetMapping("/hair-profile")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.OwnedResource
     @Operation(summary = "내 모발 프로필 조회")
     public ApiResponse<HairProfileResponse> getHairProfile(
             @AuthenticationPrincipal UUID userId,
@@ -71,6 +80,9 @@ public class ProfileController {
     }
 
     @PutMapping("/hair-profile")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.Validated
     @Operation(summary = "내 모발 프로필 생성 또는 전체 수정")
     public ApiResponse<HairProfileResponse> saveHairProfile(
             @AuthenticationPrincipal UUID userId,
@@ -83,6 +95,9 @@ public class ProfileController {
     }
 
     @DeleteMapping
+    @ApiDocs.Accepted
+    @ApiDocs.Authenticated
+    @ApiDocs.Reauthenticated
     @Operation(summary = "회원 탈퇴 요청",
             description = "재인증 토큰을 한 번 소비하고 모든 Refresh 세션과 계정 접근을 즉시 차단한 뒤 "
                     + "데이터 삭제를 비동기로 처리합니다.")

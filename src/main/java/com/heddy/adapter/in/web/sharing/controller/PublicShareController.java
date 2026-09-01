@@ -2,6 +2,7 @@ package com.heddy.adapter.in.web.sharing.controller;
 
 import com.heddy.adapter.in.web.sharing.dto.PublicShareResponse;
 import com.heddy.domain.sharing.port.in.GetPublicShareUseCase;
+import com.heddy.global.docs.ApiDocs;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +28,8 @@ public class PublicShareController {
     private final GetPublicShareUseCase getPublicShareUseCase;
 
     @GetMapping("/public/shares/{shareToken}")
+    @ApiDocs.Ok
+    @ApiDocs.PublicShare
     @Operation(summary = "공개 공유 조회",
             description = "토큰 원문으로 해시를 대조하고 철회·만료를 매 요청 검증합니다. "
                     + "공유에서 선택하지 않은 항목은 응답 키 자체가 없습니다.")

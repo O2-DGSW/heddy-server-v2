@@ -16,6 +16,7 @@ import com.heddy.domain.treatment.port.in.GetPhotoComparisonUseCase;
 import com.heddy.domain.treatment.port.in.ListTreatmentRecordsUseCase;
 import com.heddy.domain.treatment.port.in.ManageTreatmentPhotosUseCase;
 import com.heddy.domain.treatment.port.in.UpdateTreatmentRecordUseCase;
+import com.heddy.global.docs.ApiDocs;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import com.heddy.global.response.PageResponse;
@@ -56,6 +57,10 @@ public class TreatmentRecordController {
     private final GetPhotoComparisonUseCase getPhotoComparisonUseCase;
 
     @PostMapping("/treatment-records")
+    @ApiDocs.Created
+    @ApiDocs.Authenticated
+    @ApiDocs.Validated
+    @ApiDocs.PhotoAttachment
     @Operation(summary = "시술기록 등록",
             description = "시술 종류는 1개 이상, 시술일은 미래일 수 없다. 첨부 사진은 READY 인 "
                     + "요청자 소유 파일(file_id)만 가리킬 수 있다.")
@@ -72,6 +77,9 @@ public class TreatmentRecordController {
     }
 
     @GetMapping("/treatment-records")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.ListQuery
     @Operation(summary = "시술기록 목록 조회",
             description = "내 기록만 시술 종류·디자이너·미용실·시술일 범위로 필터링하고 페이지로 조회합니다. "
                     + "기록이 없으면 200과 빈 items를 반환합니다.")
@@ -106,6 +114,9 @@ public class TreatmentRecordController {
     }
 
     @GetMapping("/treatment-records/{recordId}")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.OwnedResource
     @Operation(summary = "시술기록 단건 조회",
             description = "남의 기록은 존재 여부를 드러내지 않게 404 로 답한다. 사진 URL 은 저장값이 "
                     + "아니라 조회 시점에 짧은 만료의 Presigned GET 으로 발급된다.")
@@ -124,6 +135,10 @@ public class TreatmentRecordController {
     }
 
     @PatchMapping("/treatment-records/{recordId}")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.Validated
+    @ApiDocs.OwnedResource
     @Operation(summary = "시술기록 부분 수정",
             description = "전달한 필드만 수정합니다. nullable 필드에 null을 보내면 값을 삭제합니다.")
     public ApiResponse<TreatmentRecordResponse> update(
@@ -141,6 +156,9 @@ public class TreatmentRecordController {
     }
 
     @DeleteMapping("/treatment-records/{recordId}")
+    @ApiDocs.NoContent
+    @ApiDocs.Authenticated
+    @ApiDocs.OwnedResource
     @Operation(summary = "시술기록 삭제",
             description = "기록과 사진 연결을 삭제하고 연결 파일은 비동기 회수 대상 상태로 전이합니다.")
     public ResponseEntity<Void> delete(
@@ -155,6 +173,11 @@ public class TreatmentRecordController {
     }
 
     @PostMapping("/treatment-records/{recordId}/photos")
+    @ApiDocs.Created
+    @ApiDocs.Authenticated
+    @ApiDocs.Validated
+    @ApiDocs.OwnedResource
+    @ApiDocs.PhotoAttachment
     @Operation(summary = "시술기록 사진 추가",
             description = "READY 상태인 요청자 소유 파일을 연결합니다. 기록당 최대 10장입니다.")
     public ResponseEntity<ApiResponse<TreatmentPhotoResponse>> addPhoto(
@@ -172,6 +195,10 @@ public class TreatmentRecordController {
     }
 
     @PatchMapping("/treatment-records/{recordId}/photos/{photoId}")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.Validated
+    @ApiDocs.OwnedResource
     @Operation(summary = "시술기록 사진 정보 수정",
             description = "사진 유형이나 표시 순서 중 전달한 값을 수정합니다.")
     public ApiResponse<TreatmentPhotoResponse> updatePhoto(
@@ -191,6 +218,9 @@ public class TreatmentRecordController {
     }
 
     @DeleteMapping("/treatment-records/{recordId}/photos/{photoId}")
+    @ApiDocs.NoContent
+    @ApiDocs.Authenticated
+    @ApiDocs.OwnedResource
     @Operation(summary = "시술기록 사진 삭제",
             description = "사진 연결을 삭제하고 연결 파일을 비동기 회수 대상 상태로 전이합니다.")
     public ResponseEntity<Void> deletePhoto(
@@ -207,6 +237,10 @@ public class TreatmentRecordController {
     }
 
     @GetMapping("/treatment-records/{recordId}/photo-comparison")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.OwnedResource
+    @ApiDocs.PhotoComparison
     @Operation(summary = "시술 전후 사진 비교 조회",
             description = "BEFORE와 AFTER 사진이 모두 있어야 하며, 한쪽이라도 없으면 422를 반환합니다.")
     public ApiResponse<PhotoComparisonResponse> getPhotoComparison(

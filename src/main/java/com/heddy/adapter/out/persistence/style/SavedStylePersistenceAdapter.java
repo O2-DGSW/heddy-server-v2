@@ -35,4 +35,9 @@ public class SavedStylePersistenceAdapter implements SavedStyleRepositoryPort {
                 .map(SavedStyleEntity::toDomain)
                 .toList();
     }
+
+    @Override
+    public List<UUID> findHairstyleIdsByUserId(UUID userId) {
+        return repository.findHairstyleIdsByUserId(userId);
+    }
 }

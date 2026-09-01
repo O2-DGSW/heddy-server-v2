@@ -37,6 +37,7 @@ public record StoredFile(
         UUID fileId,
         UUID uploadId,
         UUID userId,
+        FileOwnerType ownerType,
         FilePurpose purpose,
         FileStatus status,
         String objectKey,
@@ -53,7 +54,13 @@ public record StoredFile(
     public StoredFile {
         Objects.requireNonNull(fileId, "fileId");
         Objects.requireNonNull(uploadId, "uploadId");
-        Objects.requireNonNull(userId, "userId");
+        Objects.requireNonNull(ownerType, "ownerType");
+        if (ownerType == FileOwnerType.USER && userId == null) {
+            throw new IllegalArgumentException("USER 파일에는 userId가 필요합니다.");
+        }
+        if (ownerType == FileOwnerType.SYSTEM && userId != null) {
+            throw new IllegalArgumentException("SYSTEM 파일에는 userId를 둘 수 없습니다.");
+        }
         Objects.requireNonNull(purpose, "purpose");
         Objects.requireNonNull(status, "status");
         Objects.requireNonNull(objectKey, "objectKey");
@@ -66,6 +73,16 @@ public record StoredFile(
         if (fileSize <= 0) {
             throw new IllegalArgumentException("fileSize 는 양수여야 합니다: " + fileSize);
         }
+    }
+
+    /** owner_type 도입 전 호출부와의 호환 생성자. 기존 파일은 모두 사용자 소유다. */
+    public StoredFile(
+            UUID fileId, UUID uploadId, UUID userId, FilePurpose purpose, FileStatus status,
+            String objectKey, String contentType, String fileName, long fileSize, String sha256,
+            Integer width, Integer height, Instant expiresAt, Instant createdAt, Instant reclaimedAt
+    ) {
+        this(fileId, uploadId, userId, FileOwnerType.USER, purpose, status, objectKey, contentType,
+                fileName, fileSize, sha256, width, height, expiresAt, createdAt, reclaimedAt);
     }
 
     /**
@@ -84,9 +101,24 @@ public record StoredFile(
     ) {
         requireUploadable(purpose, contentType, fileSize);
         return new StoredFile(
-                UUID.randomUUID(), UUID.randomUUID(), userId, purpose, FileStatus.PENDING,
+                UUID.randomUUID(), UUID.randomUUID(), userId, FileOwnerType.USER,
+                purpose, FileStatus.PENDING,
                 objectKey, contentType, fileName, fileSize, declaredSha256, null, null,
                 expiresAt, null, null);
+    }
+
+    /** 내부 카탈로그 적재 경로가 여는 시스템 파일 세션. 외부 presign API에서는 호출하지 않는다. */
+    public static StoredFile pendingSystem(
+            FilePurpose purpose, String objectKey, String contentType, String fileName,
+            long fileSize, String declaredSha256, Instant expiresAt
+    ) {
+        if (purpose == FilePurpose.TREATMENT_PHOTO || purpose == FilePurpose.AR_CAPTURE) {
+            throw new FileException(FileError.PURPOSE_NOT_ALLOWED);
+        }
+        requireUploadable(purpose, contentType, fileSize);
+        return new StoredFile(UUID.randomUUID(), UUID.randomUUID(), null, FileOwnerType.SYSTEM,
+                purpose, FileStatus.PENDING, objectKey, contentType, fileName, fileSize,
+                declaredSha256, null, null, expiresAt, null, null);
     }
 
     /**
@@ -104,7 +136,7 @@ public record StoredFile(
         requireStatus(FileStatus.PENDING);
         requireUploadable(purpose, object.contentType(), object.byteSize());
         return new StoredFile(
-                fileId, uploadId, userId, purpose, FileStatus.READY, objectKey,
+                fileId, uploadId, userId, ownerType, purpose, FileStatus.READY, objectKey,
                 object.contentType(), fileName, object.byteSize(), sha256, width, height,
                 expiresAt, createdAt, null);
     }
@@ -118,7 +150,7 @@ public record StoredFile(
         requireStatus(FileStatus.PENDING);
         requireUploadable(purpose, verified.contentType(), verified.fileSize());
         return new StoredFile(
-                fileId, uploadId, userId, purpose, FileStatus.READY, objectKey,
+                fileId, uploadId, userId, ownerType, purpose, FileStatus.READY, objectKey,
                 verified.contentType(), fileName, verified.fileSize(), verified.sha256(),
                 verified.width(), verified.height(), expiresAt, createdAt, null);
     }
@@ -129,7 +161,7 @@ public record StoredFile(
             throw new FileException(FileError.INVALID_STATE_TRANSITION);
         }
         return new StoredFile(
-                fileId, uploadId, userId, purpose, FileStatus.DELETED, objectKey,
+                fileId, uploadId, userId, ownerType, purpose, FileStatus.DELETED, objectKey,
                 contentType, fileName, fileSize, sha256, width, height, expiresAt, createdAt, null);
     }
 

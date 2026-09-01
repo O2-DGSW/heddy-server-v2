@@ -42,6 +42,7 @@ AWS_S3_ACCESS_KEY=            # 인스턴스 역할 쓰면 비움, 아니면 IAM
 AWS_S3_SECRET_KEY=            # 위와 항상 함께 (둘 다 비움 or 둘 다 채움)
 AWS_S3_ENDPOINT=
 CORS_ALLOWED_ORIGINS=https://<실제 클라이언트 도메인>
+SHARE_PUBLIC_BASE_URL=https://heddy.site/s  # 선택: 미지정 시에도 이 값이 기본 적용됨
 ```
 
 | 변수 | 규칙 |
@@ -52,6 +53,7 @@ CORS_ALLOWED_ORIGINS=https://<실제 클라이언트 도메인>
 | `AWS_S3_ACCESS_KEY` · `AWS_S3_SECRET_KEY` | 둘 다 비우면 인스턴스 역할로 인증한다. 배포 전에 인스턴스에 역할이 붙어 있는지 확인한다 |
 | `AWS_S3_ENDPOINT` | **빈 값 유지** — 실제 AWS S3 를 쓴다 (MinIO 엔드포인트를 넣지 않는다) |
 | `JWT_SECRET` | 기본값이 없는 유일한 변수. 없으면 부팅 자체가 실패한다 |
+| `SHARE_PUBLIC_BASE_URL` | QR을 찍었을 때 열 프론트 공유 페이지의 URL 앞부분. 기본값은 `https://heddy.site/s`이며 다른 환경에서만 재정의한다 |
 
 기능별 선택 변수(소셜 로그인 `KAKAO_APP_ID` · `GOOGLE_CLIENT_ID` · `APPLE_CLIENT_ID`,
 SMS `SOLAPI_*` 등)는 해당 기능을 켤 때 같은 파일에 추가하면 `.env` 째로 컨테이너에 전달된다.
@@ -74,6 +76,7 @@ curl -s http://localhost:8080/actuator/health    # {"status":"UP"} 이어야 한
 ```bash
 docker exec heddy-v2-app printenv REDIS_HOST     # localhost 가 아니라 redis 여야 한다
 docker exec heddy-v2-app printenv DB_URL         # postgres:5432 여야 한다
+docker exec heddy-v2-app printenv SHARE_PUBLIC_BASE_URL # https://heddy.site/s 여야 한다
 ```
 
 ## 4. v1 정리 (데이터 백업 없음)

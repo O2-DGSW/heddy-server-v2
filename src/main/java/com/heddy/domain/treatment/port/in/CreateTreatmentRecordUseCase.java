@@ -31,6 +31,8 @@ public interface CreateTreatmentRecordUseCase {
             UUID appointmentId,
             String memo,
             String nextVisitCautions,
+            Integer durationMinutes,
+            String treatmentContent,
             List<Photo> photos
     ) {
         public Command(
@@ -46,7 +48,27 @@ public interface CreateTreatmentRecordUseCase {
                 List<Photo> photos
         ) {
             this(userId, serviceTypes, salonName, designerName, performedAt, satisfaction,
-                    priceAmount, priceCurrency, appointmentId, null, null, photos);
+                    priceAmount, priceCurrency, appointmentId, null, null, null, null, photos);
+        }
+
+        /** 소요 시간·시술 내용 도입 전 호출부와의 호환을 위한 생성자. */
+        public Command(
+                UUID userId,
+                Set<ServiceType> serviceTypes,
+                String salonName,
+                String designerName,
+                Instant performedAt,
+                Integer satisfaction,
+                Long priceAmount,
+                String priceCurrency,
+                UUID appointmentId,
+                String memo,
+                String nextVisitCautions,
+                List<Photo> photos
+        ) {
+            this(userId, serviceTypes, salonName, designerName, performedAt, satisfaction,
+                    priceAmount, priceCurrency, appointmentId, memo, nextVisitCautions,
+                    null, null, photos);
         }
 
         public record Photo(UUID fileId, ImageType imageType, int sortOrder) {

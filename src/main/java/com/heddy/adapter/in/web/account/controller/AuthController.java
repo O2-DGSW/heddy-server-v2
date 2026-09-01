@@ -23,9 +23,11 @@ import com.heddy.domain.account.port.in.SendSmsCodeUseCase;
 import com.heddy.domain.account.port.in.SocialLoginUseCase;
 import com.heddy.domain.account.port.in.SocialSignupUseCase;
 import com.heddy.domain.account.port.in.VerifySmsCodeUseCase;
+import com.heddy.global.docs.ApiDocs;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -95,8 +97,12 @@ public class AuthController {
     }
 
     @GetMapping("/email-availability")
+    @ApiDocs.Ok
+    @ApiDocs.Validated
     @Operation(summary = "이메일 중복 확인")
     public ApiResponse<EmailAvailabilityResponse> emailAvailability(
+            @Parameter(description = "확인할 이메일 주소. 대소문자는 구분하지 않는다 — "
+                    + "서버가 소문자로 맞춰 대조한다", required = true)
             @RequestParam @NotBlank @Email @Size(max = 255) String email,
             HttpServletRequest servletRequest
     ) {
@@ -107,6 +113,9 @@ public class AuthController {
     }
 
     @PostMapping("/signup/email")
+    @ApiDocs.Created
+    @ApiDocs.Validated
+    @ApiDocs.Signup
     @Operation(summary = "이메일 회원가입",
             description = "전화번호를 전달하는 경우 SIGNUP 목적의 SMS 인증이 먼저 완료되어야 합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -121,6 +130,9 @@ public class AuthController {
     }
 
     @PostMapping("/signup/social")
+    @ApiDocs.Created
+    @ApiDocs.Validated
+    @ApiDocs.Signup
     @Operation(summary = "소셜 회원가입",
             description = "전화번호를 전달하는 경우 SIGNUP 목적의 SMS 인증이 먼저 완료되어야 합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -135,6 +147,9 @@ public class AuthController {
     }
 
     @PostMapping("/login/email")
+    @ApiDocs.Ok
+    @ApiDocs.Validated
+    @ApiDocs.Credentials
     @Operation(summary = "이메일 로그인")
     public ApiResponse<AuthResponse> emailLogin(
             @Valid @RequestBody EmailLoginRequest request,
@@ -146,6 +161,9 @@ public class AuthController {
     }
 
     @PostMapping("/login/social")
+    @ApiDocs.Ok
+    @ApiDocs.Validated
+    @ApiDocs.Credentials
     @Operation(summary = "소셜 로그인")
     public ApiResponse<AuthResponse> socialLogin(
             @Valid @RequestBody SocialLoginRequest request,
@@ -157,6 +175,9 @@ public class AuthController {
     }
 
     @PostMapping("/token/refresh")
+    @ApiDocs.Ok
+    @ApiDocs.Validated
+    @ApiDocs.RefreshToken
     @Operation(summary = "Access Token 갱신",
             description = "Refresh Token을 회전하고 새 Access Token과 Refresh Token을 발급합니다.")
     public ApiResponse<AuthResponse.Tokens> refresh(
@@ -169,6 +190,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @ApiDocs.NoContent
+    @ApiDocs.Validated
     @Operation(summary = "현재 세션 로그아웃")
     @SecurityRequirement(name = "bearerAuth")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -182,6 +205,10 @@ public class AuthController {
     }
 
     @PostMapping("/reauthenticate")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.Validated
+    @ApiDocs.Credentials
     @Operation(summary = "민감 작업 재인증",
             description = "회원 탈퇴 등에 사용할 수 있는 300초 유효 1회용 토큰을 발급합니다.")
     @SecurityRequirement(name = "bearerAuth")
@@ -196,6 +223,9 @@ public class AuthController {
     }
 
     @PostMapping("/sms/send")
+    @ApiDocs.Ok
+    @ApiDocs.Validated
+    @ApiDocs.SmsVerification
     @Operation(summary = "SMS 인증번호 발송",
             description = "SIGNUP, PASSWORD_RESET, PHONE_CHANGE 목적별 인증번호를 발송합니다.")
     public ApiResponse<Void> sendSmsCode(
@@ -207,6 +237,9 @@ public class AuthController {
     }
 
     @PostMapping("/sms/verify")
+    @ApiDocs.Ok
+    @ApiDocs.Validated
+    @ApiDocs.SmsVerification
     @Operation(summary = "SMS 인증번호 확인")
     public ApiResponse<Void> verifySmsCode(
             @Valid @RequestBody VerifySmsCodeRequest request,
@@ -217,6 +250,9 @@ public class AuthController {
     }
 
     @PostMapping("/password/reset")
+    @ApiDocs.Ok
+    @ApiDocs.Validated
+    @ApiDocs.SmsVerification
     @Operation(summary = "비밀번호 재설정",
             description = "PASSWORD_RESET 목적의 SMS 인증이 완료된 전화번호의 비밀번호를 변경합니다.")
     public ApiResponse<Void> resetPassword(

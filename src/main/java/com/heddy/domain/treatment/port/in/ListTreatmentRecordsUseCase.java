@@ -26,7 +26,10 @@ public interface ListTreatmentRecordsUseCase {
     ) {
     }
 
-    record Item(TreatmentRecord record, URI thumbnailUrl, String analysisStatus) {
+    /**
+     * @param shared 지금 공유 중인 기록인지. 목록의 "공유중" 배지 하나가 쓴다
+     */
+    record Item(TreatmentRecord record, URI thumbnailUrl, String analysisStatus, boolean shared) {
     }
 
     record Result(List<Item> items, int page, int size, long totalElements) {

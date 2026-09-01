@@ -4,18 +4,22 @@ import com.heddy.domain.sharing.model.Share;
 import com.heddy.domain.sharing.model.SharePage;
 import com.heddy.domain.sharing.model.ShareStatus;
 import com.heddy.domain.sharing.port.out.ShareRepositoryPort;
+import com.heddy.domain.sharing.port.out.SharedRecordLookupPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class SharingPersistenceAdapter implements ShareRepositoryPort {
+public class SharingPersistenceAdapter implements ShareRepositoryPort, SharedRecordLookupPort {
 
     private static final int MAX_PAGE_SIZE = 100;
 
@@ -58,6 +62,16 @@ public class SharingPersistenceAdapter implements ShareRepositoryPort {
         return new SharePage(
                 result.getContent().stream().map(ShareEntity::toDomain).toList(),
                 result.getTotalElements());
+    }
+
+    @Override
+    public Set<UUID> findSharedRecordIds(UUID ownerId, Collection<UUID> recordIds, Instant now) {
+        // 빈 IN 절은 방언에 따라 문법 오류가 되고, 어차피 답이 정해져 있어 질의하지 않는다.
+        if (recordIds.isEmpty()) {
+            return Set.of();
+        }
+        return shareRepository.findSharedRecordIds(
+                ownerId, recordIds, ShareStatus.ACTIVE.name(), now);
     }
 
     private PageRequest pageRequest(int page, int size) {

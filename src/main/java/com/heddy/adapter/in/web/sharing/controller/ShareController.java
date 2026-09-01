@@ -11,6 +11,7 @@ import com.heddy.domain.sharing.port.in.DeleteShareUseCase;
 import com.heddy.domain.sharing.port.in.GetShareUseCase;
 import com.heddy.domain.sharing.port.in.ListSharesUseCase;
 import com.heddy.domain.sharing.port.in.UpdateShareUseCase;
+import com.heddy.global.docs.ApiDocs;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import com.heddy.global.response.PageResponse;
@@ -49,6 +50,10 @@ public class ShareController {
     private final DeleteShareUseCase deleteShareUseCase;
 
     @PostMapping("/shares")
+    @ApiDocs.Created
+    @ApiDocs.Authenticated
+    @ApiDocs.Validated
+    @ApiDocs.OwnedResource
     @Operation(summary = "공유 링크 생성",
             description = "기록 또는 후보 스타일 1개 이상과 노출 항목 1개 이상이 필요하다. 모든 대상은 "
                     + "본인 소유여야 하고, 남의 기록은 존재 여부를 드러내지 않게 404 로 답한다. 토큰 원문은 "
@@ -65,6 +70,9 @@ public class ShareController {
     }
 
     @GetMapping("/shares")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.ListQuery
     @Operation(summary = "내 공유 목록 조회",
             description = "내 공유를 최신순으로 페이지 조회합니다. 상태 필터는 생략할 수 있고, "
                     + "결과가 없으면 200과 빈 items를 반환합니다. share_url 은 저장된 것이 없어 "
@@ -73,7 +81,9 @@ public class ShareController {
             @AuthenticationPrincipal UUID userId,
             @Parameter(description = "상태 필터(ACTIVE/REVOKED). 생략 시 전체")
             @RequestParam(required = false) ShareStatus status,
+            @Parameter(description = "0부터 시작하는 페이지 번호. 음수면 400 INVALID_REQUEST")
             @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "한 페이지 크기. 1~100 이며 벗어나면 400 INVALID_REQUEST")
             @RequestParam(defaultValue = "20") int size,
             HttpServletRequest servletRequest
     ) {
@@ -86,11 +96,16 @@ public class ShareController {
     }
 
     @GetMapping("/shares/{shareId}")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.OwnedResource
     @Operation(summary = "공유 설정 상세 조회",
             description = "노출 항목과 공유 대상(기록·후보)까지 보여준다. 남의 공유는 존재 여부를 "
                     + "드러내지 않게 404 로 답한다.")
     public ApiResponse<ShareDetailResponse> get(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "공유 링크 식별자. 남의 공유는 존재 여부를 드러내지 "
+                    + "않게 없는 공유와 같은 404 로 답한다", required = true)
             @PathVariable UUID shareId,
             HttpServletRequest servletRequest
     ) {
@@ -101,11 +116,17 @@ public class ShareController {
     }
 
     @PatchMapping("/shares/{shareId}")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.Validated
+    @ApiDocs.OwnedResource
     @Operation(summary = "공유 수정",
             description = "노출 항목과 만료 시각 중 전달한 필드만 수정합니다. 만료 시각은 현재보다 "
                     + "미래여야 하고, 대상(기록·후보)은 수정 범위가 아니다.")
     public ApiResponse<ShareDetailResponse> update(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "공유 링크 식별자. 남의 공유는 존재 여부를 드러내지 "
+                    + "않게 없는 공유와 같은 404 로 답한다", required = true)
             @PathVariable UUID shareId,
             @RequestBody UpdateShareRequest request,
             HttpServletRequest servletRequest
@@ -117,11 +138,16 @@ public class ShareController {
     }
 
     @DeleteMapping("/shares/{shareId}")
+    @ApiDocs.NoContent
+    @ApiDocs.Authenticated
+    @ApiDocs.OwnedResource
     @Operation(summary = "공유 철회",
             description = "링크를 즉시 REVOKED 상태로 전이해 공개 조회를 차단한다. 행은 지우지 않으므로 "
                     + "이미 철회된 공유에 다시 호출해도 204 다.")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "공유 링크 식별자. 남의 공유는 존재 여부를 드러내지 "
+                    + "않게 없는 공유와 같은 404 로 답한다", required = true)
             @PathVariable UUID shareId
     ) {
         deleteShareUseCase.delete(new DeleteShareUseCase.Command(userId, shareId));

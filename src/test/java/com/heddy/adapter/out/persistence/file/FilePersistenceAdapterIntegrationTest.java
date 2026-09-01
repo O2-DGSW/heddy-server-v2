@@ -253,7 +253,8 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
     void filesTableMatchesMigration() {
         assertColumn("file_id", "uuid", null, false);
         assertColumn("upload_id", "uuid", null, false);
-        assertColumn("user_id", "uuid", null, false);
+        assertColumn("user_id", "uuid", null, true);
+        assertColumn("owner_type", "character varying", 10, false);
         assertColumn("purpose", "character varying", 30, false);
         assertColumn("status", "character varying", 20, false);
         assertColumn("object_key", "character varying", 500, false);

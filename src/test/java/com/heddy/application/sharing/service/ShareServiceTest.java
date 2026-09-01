@@ -14,6 +14,8 @@ import com.heddy.domain.sharing.port.in.GetShareUseCase;
 import com.heddy.domain.sharing.port.in.ListSharesUseCase;
 import com.heddy.domain.sharing.port.in.UpdateShareUseCase;
 import com.heddy.domain.sharing.port.out.ShareRepositoryPort;
+import com.heddy.domain.style.model.SavedStyle;
+import com.heddy.domain.style.port.out.SavedStyleRepositoryPort;
 import com.heddy.domain.treatment.model.TreatmentRecord;
 import com.heddy.domain.treatment.model.ServiceType;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
@@ -52,6 +54,7 @@ class ShareServiceTest {
 
     @Mock ShareRepositoryPort shareRepositoryPort;
     @Mock TreatmentRecordRepositoryPort treatmentRecordRepositoryPort;
+    @Mock SavedStyleRepositoryPort savedStyleRepositoryPort;
     @Mock SecureTokenGeneratorPort tokenGeneratorPort;
     @Mock TokenHasherPort tokenHasherPort;
 
@@ -60,7 +63,7 @@ class ShareServiceTest {
     @BeforeEach
     void setUp() {
         service = new ShareService(shareRepositoryPort, treatmentRecordRepositoryPort,
-                tokenGeneratorPort, tokenHasherPort, BASE_URL);
+                savedStyleRepositoryPort, tokenGeneratorPort, tokenHasherPort, BASE_URL);
     }
 
     // ------------------------------------------------------------------ 생성
@@ -99,17 +102,36 @@ class ShareServiceTest {
     }
 
     @Test
-    void acceptsSavedStylesWithoutAnyRecord() {
+    void acceptsOwnedSavedStylesWithoutAnyRecord() {
+        UUID savedStyleId = UUID.randomUUID();
         stubToken();
+        given(savedStyleRepositoryPort.findAllByUserIdAndIds(
+                USER_ID, Set.of(savedStyleId)))
+                .willReturn(List.of(savedStyle(savedStyleId)));
         given(shareRepositoryPort.insert(any())).willAnswer(invocation -> invocation.getArgument(0));
 
         CreateShareUseCase.Result result = service.create(command(
-                Set.of(), Set.of(UUID.randomUUID()),
+                Set.of(), Set.of(savedStyleId),
                 Set.of(ShareFieldType.SAVED_STYLES), 3));
 
-        assertThat(result.share().savedStyleIds()).hasSize(1);
-        // 후보 스타일 도메인이 아직 없어 기록 소유권 질의는 일어나지 않는다.
+        assertThat(result.share().savedStyleIds()).containsExactly(savedStyleId);
         verifyNoInteractions(treatmentRecordRepositoryPort);
+    }
+
+    @Test
+    void hidesForeignOrUnknownSavedStyleBehindResourceNotFound() {
+        UUID foreignSavedStyleId = UUID.randomUUID();
+        stubToken();
+        given(savedStyleRepositoryPort.findAllByUserIdAndIds(
+                USER_ID, Set.of(foreignSavedStyleId)))
+                .willReturn(List.of());
+
+        assertThatThrownBy(() -> service.create(command(
+                Set.of(), Set.of(foreignSavedStyleId),
+                Set.of(ShareFieldType.SAVED_STYLES), null)))
+                .isInstanceOfSatisfying(ApplicationException.class, e ->
+                        assertThat(e.getErrorCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND));
+        then(shareRepositoryPort).shouldHaveNoInteractions();
     }
 
     @Test
@@ -335,6 +357,11 @@ class ShareServiceTest {
         return new TreatmentRecord(recordId, USER_ID, Set.of(ServiceType.CUT), null, null,
                 Instant.now().minusSeconds(60), null, null, null, null, null, null,
                 List.of(), Instant.now());
+    }
+
+    private SavedStyle savedStyle(UUID savedStyleId) {
+        return new SavedStyle(savedStyleId, USER_ID, "레이어드 커트",
+                "https://images.example.com/layered.jpg", "추천 이유", Instant.now());
     }
 
     private Share share(ShareStatus status) {

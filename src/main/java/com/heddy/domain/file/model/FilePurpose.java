@@ -17,7 +17,15 @@ public enum FilePurpose {
     AR_CAPTURE(5L * 1024 * 1024, Set.of("image/jpeg", "image/png")),
 
     /** 분석 서버가 생성하는 오버레이 이미지. 사용자에게 직접 노출되지 않는다. */
-    ANALYSIS_OVERLAY_INTERNAL(5L * 1024 * 1024, Set.of("image/png"));    private final long maximumBytes;
+    ANALYSIS_OVERLAY_INTERNAL(5L * 1024 * 1024, Set.of("image/png")),
+
+    /** 운영자가 검수해 등록하는 스타일 카탈로그 썸네일. */
+    HAIRSTYLE_THUMBNAIL(5L * 1024 * 1024, Set.of("image/jpeg", "image/png", "image/webp")),
+    /** AR 합성 원본과 색상 마스크는 사용자 업로드 API에서 발급하지 않는다. */
+    HAIRSTYLE_AR_BASE(10L * 1024 * 1024, Set.of("image/png", "image/webp")),
+    HAIRSTYLE_AR_MASK(10L * 1024 * 1024, Set.of("image/png"));
+
+    private final long maximumBytes;
     private final Set<String> allowedContentTypes;
 
     FilePurpose(long maximumBytes, Set<String> allowedContentTypes) {
@@ -52,6 +60,6 @@ public enum FilePurpose {
      * 나중에 생길 내부 전용 경로(분석 callback)가 맡는다.
      */
     public boolean isExternallyRequestable() {
-        return this != ANALYSIS_OVERLAY_INTERNAL;
+        return this == TREATMENT_PHOTO || this == AR_CAPTURE;
     }
 }

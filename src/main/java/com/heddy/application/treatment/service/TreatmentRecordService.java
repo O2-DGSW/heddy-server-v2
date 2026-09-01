@@ -4,7 +4,11 @@ import com.heddy.domain.file.model.StoredFile;
 import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
 import com.heddy.domain.file.port.out.FileStoragePort;
+import com.heddy.domain.analysis.model.AnalysisJobStatus;
 import com.heddy.domain.analysis.port.out.AnalysisStalenessPort;
+import com.heddy.domain.analysis.port.out.LatestAnalysisStatusPort;
+import com.heddy.domain.recommendation.port.out.RecommendationStalenessPort;
+import com.heddy.domain.sharing.port.out.SharedRecordLookupPort;
 import com.heddy.domain.treatment.exception.TreatmentError;
 import com.heddy.domain.treatment.exception.TreatmentException;
 import com.heddy.domain.treatment.model.ImageType;
@@ -28,9 +32,11 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -55,18 +61,28 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     private final FileRepositoryPort fileRepositoryPort;
     private final FileStoragePort fileStoragePort;
     private final AnalysisStalenessPort analysisStalenessPort;
+    private final RecommendationStalenessPort recommendationStalenessPort;
+    private final SharedRecordLookupPort sharedRecordLookupPort;
+    private final LatestAnalysisStatusPort latestAnalysisStatusPort;
 
     @Autowired
     public TreatmentRecordService(
             TreatmentRecordRepositoryPort recordRepositoryPort,
             FileRepositoryPort fileRepositoryPort,
             FileStoragePort fileStoragePort,
-            ObjectProvider<AnalysisStalenessPort> analysisStalenessPortProvider
+            ObjectProvider<AnalysisStalenessPort> analysisStalenessPortProvider,
+            SharedRecordLookupPort sharedRecordLookupPort,
+            LatestAnalysisStatusPort latestAnalysisStatusPort,
+            ObjectProvider<RecommendationStalenessPort> recommendationStalenessPortProvider
     ) {
         this.recordRepositoryPort = recordRepositoryPort;
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = analysisStalenessPortProvider.getIfAvailable(() -> recordId -> { });
+        this.sharedRecordLookupPort = sharedRecordLookupPort;
+        this.latestAnalysisStatusPort = latestAnalysisStatusPort;
+        this.recommendationStalenessPort = recommendationStalenessPortProvider
+                .getIfAvailable(() -> recordId -> { });
     }
 
     /** 분석 도메인이 없는 단위 테스트와의 호환을 위한 생성자. */
@@ -79,18 +95,26 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = recordId -> { };
+        this.recommendationStalenessPort = recordId -> { };
+        this.sharedRecordLookupPort = (ownerId, recordIds, now) -> Set.of();
+        this.latestAnalysisStatusPort = recordIds -> Map.of();
     }
 
     TreatmentRecordService(
             TreatmentRecordRepositoryPort recordRepositoryPort,
             FileRepositoryPort fileRepositoryPort,
             FileStoragePort fileStoragePort,
-            AnalysisStalenessPort analysisStalenessPort
+            AnalysisStalenessPort analysisStalenessPort,
+            SharedRecordLookupPort sharedRecordLookupPort,
+            LatestAnalysisStatusPort latestAnalysisStatusPort
     ) {
         this.recordRepositoryPort = recordRepositoryPort;
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = analysisStalenessPort;
+        this.recommendationStalenessPort = recordId -> { };
+        this.sharedRecordLookupPort = sharedRecordLookupPort;
+        this.latestAnalysisStatusPort = latestAnalysisStatusPort;
     }
 
     @Override
@@ -134,9 +158,19 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                 SORT_ASCENDING.equals(query.sort()));
         TreatmentRecordPage page = recordRepositoryPort.findPage(filter);
         Map<UUID, URI> thumbnails = thumbnailsFor(page.items());
+        // 페이지의 기록을 한 번에 넣고 묻는다. 기록마다 물으면 페이지 크기만큼 왕복이 는다.
+        List<UUID> recordIds = page.items().stream().map(TreatmentRecord::recordId).toList();
+        Set<UUID> sharedRecordIds = sharedRecordLookupPort.findSharedRecordIds(
+                query.requesterId(), recordIds, Instant.now());
+        Map<UUID, AnalysisJobStatus> analysisStatuses =
+                latestAnalysisStatusPort.findLatestStatuses(recordIds);
         List<ListTreatmentRecordsUseCase.Item> items = page.items().stream()
                 .map(record -> new ListTreatmentRecordsUseCase.Item(
-                        record, thumbnails.get(record.recordId()), null))
+                        record, thumbnails.get(record.recordId()),
+                        // 분석을 한 번도 요청하지 않은 기록은 상태 자체가 없어 null 로 둔다.
+                        // 별도 값으로 바꾸면 클라이언트가 상태 6종에 없는 값을 알아야 한다.
+                        statusNameOf(analysisStatuses.get(record.recordId())),
+                        sharedRecordIds.contains(record.recordId())))
                 .toList();
         return new ListTreatmentRecordsUseCase.Result(
                 items, query.page(), query.size(), page.totalElements());
@@ -172,6 +206,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                 }
             });
         }
+        // FK CASCADE로 근거 행이 사라지기 전에 해당 추천 실행을 이력 상태로 전환한다.
+        recommendationStalenessPort.markByReferenceRecordStale(record.recordId());
         // 공개 API에 소프트 삭제 개념이 없으므로 기록은 하드 삭제하고 사진 행은 FK CASCADE에 맡긴다.
         if (!recordRepositoryPort.deleteById(record.recordId())) {
             throw new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND);
@@ -297,6 +333,10 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         return value != null && value.strip().length() > maximum;
     }
 
+    private static String statusNameOf(AnalysisJobStatus status) {
+        return status == null ? null : status.name();
+    }
+
     private String normalizeFilter(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -345,7 +385,7 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     private void requireOwnedReadyFile(UUID requesterId, UUID fileId) {
         StoredFile file = fileRepositoryPort.findById(fileId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
-        if (!file.userId().equals(requesterId)) {
+        if (!requesterId.equals(file.userId())) {
             throw new ApplicationException(ErrorCode.FORBIDDEN_RESOURCE);
         }
         if (!file.isReady()) {

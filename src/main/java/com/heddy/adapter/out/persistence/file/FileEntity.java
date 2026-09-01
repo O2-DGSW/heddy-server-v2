@@ -2,6 +2,7 @@ package com.heddy.adapter.out.persistence.file;
 
 import com.heddy.adapter.out.persistence.BaseEntity;
 import com.heddy.domain.file.model.FilePurpose;
+import com.heddy.domain.file.model.FileOwnerType;
 import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.model.StoredFile;
 import jakarta.persistence.Column;
@@ -25,8 +26,12 @@ class FileEntity extends BaseEntity {
     @Column(name = "upload_id", nullable = false, updatable = false)
     private UUID uploadId;
 
-    @Column(name = "user_id", nullable = false, updatable = false)
+    @Column(name = "user_id", updatable = false)
     private UUID userId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "owner_type", nullable = false, length = 10, updatable = false)
+    private FileOwnerType ownerType;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30, updatable = false)
@@ -74,6 +79,7 @@ class FileEntity extends BaseEntity {
         fileId = file.fileId();
         uploadId = file.uploadId();
         userId = file.userId();
+        ownerType = file.ownerType();
         purpose = file.purpose();
         objectKey = file.objectKey();
         expiresAt = file.expiresAt();
@@ -88,7 +94,7 @@ class FileEntity extends BaseEntity {
 
     StoredFile toDomain() {
         return new StoredFile(
-                fileId, uploadId, userId, purpose, status, objectKey, contentType,
+                fileId, uploadId, userId, ownerType, purpose, status, objectKey, contentType,
                 fileName, fileSize, sha256, width, height, expiresAt, getCreatedAt(),
                 reclaimedAt);
     }

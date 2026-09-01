@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.heddy.domain.sharing.model.SharedContentView.SharedPhotoView;
 import com.heddy.domain.sharing.model.SharedContentView.SharedRecordView;
+import com.heddy.domain.sharing.model.SharedContentView.SharedSavedStyleView;
 import com.heddy.domain.sharing.port.in.GetPublicShareUseCase;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -23,7 +24,7 @@ public record PublicShareResponse(
         @Schema(description = "공유된 시술기록")
         @JsonProperty("records") List<PublicRecordResponse> records,
 
-        @Schema(description = "공유된 후보 스타일. 항목을 선택했으면 지금은 빈 배열이다")
+        @Schema(description = "공유된 저장 후보 스타일. 항목을 선택하지 않았으면 키를 제외한다")
         @JsonProperty("saved_styles") List<PublicSavedStyleResponse> savedStyles
 ) {
 
@@ -31,10 +32,14 @@ public record PublicShareResponse(
         return new PublicShareResponse(
                 new ShareHeader(result.expiresAt(), result.content().ownerDisplayName()),
                 result.content().records().stream().map(PublicRecordResponse::from).toList(),
-                result.includesSavedStyles() ? List.of() : null);
+                result.content().savedStyles() == null ? null
+                        : result.content().savedStyles().stream()
+                                .map(PublicSavedStyleResponse::from)
+                                .toList());
     }
 
     public record ShareHeader(
+            @Schema(description = "링크 만료 시각. 이 시각이 지나면 SHARE_EXPIRED 로 답한다")
             @JsonProperty("expires_at") Instant expiresAt,
 
             @Schema(description = "공유한 사람의 표시 이름. user_id 는 노출하지 않는다")
@@ -45,13 +50,28 @@ public record PublicShareResponse(
     /** 미선택 항목은 값이 아니라 키 자체가 빠진다. */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record PublicRecordResponse(
+            @Schema(description = "시술일시. TREATMENT_DETAILS 를 선택하지 않았으면 키가 빠진다")
             @JsonProperty("performed_at") Instant performedAt,
+
+            @Schema(description = "미용실 이름. TREATMENT_DETAILS 를 선택하지 않았으면 키가 빠진다")
             @JsonProperty("salon_name") String salonName,
+
+            @Schema(description = "디자이너 이름. TREATMENT_DETAILS 를 선택하지 않았으면 키가 빠진다")
             @JsonProperty("designer_name") String designerName,
+
+            @Schema(description = "시술 종류 목록. TREATMENT_DETAILS 를 선택하지 않았으면 키가 빠진다")
             @JsonProperty("service_types") java.util.Set<String> serviceTypes,
+
+            @Schema(description = "만족도(1~5). SATISFACTION 을 선택하지 않았으면 키가 빠진다")
             Integer satisfaction,
+
+            @Schema(description = "메모. MEMO 를 선택하지 않았으면 키가 빠진다")
             String memo,
+
+            @Schema(description = "다음 방문 주의사항. CAUTIONS 를 선택하지 않았으면 키가 빠진다")
             @JsonProperty("next_visit_cautions") String nextVisitCautions,
+
+            @Schema(description = "사진 목록. PHOTOS 를 선택하지 않았으면 키가 빠진다")
             @JsonProperty("photos") List<PublicPhotoResponse> photos
     ) {
 
@@ -77,8 +97,20 @@ public record PublicShareResponse(
         }
     }
 
-    /** 후보 스타일 도메인(#51 계획의 P4-3)이 자리 잡으면 채워진다. */
     public record PublicSavedStyleResponse(
+            @Schema(description = "저장 당시의 스타일 이름")
+            @JsonProperty("style_name") String styleName,
+
+            @Schema(description = "스타일 이미지 URL")
+            @JsonProperty("image_url") String imageUrl,
+
+            @Schema(description = "이 스타일을 추천받은 이유")
+            String reason
     ) {
+
+        public static PublicSavedStyleResponse from(SharedSavedStyleView savedStyle) {
+            return new PublicSavedStyleResponse(
+                    savedStyle.styleName(), savedStyle.imageUrl(), savedStyle.reason());
+        }
     }
 }

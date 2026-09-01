@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.persistence.LockModeType;
@@ -19,6 +20,8 @@ interface TreatmentRecordJpaRepository extends JpaRepository<TreatmentRecordEnti
 
     long deleteByRecordId(UUID recordId);
     long deleteAllByUserId(UUID userId);
+
+    List<TreatmentRecordEntity> findTop10ByUserIdOrderByPerformedAtDescRecordIdDesc(UUID userId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select record from TreatmentRecordEntity record where record.recordId = :recordId")

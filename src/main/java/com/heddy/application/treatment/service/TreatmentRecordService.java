@@ -5,6 +5,7 @@ import com.heddy.domain.file.model.FileStatus;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
 import com.heddy.domain.file.port.out.FileStoragePort;
 import com.heddy.domain.analysis.port.out.AnalysisStalenessPort;
+import com.heddy.domain.recommendation.port.out.RecommendationStalenessPort;
 import com.heddy.domain.treatment.exception.TreatmentError;
 import com.heddy.domain.treatment.exception.TreatmentException;
 import com.heddy.domain.treatment.model.ImageType;
@@ -55,18 +56,22 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     private final FileRepositoryPort fileRepositoryPort;
     private final FileStoragePort fileStoragePort;
     private final AnalysisStalenessPort analysisStalenessPort;
+    private final RecommendationStalenessPort recommendationStalenessPort;
 
     @Autowired
     public TreatmentRecordService(
             TreatmentRecordRepositoryPort recordRepositoryPort,
             FileRepositoryPort fileRepositoryPort,
             FileStoragePort fileStoragePort,
-            ObjectProvider<AnalysisStalenessPort> analysisStalenessPortProvider
+            ObjectProvider<AnalysisStalenessPort> analysisStalenessPortProvider,
+            ObjectProvider<RecommendationStalenessPort> recommendationStalenessPortProvider
     ) {
         this.recordRepositoryPort = recordRepositoryPort;
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = analysisStalenessPortProvider.getIfAvailable(() -> recordId -> { });
+        this.recommendationStalenessPort = recommendationStalenessPortProvider
+                .getIfAvailable(() -> recordId -> { });
     }
 
     /** 분석 도메인이 없는 단위 테스트와의 호환을 위한 생성자. */
@@ -79,6 +84,7 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = recordId -> { };
+        this.recommendationStalenessPort = recordId -> { };
     }
 
     TreatmentRecordService(
@@ -91,6 +97,7 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = analysisStalenessPort;
+        this.recommendationStalenessPort = recordId -> { };
     }
 
     @Override
@@ -172,6 +179,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                 }
             });
         }
+        // FK CASCADE로 근거 행이 사라지기 전에 해당 추천 실행을 이력 상태로 전환한다.
+        recommendationStalenessPort.markByReferenceRecordStale(record.recordId());
         // 공개 API에 소프트 삭제 개념이 없으므로 기록은 하드 삭제하고 사진 행은 FK CASCADE에 맡긴다.
         if (!recordRepositoryPort.deleteById(record.recordId())) {
             throw new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND);
@@ -345,7 +354,7 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     private void requireOwnedReadyFile(UUID requesterId, UUID fileId) {
         StoredFile file = fileRepositoryPort.findById(fileId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
-        if (!file.userId().equals(requesterId)) {
+        if (!requesterId.equals(file.userId())) {
             throw new ApplicationException(ErrorCode.FORBIDDEN_RESOURCE);
         }
         if (!file.isReady()) {

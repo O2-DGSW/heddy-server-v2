@@ -5,6 +5,7 @@ import com.heddy.adapter.in.web.account.dto.ConsentStatusResponse;
 import com.heddy.adapter.in.web.account.dto.ConsentsResponse;
 import com.heddy.domain.account.model.ConsentType;
 import com.heddy.domain.account.port.in.ConsentUseCase;
+import com.heddy.global.docs.ApiDocs;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,6 +35,8 @@ public class ConsentController {
     private final ConsentUseCase consentUseCase;
 
     @GetMapping
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
     @Operation(summary = "내 동의 상태 조회", description = "동의 유형별 최신 변경 이력을 조회합니다.")
     public ApiResponse<ConsentsResponse> getConsents(
             @AuthenticationPrincipal UUID userId,
@@ -45,6 +48,10 @@ public class ConsentController {
     }
 
     @PutMapping("/{consentType}")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @ApiDocs.Validated
+    @ApiDocs.Consent
     @Operation(
             summary = "내 동의 상태 변경",
             description = "변경 이력을 추가합니다. 필수 약관 철회는 회원 탈퇴 흐름을 이용해야 합니다.")

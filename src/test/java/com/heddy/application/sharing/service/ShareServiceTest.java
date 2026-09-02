@@ -50,7 +50,7 @@ class ShareServiceTest {
     private static final UUID USER_ID = UUID.randomUUID();
     private static final String RAW_TOKEN = "raw-share-token";
     private static final String TOKEN_HASH = "hash-" + RAW_TOKEN;
-    private static final String BASE_URL = "https://heddy.example.com/s";
+    private static final String BASE_URL = "https://heddy.site/s";
 
     @Mock ShareRepositoryPort shareRepositoryPort;
     @Mock TreatmentRecordRepositoryPort treatmentRecordRepositoryPort;

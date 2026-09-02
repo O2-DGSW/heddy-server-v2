@@ -403,7 +403,7 @@ class TreatmentRecordServiceTest {
         var result = service.list(listQuery());
 
         assertThat(result.items()).extracting(ListTreatmentRecordsUseCase.Item::analysisStatus)
-                .containsExactly("SUCCEEDED", null);
+                .containsExactly(AnalysisJobStatus.SUCCEEDED, null);
     }
 
     /** 사진이 바뀐 뒤의 기록은 STALE 이다. 완료로 뭉뚱그리면 옛 결과가 완료로 보인다. */
@@ -415,7 +415,8 @@ class TreatmentRecordServiceTest {
         given(latestAnalysisStatusPort.findLatestStatuses(anyCollection()))
                 .willReturn(Map.of(recordId, AnalysisJobStatus.STALE));
 
-        assertThat(service.list(listQuery()).items().get(0).analysisStatus()).isEqualTo("STALE");
+        assertThat(service.list(listQuery()).items().get(0).analysisStatus())
+                .isEqualTo(AnalysisJobStatus.STALE);
     }
 
     /** 페이지 전체를 한 번에 묻는다. 기록별 조회가 남아 있으면 호출 횟수에서 드러난다. */

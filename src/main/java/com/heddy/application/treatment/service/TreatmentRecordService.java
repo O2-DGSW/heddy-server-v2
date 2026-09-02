@@ -170,7 +170,7 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                         record, thumbnails.get(record.recordId()),
                         // 분석을 한 번도 요청하지 않은 기록은 상태 자체가 없어 null 로 둔다.
                         // 별도 값으로 바꾸면 클라이언트가 상태 6종에 없는 값을 알아야 한다.
-                        statusNameOf(analysisStatuses.get(record.recordId())),
+                        analysisStatuses.get(record.recordId()),
                         sharedRecordIds.contains(record.recordId())))
                 .toList();
         return new ListTreatmentRecordsUseCase.Result(
@@ -334,10 +334,6 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
 
     private boolean exceedsLength(String value, int maximum) {
         return value != null && value.strip().length() > maximum;
-    }
-
-    private static String statusNameOf(AnalysisJobStatus status) {
-        return status == null ? null : status.name();
     }
 
     private String normalizeFilter(String value) {

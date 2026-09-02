@@ -69,6 +69,12 @@ class TreatmentRecordEntity extends BaseEntity {
     @Column(name = "next_visit_cautions", columnDefinition = "text")
     private String nextVisitCautions;
 
+    @Column(name = "duration_minutes")
+    private Short durationMinutes;
+
+    @Column(name = "treatment_content", length = 255)
+    private String treatmentContent;
+
     protected TreatmentRecordEntity() {
     }
 
@@ -87,6 +93,9 @@ class TreatmentRecordEntity extends BaseEntity {
         appointmentId = record.appointmentId();
         memo = record.memo();
         nextVisitCautions = record.nextVisitCautions();
+        durationMinutes = record.durationMinutes() == null
+                ? null : record.durationMinutes().shortValue();
+        treatmentContent = record.treatmentContent();
     }
 
     TreatmentRecord toDomain(List<TreatmentPhoto> photos) {
@@ -97,6 +106,7 @@ class TreatmentRecordEntity extends BaseEntity {
                 recordId, userId, parsedServiceTypes, salonName, designerName, performedAt,
                 satisfaction == null ? null : satisfaction.intValue(),
                 priceAmount, priceCurrency, appointmentId, memo, nextVisitCautions,
+                durationMinutes == null ? null : durationMinutes.intValue(), treatmentContent,
                 photos, getCreatedAt());
     }
 
@@ -117,6 +127,9 @@ class TreatmentRecordEntity extends BaseEntity {
         appointmentId = record.appointmentId();
         memo = record.memo();
         nextVisitCautions = record.nextVisitCautions();
+        durationMinutes = record.durationMinutes() == null
+                ? null : record.durationMinutes().shortValue();
+        treatmentContent = record.treatmentContent();
     }
 
     private static ServiceType parseServiceType(String name) {

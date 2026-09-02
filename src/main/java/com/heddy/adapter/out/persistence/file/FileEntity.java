@@ -48,7 +48,7 @@ class FileEntity extends BaseEntity {
     private String contentType;
 
     /** 클라이언트가 선언한 원본 파일명. 키 생성에는 쓰지 않고 감사·표시 목적으로만 둔다. */
-    @Column(name = "file_name", length = 255)
+    @Column(name = "file_name", nullable = false, length = 255)
     private String fileName;
 
     @Column(name = "file_size", nullable = false)

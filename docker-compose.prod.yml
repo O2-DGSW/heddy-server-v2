@@ -29,6 +29,10 @@ services:
       # 실제 S3 를 쓰므로 운영 값은 빈 문자열이다. unset 만 아니면 통과시킨다.
       AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT:-}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required}
+      # QR/공유 버튼이 발급하는 URL의 앞부분. 운영 기본 도메인은 heddy.site 다.
+      # 이 줄이 없으면 애플리케이션 기본값(https://heddy.example.com/s)이 쓰여
+      # share_url 이 존재하지 않는 도메인으로 나간다. CORS 허용 오리진과 호스트를 맞춘다.
+      SHARE_PUBLIC_BASE_URL: ${SHARE_PUBLIC_BASE_URL:-https://heddy.site/s}
     ports:
       - "8080:8080"
     healthcheck:

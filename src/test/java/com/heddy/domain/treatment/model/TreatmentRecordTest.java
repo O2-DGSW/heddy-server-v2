@@ -327,4 +327,49 @@ class TreatmentRecordTest {
         }
         return record;
     }
+
+    /** 소요 시간은 0분 이상이다. 음수는 입력 실수이지 "모름"이 아니다. */
+    @Test
+    void refusesNegativeDurationMinutes() {
+        assertThatThrownBy(() -> TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.CUT), null, null,
+                Instant.now().minusSeconds(60), null, null, null, null, null, null, -1, null))
+                .isInstanceOf(TreatmentException.class)
+                .hasFieldOrPropertyWithValue("error", TreatmentError.DURATION_MINUTES_NEGATIVE);
+    }
+
+    /** 0분은 허용한다 — 실제로 걸린 시간을 모른다는 뜻이 아니라 값으로 받은 것이다. */
+    @Test
+    void keepsDurationAndContentAsGiven() {
+        TreatmentRecord record = TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.COLOR), null, null,
+                Instant.now().minusSeconds(60), null, null, null, null, null, null,
+                90, "  애쉬브라운 전체 염색  ");
+
+        assertThat(record.durationMinutes()).isEqualTo(90);
+        assertThat(record.treatmentContent()).isEqualTo("애쉬브라운 전체 염색");
+    }
+
+    /** 시술 내용은 메모와 별개 필드다. 한쪽만 넣어도 다른 쪽이 채워지지 않는다. */
+    @Test
+    void keepsTreatmentContentSeparateFromMemo() {
+        TreatmentRecord record = TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.COLOR), null, null,
+                Instant.now().minusSeconds(60), null, null, null, null, "개인 메모", null,
+                null, "애쉬브라운 전체 염색");
+
+        assertThat(record.memo()).isEqualTo("개인 메모");
+        assertThat(record.treatmentContent()).isEqualTo("애쉬브라운 전체 염색");
+    }
+
+    @Test
+    void refusesTreatmentContentLongerThanTheColumn() {
+        assertThatThrownBy(() -> TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.CUT), null, null,
+                Instant.now().minusSeconds(60), null, null, null, null, null, null,
+                null, "가".repeat(256)))
+                .isInstanceOf(TreatmentException.class)
+                .hasFieldOrPropertyWithValue("error", TreatmentError.TREATMENT_CONTENT_TOO_LONG);
+    }
+
 }

@@ -362,6 +362,53 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.items[2].analysis_status").value(nullValue()));
     }
 
+    /** 기록 추가 화면의 "소요 시간"·"시술 내용" 입력란이 실제로 저장되고 조회된다. */
+    @Test
+    void storesAndReturnsDurationAndTreatmentContent() throws Exception {
+        String created = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "service_types": ["COLOR"],
+                                  "performed_at": "2026-08-20T10:00:00Z",
+                                  "duration_minutes": 90,
+                                  "treatment_content": "애쉬브라운 전체 염색",
+                                  "memo": "개인 메모"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.duration_minutes").value(90))
+                .andExpect(jsonPath("$.data.treatment_content").value("애쉬브라운 전체 염색"))
+                // 시술 내용과 메모는 별개 필드다. 한쪽이 다른 쪽을 덮어쓰면 안 된다.
+                .andExpect(jsonPath("$.data.memo").value("개인 메모"))
+                .andReturn().getResponse().getContentAsString();
+        String recordId = new ObjectMapper().readTree(created).path("data").path("record_id").asText();
+
+        mockMvc.perform(get("/treatment-records/{recordId}", recordId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.duration_minutes").value(90))
+                .andExpect(jsonPath("$.data.treatment_content").value("애쉬브라운 전체 염색"));
+    }
+
+    @Test
+    void rejectsNegativeDurationMinutes() throws Exception {
+        mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "service_types": ["CUT"],
+                                  "performed_at": "2026-08-20T10:00:00Z",
+                                  "duration_minutes": -1
+                                }
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code")
+                        .value("TREATMENT_DURATION_MINUTES_NEGATIVE"));
+    }
+
     @Test
     void rejectsInvalidListRangePageAndSortAsBadRequest() throws Exception {
         mockMvc.perform(get("/treatment-records")

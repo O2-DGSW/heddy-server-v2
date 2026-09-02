@@ -151,8 +151,8 @@ class AnalysisOverlayPersistenceAdapterIntegrationTest extends PostgresIntegrati
         jdbcTemplate.update("""
                 INSERT INTO files (
                     file_id, upload_id, user_id, purpose, status, object_key,
-                    content_type, file_size, expires_at
-                ) VALUES (?, ?, ?, 'ANALYSIS_OVERLAY_INTERNAL', 'READY', ?, 'image/png', 2048,
+                    content_type, file_name, file_size, expires_at
+                ) VALUES (?, ?, ?, 'ANALYSIS_OVERLAY_INTERNAL', 'READY', ?, 'image/png', 'overlay.png', 2048,
                           now() + interval '5 minutes')
                 """, fileId, UUID.randomUUID(), USER_ID, "ANALYSIS_OVERLAY_INTERNAL/" + fileId);
         return fileId;
@@ -163,8 +163,8 @@ class AnalysisOverlayPersistenceAdapterIntegrationTest extends PostgresIntegrati
         jdbcTemplate.update("""
                 INSERT INTO files (
                     file_id, upload_id, user_id, purpose, status, object_key,
-                    content_type, file_size, expires_at
-                ) VALUES (?, ?, ?, 'TREATMENT_PHOTO', 'READY', ?, 'image/jpeg', 1024,
+                    content_type, file_name, file_size, expires_at
+                ) VALUES (?, ?, ?, 'TREATMENT_PHOTO', 'READY', ?, 'image/jpeg', 'photo.jpg', 1024,
                           now() + interval '5 minutes')
                 """, fileId, UUID.randomUUID(), USER_ID, "TREATMENT_PHOTO/" + USER_ID + "/" + fileId);
         UUID newPhotoId = UUID.randomUUID();

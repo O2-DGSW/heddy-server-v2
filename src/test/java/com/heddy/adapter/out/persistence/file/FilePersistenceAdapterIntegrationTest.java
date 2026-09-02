@@ -259,7 +259,7 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
         assertColumn("status", "character varying", 20, false);
         assertColumn("object_key", "character varying", 500, false);
         assertColumn("content_type", "character varying", 100, false);
-        assertColumn("file_name", "character varying", 255, true);
+        assertColumn("file_name", "character varying", 255, false);
         assertColumn("file_size", "bigint", null, false);
         assertColumn("sha256", "character varying", 64, true);
         assertColumn("width", "integer", null, true);
@@ -284,6 +284,25 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
                 WHERE status = 'PENDING' AND expires_at <= now()
                 """, String.class));
         assertThat(plan).contains("idx_files_status_expires_at");
+    }
+
+    /**
+     * 도메인이 fileName 을 필수로 요구하므로(StoredFile) 값이 없는 행은 읽는 순간 터진다.
+     * 실제로 값이 없는 행이 남아 있어 시술기록 목록 조회가 통째로 500 이 됐다(#122).
+     *
+     * <p>애플리케이션 경로로는 이런 행을 만들 수 없어 이 테스트는 SQL 로 직접 넣는다.
+     * 도메인을 거치면 값이 없다는 사실이 저장 계층에 닿기 전에 걸리기 때문이다.
+     */
+    @Test
+    void refusesFileRowsWithoutFileName() {
+        assertThatThrownBy(() -> jdbcTemplate.update("""
+                INSERT INTO files (
+                    file_id, upload_id, user_id, owner_type, purpose, status,
+                    object_key, content_type, file_name, file_size, expires_at
+                ) VALUES (?, ?, ?, 'USER', 'TREATMENT_PHOTO', 'PENDING',
+                    'TREATMENT_PHOTO/nameless.jpg', 'image/jpeg', NULL, 1024, now())
+                """, UUID.randomUUID(), UUID.randomUUID(), USER_ID))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test

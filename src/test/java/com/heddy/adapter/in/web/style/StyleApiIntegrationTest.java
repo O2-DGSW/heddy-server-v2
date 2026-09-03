@@ -23,7 +23,10 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -273,6 +276,135 @@ class StyleApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.error.code").value("AUTH_ACCOUNT_DELETED"));
     }
 
+    @Test
+    void createsListsUpdatesAndDeletesSavedStyle() throws Exception {
+        String createdBody = mockMvc.perform(post("/saved-styles")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(RequestIdFilter.HEADER, "request-saved-style")
+                        .content("""
+                                {
+                                  "style_name":"레이어드 커트",
+                                  "image_url":"https://example.com/layered.jpg",
+                                  "reason":"과거 만족도가 높은 커트와 유사함",
+                                  "memo":"상담 때 보여주기"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.saved_style_id").isNotEmpty())
+                .andExpect(jsonPath("$.data.style_name").value("레이어드 커트"))
+                .andExpect(jsonPath("$.data.memo").value("상담 때 보여주기"))
+                .andExpect(jsonPath("$.request_id").value("request-saved-style"))
+                .andReturn().getResponse().getContentAsString();
+        String savedStyleId = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(createdBody).at("/data/saved_style_id").asText();
+
+        mockMvc.perform(get("/saved-styles")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].saved_style_id").value(savedStyleId))
+                .andExpect(jsonPath("$.data.page.total_elements").value(1));
+
+        mockMvc.perform(patch("/saved-styles/{savedStyleId}", savedStyleId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"memo\":\"다음 방문에 보여주기\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.memo").value("다음 방문에 보여주기"));
+
+        mockMvc.perform(patch("/saved-styles/{savedStyleId}", savedStyleId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"memo\":null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.memo").doesNotExist());
+
+        mockMvc.perform(delete("/saved-styles/{savedStyleId}", savedStyleId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent());
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM saved_styles WHERE user_id = ?",
+                Integer.class, USER_ID)).isZero();
+    }
+
+    @Test
+    void deletingSavedStyleAlsoRemovesItFromExistingShare() throws Exception {
+        UUID savedStyleId = createSavedStyle(
+                USER_ID, "공유 후보", "https://example.com/shared.jpg");
+        UUID shareId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO shares (share_id, user_id, token_hash, status, expires_at)
+                VALUES (?, ?, ?, 'ACTIVE', now() + interval '1 day')
+                """, shareId, USER_ID,
+                UUID.randomUUID().toString().replace("-", "")
+                        + UUID.randomUUID().toString().replace("-", ""));
+        jdbcTemplate.update("""
+                INSERT INTO share_saved_styles (share_id, saved_style_id) VALUES (?, ?)
+                """, shareId, savedStyleId);
+
+        mockMvc.perform(delete("/saved-styles/{savedStyleId}", savedStyleId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNoContent());
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM share_saved_styles WHERE saved_style_id = ?",
+                Integer.class, savedStyleId)).isZero();
+    }
+
+    @Test
+    void rejectsDuplicateSavedStyleAndKeepsOtherUsersCandidatesPrivate() throws Exception {
+        createSavedStyle(USER_ID, "보브", "https://example.com/bob.jpg");
+
+        mockMvc.perform(post("/saved-styles")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(savedStyleBody("보브", "https://example.com/bob.jpg")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("SAVED_STYLE_DUPLICATED"));
+
+        UUID otherStyleId = createSavedStyle(
+                OTHER_USER_ID, "숏컷", "https://example.com/short.jpg");
+        mockMvc.perform(patch("/saved-styles/{savedStyleId}", otherStyleId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"memo\":\"가져오기\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+        mockMvc.perform(delete("/saved-styles/{savedStyleId}", otherStyleId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void rejectsTwentyFirstSavedStyle() throws Exception {
+        for (int index = 0; index < 20; index++) {
+            createSavedStyle(USER_ID, "스타일 " + index,
+                    "https://example.com/style-" + index + ".jpg");
+        }
+
+        mockMvc.perform(post("/saved-styles")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(savedStyleBody("초과", "https://example.com/overflow.jpg")))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("SAVED_STYLE_LIMIT_EXCEEDED"));
+    }
+
+    @Test
+    void requiresMemoFieldForSavedStylePatch() throws Exception {
+        UUID savedStyleId = createSavedStyle(
+                USER_ID, "레이어드", "https://example.com/layered-2.jpg");
+
+        mockMvc.perform(patch("/saved-styles/{savedStyleId}", savedStyleId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
     private void savePreferences(UUID userId, UUID preferredTagId, UUID excludedTagId)
             throws Exception {
         mockMvc.perform(put("/me/style-preferences")
@@ -281,6 +413,28 @@ class StyleApiIntegrationTest extends PostgresIntegrationTest {
                         .content(preferenceBody(
                                 List.of(preferredTagId), List.of(excludedTagId))))
                 .andExpect(status().isOk());
+    }
+
+    private UUID createSavedStyle(UUID userId, String styleName, String imageUrl)
+            throws Exception {
+        String response = mockMvc.perform(post("/saved-styles")
+                        .with(authentication(userAuthentication(userId)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(savedStyleBody(styleName, imageUrl)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return UUID.fromString(new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(response).at("/data/saved_style_id").asText());
+    }
+
+    private String savedStyleBody(String styleName, String imageUrl) {
+        return """
+                {
+                  "style_name":"%s",
+                  "image_url":"%s",
+                  "reason":"추천 이유"
+                }
+                """.formatted(styleName, imageUrl);
     }
 
     private UsernamePasswordAuthenticationToken userAuthentication(UUID userId) {

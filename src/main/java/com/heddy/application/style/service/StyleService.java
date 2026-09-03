@@ -6,6 +6,7 @@ import com.heddy.domain.account.model.Account;
 import com.heddy.domain.account.port.out.AccountRepositoryPort;
 import com.heddy.domain.style.exception.StyleError;
 import com.heddy.domain.style.exception.StyleException;
+import com.heddy.domain.style.model.HairColor;
 import com.heddy.domain.style.model.StyleTag;
 import com.heddy.domain.style.model.StyleTagCategory;
 import com.heddy.domain.style.model.UserStylePreference;
@@ -13,6 +14,7 @@ import com.heddy.domain.style.model.UserStylePreference.PreferenceType;
 import com.heddy.domain.style.port.in.SaveStylePreferencesCommand;
 import com.heddy.domain.style.port.in.StylePreferencesResult;
 import com.heddy.domain.style.port.in.StyleUseCase;
+import com.heddy.domain.style.port.out.HairColorRepositoryPort;
 import com.heddy.domain.style.port.out.StyleTagRepositoryPort;
 import com.heddy.domain.style.port.out.UserStylePreferenceRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -36,11 +38,17 @@ public class StyleService implements StyleUseCase {
 
     private final AccountRepositoryPort accountRepositoryPort;
     private final StyleTagRepositoryPort styleTagRepositoryPort;
+    private final HairColorRepositoryPort hairColorRepositoryPort;
     private final UserStylePreferenceRepositoryPort preferenceRepositoryPort;
 
     @Override
     public List<StyleTag> getStyleTags(StyleTagCategory category) {
         return styleTagRepositoryPort.findAll(category);
+    }
+
+    @Override
+    public List<HairColor> getHairColors() {
+        return hairColorRepositoryPort.findAllActive();
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -34,6 +35,28 @@ public class SavedStylePersistenceAdapter implements SavedStyleRepositoryPort {
                 .stream()
                 .map(SavedStyleEntity::toDomain)
                 .toList();
+    }
+
+    @Override
+    public List<SavedStyle> findAllByUserId(UUID userId) {
+        return repository.findAllByUserIdOrderByCreatedAtDescSavedStyleIdDesc(userId).stream()
+                .map(SavedStyleEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<SavedStyle> findByIdAndUserId(UUID savedStyleId, UUID userId) {
+        return repository.findBySavedStyleIdAndUserId(savedStyleId, userId)
+                .map(SavedStyleEntity::toDomain);
+    }
+
+    @Override
+    public boolean deleteById(UUID savedStyleId) {
+        boolean deleted = repository.deleteBySavedStyleId(savedStyleId) == 1;
+        if (deleted) {
+            repository.flush();
+        }
+        return deleted;
     }
 
     @Override

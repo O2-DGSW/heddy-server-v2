@@ -42,13 +42,16 @@ class MySummaryJdbcAdapterIntegrationTest extends PostgresIntegrationTest {
                 .isEqualTo(new MySummary(0, 0, 0, 0));
     }
 
-    /** 같은 기록으로 링크를 여러 번 만들어도 기록은 하나다. 여기서 3 이 나오면 정의가 틀린 것. */
+    /**
+     * 한 기록이 여러 링크에 담길 수 있다 — 대상 구성이 다르면 링크는 공존한다(V31). 그래도
+     * "공유 중인 기록" 은 하나다. 여기서 3 이 나오면 행을 세고 있다는 뜻이다.
+     */
     @Test
     void countsARecordOnceEvenWhenSeveralLinksPointAtIt() {
-        UUID recordId = insertRecord(OWNER_ID);
-        insertShare(OWNER_ID, recordId, "ACTIVE", NOW.plusSeconds(60));
-        insertShare(OWNER_ID, recordId, "ACTIVE", NOW.plusSeconds(120));
-        insertShare(OWNER_ID, recordId, "ACTIVE", NOW.plusSeconds(180));
+        UUID shared = insertRecord(OWNER_ID);
+        insertShare(OWNER_ID, shared, "ACTIVE", NOW.plusSeconds(60));
+        insertShare(OWNER_ID, shared, "ACTIVE", NOW.plusSeconds(120));
+        insertShare(OWNER_ID, shared, "ACTIVE", NOW.plusSeconds(180));
 
         assertThat(adapter.count(OWNER_ID, NOW).sharedRecordCount()).isEqualTo(1);
     }
@@ -135,8 +138,9 @@ class MySummaryJdbcAdapterIntegrationTest extends PostgresIntegrationTest {
     private UUID insertShare(UUID ownerId, UUID recordId, String status, Instant expiresAt) {
         UUID shareId = UUID.randomUUID();
         jdbcTemplate.update("""
-                INSERT INTO shares (share_id, user_id, token_hash, status, expires_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO shares (
+                    share_id, user_id, token_hash, target_hash, status, expires_at
+                ) VALUES (?, ?, ?, md5(random()::text), ?, ?)
                 """, shareId, ownerId, UUID.randomUUID().toString().replace("-", ""),
                 status, Timestamp.from(expiresAt));
         if (recordId != null) {

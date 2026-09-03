@@ -5,6 +5,7 @@ import com.heddy.domain.sharing.model.SharePage;
 import com.heddy.domain.sharing.model.ShareStatus;
 import com.heddy.domain.sharing.port.out.ShareRepositoryPort;
 import com.heddy.domain.sharing.port.out.SharedRecordLookupPort;
+import com.heddy.domain.account.port.out.TokenHasherPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,10 +25,24 @@ public class SharingPersistenceAdapter implements ShareRepositoryPort, SharedRec
     private static final int MAX_PAGE_SIZE = 100;
 
     private final ShareJpaRepository shareRepository;
+    /** 토큰과 같은 SHA-256 을 대상 구성에도 쓴다. 해시 계산이 한 곳이어야 값이 갈리지 않는다. */
+    private final TokenHasherPort tokenHasherPort;
 
     @Override
     public Share insert(Share share) {
-        return shareRepository.saveAndFlush(new ShareEntity(share)).toDomain();
+        return shareRepository
+                .saveAndFlush(new ShareEntity(share, targetHash(share.targetKey())))
+                .toDomain();
+    }
+
+    @Override
+    public int revokeActiveWithSameTarget(UUID userId, String targetKey, Instant revokedAt) {
+        return shareRepository.revokeActiveWithSameTarget(
+                userId, targetHash(targetKey), revokedAt);
+    }
+
+    private String targetHash(String targetKey) {
+        return tokenHasherPort.hash(targetKey);
     }
 
     @Override

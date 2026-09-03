@@ -22,6 +22,16 @@ public interface ShareRepositoryPort {
      */
     Optional<Share> findByIdAndUserId(UUID shareId, UUID userId);
 
+    /**
+     * 같은 대상 구성을 가리키는 이 소유자의 활성 공유를 모두 폐기한다.
+     *
+     * <p>만료 여부를 보지 않는 것이 중요하다. 부분 유니크 인덱스의 조건이 상태뿐이라(V31)
+     * 만료됐지만 상태가 ACTIVE 인 행을 남겨 두면 다음 발급이 인덱스에 걸린다.
+     *
+     * @return 폐기된 공유 수
+     */
+    int revokeActiveWithSameTarget(UUID userId, String targetKey, Instant revokedAt);
+
     /** 토큰 해시 대조로 조회한다. 공개 조회(#51)의 유일한 진입 경로다. */
     Optional<Share> findByTokenHash(String tokenHash);
 

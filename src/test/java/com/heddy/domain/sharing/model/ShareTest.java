@@ -5,6 +5,8 @@ import com.heddy.domain.sharing.exception.SharingException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -126,6 +128,32 @@ class ShareTest {
         assertThatThrownBy(() -> share.update(fields(), NOW, requestTime))
                 .isInstanceOfSatisfying(SharingException.class,
                         e -> assertThat(e.error()).isEqualTo(SharingError.EXPIRES_AT_NOT_FUTURE));
+    }
+
+    /** 고르는 순서는 대상의 일부가 아니다. 순서가 남으면 같은 조합으로 링크가 무한히 쌓인다. */
+    @Test
+    void buildsTheSameTargetKeyRegardlessOfSelectionOrder() {
+        UUID first = UUID.fromString("11111111-1111-4111-8111-111111111111");
+        UUID second = UUID.fromString("22222222-2222-4222-8222-222222222222");
+
+        Share ascending = Share.create(USER_ID, TOKEN_HASH,
+                new LinkedHashSet<>(List.of(first, second)), Set.of(), fields(), 1, NOW);
+        Share descending = Share.create(USER_ID, TOKEN_HASH,
+                new LinkedHashSet<>(List.of(second, first)), Set.of(), fields(), 1, NOW);
+
+        assertThat(ascending.targetKey()).isEqualTo(descending.targetKey());
+        assertThat(ascending.targetKey()).isEqualTo(first + "," + second + "|");
+    }
+
+    /** 기록만 고른 공유와 후보만 고른 공유는 다른 대상이다. 구분자가 없으면 둘이 섞인다. */
+    @Test
+    void separatesRecordsFromSavedStylesInTheTargetKey() {
+        UUID id = UUID.randomUUID();
+
+        Share byRecord = Share.create(USER_ID, TOKEN_HASH, Set.of(id), Set.of(), fields(), 1, NOW);
+        Share byStyle = Share.create(USER_ID, TOKEN_HASH, Set.of(), Set.of(id), fields(), 1, NOW);
+
+        assertThat(byRecord.targetKey()).isNotEqualTo(byStyle.targetKey());
     }
 
     private static Set<ShareFieldType> fields() {

@@ -1025,8 +1025,9 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
     private void insertShare(UUID ownerId, UUID recordId, String status, Instant expiresAt) {
         UUID shareId = UUID.randomUUID();
         jdbcTemplate.update("""
-                INSERT INTO shares (share_id, user_id, token_hash, status, expires_at, revoked_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO shares (
+                    share_id, user_id, token_hash, target_hash, status, expires_at, revoked_at
+                ) VALUES (?, ?, ?, md5(random()::text), ?, ?, ?)
                 """, shareId, ownerId, UUID.randomUUID().toString().replace("-", ""),
                 status, Timestamp.from(expiresAt),
                 "REVOKED".equals(status) ? Timestamp.from(Instant.now()) : null);

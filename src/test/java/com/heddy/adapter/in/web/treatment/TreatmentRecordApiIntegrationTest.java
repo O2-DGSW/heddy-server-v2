@@ -464,6 +464,34 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
+    void rejectsUnknownFieldsInPatchInsteadOfSilentlyDroppingThem() throws Exception {
+        UUID fileId = readyFile(USER_ID);
+        String recordId = createRecord(USER_ID);
+
+        // photos 는 이 API 가 받지 않는 필드다. 조용히 버리고 200 을 주면 클라이언트는
+        // 사진이 교체된 줄 알고 옛 사진이 남은 화면을 본다.
+        mockMvc.perform(patch("/treatment-records/" + recordId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"memo":"메모는 정상 필드",
+                                 "photos":[{"file_id":"%s","image_type":"BEFORE"}]}
+                                """.formatted(fileId)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.error.field_errors[*].field")
+                        .value(hasItem("known_fields_only")))
+                .andExpect(jsonPath("$.error.field_errors[*].reason")
+                        .value(hasItem(containsString("/photos"))));
+
+        // 거절된 요청은 정상 필드까지 포함해 아무것도 반영하지 않는다.
+        var stored = jdbcTemplate.queryForMap(
+                "SELECT memo FROM treatment_records WHERE record_id = ?",
+                UUID.fromString(recordId));
+        assertThat(stored.get("memo")).isEqualTo("기존 메모");
+    }
+
+    @Test
     void rejectsFuturePerformedAtAndHidesForeignRecordDuringPatch() throws Exception {
         String ownRecordId = createRecord(USER_ID);
         mockMvc.perform(patch("/treatment-records/" + ownRecordId)

@@ -24,10 +24,12 @@ public interface ManageTreatmentPhotosUseCase {
     ) {
     }
 
+    /** 셋 다 null 이면 바꿀 것이 없다. {@code fileId} 는 사진이 가리키는 파일을 교체한다. */
     record UpdateCommand(
             UUID requesterId,
             UUID recordId,
             UUID photoId,
+            UUID fileId,
             ImageType imageType,
             Integer sortOrder
     ) {

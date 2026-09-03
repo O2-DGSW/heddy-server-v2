@@ -199,8 +199,11 @@ public class TreatmentRecordController {
     @ApiDocs.Authenticated
     @ApiDocs.Validated
     @ApiDocs.OwnedResource
-    @Operation(summary = "시술기록 사진 정보 수정",
-            description = "사진 유형이나 표시 순서 중 전달한 값을 수정합니다.")
+    @ApiDocs.PhotoAttachment
+    @Operation(summary = "시술기록 사진 수정",
+            description = "가리키는 파일, 사진 유형, 표시 순서 중 전달한 값을 수정합니다. "
+                    + "file_id 를 보내면 사진을 다른 파일로 교체하며 photo_id 는 그대로 둡니다 "
+                    + "— 삭제 후 재등록과 달리 표시 순서와 이 사진을 참조하는 분석 결과가 끊기지 않습니다.")
     public ApiResponse<TreatmentPhotoResponse> updatePhoto(
             @AuthenticationPrincipal UUID userId,
             @Parameter(description = "시술기록 식별자. 남의 기록은 존재 여부를 드러내지 않게 "

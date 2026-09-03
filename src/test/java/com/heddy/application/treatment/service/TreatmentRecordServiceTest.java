@@ -630,11 +630,60 @@ class TreatmentRecordServiceTest {
                 .willReturn(URI.create("https://bucket.example/photo"));
 
         var result = service.update(new ManageTreatmentPhotosUseCase.UpdateCommand(
-                USER_ID, recordId, photo.photoId(), ImageType.AFTER, 5));
+                USER_ID, recordId, photo.photoId(), null, ImageType.AFTER, 5));
 
         assertThat(result.photo().imageType()).isEqualTo(ImageType.AFTER);
         assertThat(result.photo().sortOrder()).isEqualTo(5);
         verify(analysisStalenessPort).markLatestStale(recordId);
+    }
+
+    @Test
+    void replacesTheFileBehindAPhotoKeepingItsIdentifier() {
+        UUID recordId = UUID.randomUUID();
+        UUID oldFileId = UUID.randomUUID();
+        UUID newFileId = UUID.randomUUID();
+        TreatmentPhoto photo = new TreatmentPhoto(
+                UUID.randomUUID(), recordId, oldFileId, ImageType.AFTER, 2, Instant.now());
+        TreatmentRecord record = recordWithPhotos(recordId, List.of(photo));
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
+        given(recordRepositoryPort.updatePhoto(any())).willAnswer(invocation ->
+                Optional.of(invocation.getArgument(0)));
+        given(recordRepositoryPort.isFileAttached(newFileId)).willReturn(false);
+        given(fileRepositoryPort.findById(newFileId))
+                .willReturn(Optional.of(readyFile(newFileId)));
+        given(fileStoragePort.createDownloadUrl(any()))
+                .willReturn(URI.create("https://bucket.example/photo"));
+
+        var result = service.update(new ManageTreatmentPhotosUseCase.UpdateCommand(
+                USER_ID, recordId, photo.photoId(), newFileId, null, null));
+
+        assertThat(result.photo().fileId()).isEqualTo(newFileId);
+        assertThat(result.photo().photoId()).isEqualTo(photo.photoId());
+        assertThat(result.photo().imageType()).isEqualTo(ImageType.AFTER);
+        assertThat(result.photo().sortOrder()).isEqualTo(2);
+        // AFTER 사진의 내용이 바뀌었으니 그 사진으로 낸 분석 결과는 더 이상 맞지 않는다.
+        verify(analysisStalenessPort).markLatestStale(recordId);
+    }
+
+    @Test
+    void refusesToPointTwoPhotosAtTheSameFile() {
+        UUID recordId = UUID.randomUUID();
+        UUID sharedFileId = UUID.randomUUID();
+        TreatmentPhoto photo = new TreatmentPhoto(
+                UUID.randomUUID(), recordId, UUID.randomUUID(), ImageType.BEFORE, 0, Instant.now());
+        TreatmentRecord record = recordWithPhotos(recordId, List.of(photo));
+        given(recordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(record));
+        given(fileRepositoryPort.findById(sharedFileId))
+                .willReturn(Optional.of(readyFile(sharedFileId)));
+        given(recordRepositoryPort.isFileAttached(sharedFileId)).willReturn(true);
+
+        assertThatThrownBy(() -> service.update(new ManageTreatmentPhotosUseCase.UpdateCommand(
+                USER_ID, recordId, photo.photoId(), sharedFileId, null, null)))
+                .isInstanceOf(ApplicationException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FILE_INVALID_STATE);
+        verify(recordRepositoryPort, never()).updatePhoto(any());
     }
 
     @Test

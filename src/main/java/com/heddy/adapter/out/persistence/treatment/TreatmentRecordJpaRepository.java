@@ -23,6 +23,12 @@ interface TreatmentRecordJpaRepository extends JpaRepository<TreatmentRecordEnti
 
     List<TreatmentRecordEntity> findTop10ByUserIdOrderByPerformedAtDescRecordIdDesc(UUID userId);
 
+    long countByUserId(UUID userId);
+
+    @Query("select max(record.satisfaction) from TreatmentRecordEntity record "
+            + "where record.userId = :userId")
+    Short findHighestSatisfactionByUserId(@Param("userId") UUID userId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select record from TreatmentRecordEntity record where record.recordId = :recordId")
     java.util.Optional<TreatmentRecordEntity> findByIdForUpdate(@Param("recordId") UUID recordId);

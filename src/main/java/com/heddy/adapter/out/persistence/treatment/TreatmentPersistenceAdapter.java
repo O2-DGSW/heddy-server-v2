@@ -2,6 +2,7 @@ package com.heddy.adapter.out.persistence.treatment;
 
 import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
+import com.heddy.domain.treatment.model.TreatmentHistorySummary;
 import com.heddy.domain.treatment.model.TreatmentRecordFilter;
 import com.heddy.domain.treatment.model.TreatmentRecordPage;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
@@ -124,6 +125,13 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
                 .stream().limit(Math.min(limit, 10))
                 .map(entity -> entity.toDomain(List.of()))
                 .toList();
+    }
+
+    @Override
+    public TreatmentHistorySummary summarizeByUserId(UUID userId) {
+        Short highest = recordRepository.findHighestSatisfactionByUserId(userId);
+        return new TreatmentHistorySummary(recordRepository.countByUserId(userId),
+                highest == null ? null : highest.intValue());
     }
 
     private List<TreatmentPhoto> photosOf(UUID recordId) {

@@ -13,6 +13,7 @@ import com.heddy.domain.recommendation.exception.RecommendationError;
 import com.heddy.domain.recommendation.exception.RecommendationException;
 import com.heddy.domain.recommendation.model.HairstyleCandidate;
 import com.heddy.domain.recommendation.model.RecommendationContext;
+import com.heddy.domain.recommendation.model.RecommendationBasis;
 import com.heddy.domain.recommendation.model.RecommendationItem;
 import com.heddy.domain.recommendation.model.RecommendationReason;
 import com.heddy.domain.recommendation.model.RecommendationReference;
@@ -30,6 +31,7 @@ import com.heddy.domain.style.model.UserStylePreference;
 import com.heddy.domain.style.port.out.SavedStyleRepositoryPort;
 import com.heddy.domain.style.port.out.UserStylePreferenceRepositoryPort;
 import com.heddy.domain.treatment.model.TreatmentRecord;
+import com.heddy.domain.treatment.model.TreatmentHistorySummary;
 import com.heddy.domain.treatment.port.out.TreatmentRecordRepositoryPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -128,16 +130,17 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         Set<UUID> excluded = preferenceIds(preferences, UserStylePreference.PreferenceType.EXCLUDED);
         Set<UUID> saved = Set.copyOf(savedStyleRepositoryPort.findHairstyleIdsByUserId(userId));
         List<TreatmentRecord> treatments = treatmentRepositoryPort.findRecentByUserId(userId, 10);
+        TreatmentHistorySummary treatmentHistory = treatmentRepositoryPort.summarizeByUserId(userId);
         List<HairstyleCandidate> candidates = catalogRepositoryPort.findEligibleCandidates();
         RecommendationContext context = new RecommendationContext(
                 profile, preferred, excluded, saved, treatments, generatedAt);
 
-        String canonical = canonicalSnapshot(context, candidates);
+        String canonical = canonicalSnapshot(context, candidates, treatmentHistory);
         String inputHash = sha256(canonical);
         if (!forceRefresh) {
             RecommendationRun reusable = recommendationRepositoryPort.findActiveByInputHash(
                     userId, RecommendationRun.Strategy.RULE_BASED_V1.name(), inputHash).orElse(null);
-            if (reusable != null) {
+            if (reusable != null && reusable.recommendationBasis() != null) {
                 return render(reusable);
             }
         }
@@ -152,9 +155,10 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         UUID runId = UUID.randomUUID();
         List<RecommendationItem> items = java.util.stream.IntStream.range(0, selected.size())
                 .mapToObj(index -> toItem(selected.get(index), index + 1, records)).toList();
+        RecommendationBasis basis = recommendationBasis(context, treatmentHistory, selected);
         RecommendationRun run = new RecommendationRun(runId, userId,
                 RecommendationRun.Strategy.RULE_BASED_V1, RecommendationRun.Status.ACTIVE,
-                inputHash, context.coldStart(), generatedAt, items);
+                inputHash, context.coldStart(), basis, generatedAt, items);
         return render(recommendationRepositoryPort.insert(run, canonical));
     }
 
@@ -190,7 +194,27 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             return new RecommendationResult.Item(item, hairstyle, url);
         }).toList();
         return new RecommendationResult(run.recommendationRunId(), run.strategy(), run.status(),
-                run.generatedAt(), run.fallback(), items);
+                run.generatedAt(), run.fallback(), run.recommendationBasis(), items);
+    }
+
+    private RecommendationBasis recommendationBasis(
+            RecommendationContext context,
+            TreatmentHistorySummary treatmentHistory,
+            List<ScoredRecommendation> selected
+    ) {
+        HairProfile profile = context.hairProfile();
+        RecommendationBasis.CurrentHair currentHair = profile == null ? null
+                : new RecommendationBasis.CurrentHair(profile.hairType(), profile.hairCondition(),
+                        profile.hairLength(), profile.hairThickness());
+        return new RecommendationBasis(
+                new RecommendationBasis.TreatmentHistory(
+                        treatmentHistory.count(), treatmentHistory.highestSatisfaction()),
+                Math.toIntExact(selected.stream()
+                        .filter(result -> result.candidate().supportsAr()).count()),
+                new RecommendationBasis.StylePreferences(
+                        context.preferredTagIds().size(), context.excludedTagIds().size()),
+                currentHair,
+                profile == null ? null : profile.availableCareTimeMinutes());
     }
 
     private RecommendationItem toItem(
@@ -218,7 +242,8 @@ public class RecommendationService implements GenerateRecommendationUseCase,
 
     private String canonicalSnapshot(
             RecommendationContext context,
-            List<HairstyleCandidate> candidates
+            List<HairstyleCandidate> candidates,
+            TreatmentHistorySummary treatmentHistory
     ) {
         StringBuilder value = new StringBuilder("RULE_BASED_V1|");
         HairProfile profile = context.hairProfile();
@@ -230,13 +255,16 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         appendSorted(value, context.preferredTagIds());
         appendSorted(value, context.excludedTagIds());
         appendSorted(value, context.savedHairstyleIds());
+        value.append('|').append(treatmentHistory.count()).append(':')
+                .append(treatmentHistory.highestSatisfaction());
         context.recentTreatments().stream().sorted(Comparator.comparing(TreatmentRecord::recordId))
                 .forEach(record -> value.append('|').append(record.recordId()).append(':')
                         .append(record.performedAt()).append(':').append(record.satisfaction()).append(':')
                         .append(record.serviceTypes().stream().map(Enum::name).sorted().toList()));
         candidates.stream().sorted(Comparator.comparing(HairstyleCandidate::hairstyleId))
                 .forEach(candidate -> value.append('|').append(candidate.hairstyleId()).append(':')
-                        .append(candidate.assetVersion()).append(':').append(candidate.metadataVersion()));
+                        .append(candidate.assetVersion()).append(':').append(candidate.metadataVersion())
+                        .append(':').append(candidate.arMode()));
         return value.toString();
     }
 

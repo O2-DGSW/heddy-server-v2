@@ -1,6 +1,7 @@
 package com.heddy.adapter.in.web.recommendation;
 
 import com.heddy.support.PostgresIntegrationTest;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +49,7 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired JdbcTemplate jdbcTemplate;
+    @Autowired EntityManager entityManager;
 
     private UUID treatmentRecordId;
 
@@ -71,9 +73,12 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
                     (record_id, user_id, service_types, performed_at, satisfaction)
                 VALUES (?, ?, '["CUT"]'::jsonb, now() - interval '1 day', 5)
                 """, treatmentRecordId, USER_ID);
-        insertStyle("94000000-0000-4000-8000-000000000001", "레이어드 C컬", "MEDIUM", 30, true);
-        insertStyle("94000000-0000-4000-8000-000000000002", "내추럴 보브", "BOB", 20, false);
-        insertStyle("94000000-0000-4000-8000-000000000003", "소프트 웨이브", "LONG", 10, false);
+        insertStyle("94000000-0000-4000-8000-000000000001", "레이어드 C컬",
+                "MEDIUM", "OVERLAY", 30, true);
+        insertStyle("94000000-0000-4000-8000-000000000002", "내추럴 보브",
+                "BOB", "OVERLAY", 20, false);
+        insertStyle("94000000-0000-4000-8000-000000000003", "소프트 웨이브",
+                "LONG", "NONE", 10, false);
     }
 
     @Test
@@ -85,9 +90,28 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.strategy").value("RULE_BASED_V1"))
                 .andExpect(jsonPath("$.data.fallback").value(false))
+                .andExpect(jsonPath("$.data.recommendation_basis.treatment_history.count").value(1))
+                .andExpect(jsonPath("$.data.recommendation_basis.treatment_history"
+                        + ".highest_satisfaction").value(5))
+                .andExpect(jsonPath("$.data.recommendation_basis.ar_candidate_style_count").value(2))
+                .andExpect(jsonPath("$.data.recommendation_basis.style_preferences"
+                        + ".preferred_count").value(1))
+                .andExpect(jsonPath("$.data.recommendation_basis.style_preferences"
+                        + ".excluded_count").value(0))
+                .andExpect(jsonPath("$.data.recommendation_basis.current_hair.hair_type")
+                        .value("WAVY"))
+                .andExpect(jsonPath("$.data.recommendation_basis.current_hair.hair_condition")
+                        .value("HEALTHY"))
+                .andExpect(jsonPath("$.data.recommendation_basis.current_hair.hair_length")
+                        .value("BELOW_SHOULDER"))
+                .andExpect(jsonPath("$.data.recommendation_basis.current_hair.hair_thickness")
+                        .value("NORMAL"))
+                .andExpect(jsonPath("$.data.recommendation_basis"
+                        + ".available_care_time_minutes").value(15))
                 .andExpect(jsonPath("$.data.items.length()").value(3))
                 .andExpect(jsonPath("$.data.items[0].hairstyle.style_name").value("레이어드 C컬"))
                 .andExpect(jsonPath("$.data.items[0].hairstyle.thumbnail_url").isNotEmpty())
+                .andExpect(jsonPath("$.data.items[0].hairstyle.ar_mode").value("OVERLAY"))
                 .andExpect(jsonPath("$.data.items[0].reasons[*].code")
                         .value(org.hamcrest.Matchers.hasItem("PREFERRED_TAG_MATCH")))
                 .andReturn().getResponse().getContentAsString();
@@ -108,6 +132,18 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM recommendation_items WHERE recommendation_run_id = ?",
                 Integer.class, UUID.fromString(runId))).isEqualTo(3);
+
+        jdbcTemplate.update("UPDATE hair_profiles SET available_care_time_minutes = 3 WHERE user_id = ?",
+                USER_ID);
+        jdbcTemplate.update("DELETE FROM user_style_preferences WHERE user_id = ?", USER_ID);
+
+        mockMvc.perform(get("/recommendations/{id}", runId)
+                        .with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_basis.style_preferences"
+                        + ".preferred_count").value(1))
+                .andExpect(jsonPath("$.data.recommendation_basis"
+                        + ".available_care_time_minutes").value(15));
 
         mockMvc.perform(get("/recommendations/{id}", runId)
                         .with(authentication(auth(OTHER_USER_ID))))
@@ -131,8 +167,49 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.status").value("STALE"));
     }
 
+    @Test
+    void legacyRunWithoutRecommendationBasisIsReadableButNotReusable() throws Exception {
+        String firstResponse = mockMvc.perform(post("/recommendations/generate")
+                        .with(authentication(auth(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String firstRunId = new com.fasterxml.jackson.databind.ObjectMapper().readTree(firstResponse)
+                .path("data").path("recommendation_run_id").asText();
+
+        jdbcTemplate.update("""
+                UPDATE recommendation_runs
+                SET input_snapshot_json = input_snapshot_json - 'recommendation_basis'
+                WHERE recommendation_run_id = ?
+                """, UUID.fromString(firstRunId));
+        entityManager.clear();
+
+        mockMvc.perform(get("/recommendations/{id}", firstRunId)
+                        .with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_basis").doesNotExist());
+
+        String regeneratedResponse = mockMvc.perform(post("/recommendations/generate")
+                        .with(authentication(auth(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_basis").exists())
+                .andReturn().getResponse().getContentAsString();
+        String regeneratedRunId = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(regeneratedResponse).path("data").path("recommendation_run_id").asText();
+
+        assertThat(regeneratedRunId).isNotEqualTo(firstRunId);
+    }
+
     private void insertStyle(
-            String hairstyleIdText, String name, String category, int priority, boolean tagged
+            String hairstyleIdText,
+            String name,
+            String category,
+            String arMode,
+            int priority,
+            boolean tagged
     ) {
         UUID hairstyleId = UUID.fromString(hairstyleIdText);
         UUID fileId = UUID.randomUUID();
@@ -145,8 +222,8 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
         jdbcTemplate.update("""
                 INSERT INTO hairstyle_assets (hairstyle_id, style_name, category,
                     thumbnail_file_id, ar_mode, active, asset_version)
-                VALUES (?, ?, ?, ?, 'NONE', true, '1.0.0')
-                """, hairstyleId, name, category, fileId);
+                VALUES (?, ?, ?, ?, ?, true, '1.0.0')
+                """, hairstyleId, name, category, fileId, arMode);
         jdbcTemplate.update("""
                 INSERT INTO hairstyle_recommendation_profiles (
                     hairstyle_id, service_types, compatible_hair_lengths,

@@ -24,6 +24,9 @@ class HairstyleAssetEntity extends BaseEntity {
     @Column(name = "thumbnail_file_id")
     private UUID thumbnailFileId;
 
+    @Column(name = "ar_mode", nullable = false, length = 30)
+    private String arMode;
+
     @Column(nullable = false)
     private boolean active;
 
@@ -36,6 +39,7 @@ class HairstyleAssetEntity extends BaseEntity {
     String styleName() { return styleName; }
     String category() { return category; }
     UUID thumbnailFileId() { return thumbnailFileId; }
+    String arMode() { return arMode; }
     boolean active() { return active; }
     String assetVersion() { return assetVersion; }
 }

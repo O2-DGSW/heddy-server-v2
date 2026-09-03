@@ -18,6 +18,7 @@ public record HairstyleCandidate(
         String styleName,
         String category,
         UUID thumbnailFileId,
+        String arMode,
         boolean active,
         String assetVersion,
         Set<ServiceType> serviceTypes,
@@ -41,6 +42,7 @@ public record HairstyleCandidate(
         Objects.requireNonNull(hairstyleId, "hairstyleId");
         Objects.requireNonNull(styleName, "styleName");
         Objects.requireNonNull(category, "category");
+        Objects.requireNonNull(arMode, "arMode");
         Objects.requireNonNull(assetVersion, "assetVersion");
         Objects.requireNonNull(managementDifficulty, "managementDifficulty");
         Objects.requireNonNull(chemicalStressLevel, "chemicalStressLevel");
@@ -63,5 +65,9 @@ public record HairstyleCandidate(
 
     public UUID representativeTagId() {
         return tags.keySet().stream().sorted().findFirst().orElse(null);
+    }
+
+    public boolean supportsAr() {
+        return !"NONE".equals(arMode);
     }
 }

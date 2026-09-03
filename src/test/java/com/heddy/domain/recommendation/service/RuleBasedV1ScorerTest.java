@@ -98,7 +98,7 @@ class RuleBasedV1ScorerTest {
                 context(null, Set.of(), Set.of(excluded), Set.of(), List.of()))).isEmpty();
 
         HairstyleCandidate longOnly = new HairstyleCandidate(tagged.hairstyleId(), "style", "CUT",
-                UUID.randomUUID(), true, "1", Set.of(), Set.of(HairLength.BELOW_CHEST),
+                UUID.randomUUID(), "NONE", true, "1", Set.of(), Set.of(HairLength.BELOW_CHEST),
                 Set.of(HairType.WAVY), Set.of(HairThickness.NORMAL), Set.of(HairCondition.HEALTHY),
                 Set.of(HairCondition.DAMAGED), HairLength.BELOW_CHEST, 10,
                 ManagementDifficulty.MEDIUM, ChemicalStressLevel.LOW, 1, "1", Map.of());
@@ -130,7 +130,7 @@ class RuleBasedV1ScorerTest {
 
     private HairstyleCandidate candidate(Set<ServiceType> services, Map<UUID, String> tags) {
         return new HairstyleCandidate(UUID.randomUUID(), "레이어드 C컬", "MEDIUM",
-                UUID.randomUUID(), true, "1.0.0", services,
+                UUID.randomUUID(), "NONE", true, "1.0.0", services,
                 Set.of(HairLength.BELOW_SHOULDER), Set.of(HairType.WAVY),
                 Set.of(HairThickness.NORMAL), Set.of(HairCondition.HEALTHY), Set.of(), null,
                 10, ManagementDifficulty.MEDIUM, ChemicalStressLevel.LOW, 10, "1", tags);

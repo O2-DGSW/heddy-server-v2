@@ -4,6 +4,7 @@ import com.heddy.domain.treatment.model.TreatmentPhoto;
 import com.heddy.domain.treatment.model.TreatmentRecord;
 import com.heddy.domain.treatment.model.TreatmentRecordFilter;
 import com.heddy.domain.treatment.model.TreatmentRecordPage;
+import com.heddy.domain.treatment.model.TreatmentHistorySummary;
 
 import java.util.Optional;
 import java.util.List;
@@ -57,4 +58,7 @@ public interface TreatmentRecordRepositoryPort {
 
     /** 추천 계산용 최근 기록. 사진은 적재하지 않고 점수 계산기가 만족도 없는 기록을 제외한다. */
     List<TreatmentRecord> findRecentByUserId(UUID userId, int limit);
+
+    /** 추천 근거 표시에 사용할 사용자의 전체 시술 건수와 최고 만족도. */
+    TreatmentHistorySummary summarizeByUserId(UUID userId);
 }

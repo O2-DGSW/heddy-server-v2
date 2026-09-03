@@ -71,6 +71,12 @@ public class SharingPersistenceAdapter implements ShareRepositoryPort, SharedRec
     }
 
     @Override
+    public void deleteAllByUserId(UUID userId) {
+        shareRepository.deleteAllByUserId(userId);
+        shareRepository.flush();
+    }
+
+    @Override
     public Set<UUID> findSharedRecordIds(UUID ownerId, Collection<UUID> recordIds, Instant now) {
         // 빈 IN 절은 방언에 따라 문법 오류가 되고, 어차피 답이 정해져 있어 질의하지 않는다.
         if (recordIds.isEmpty()) {

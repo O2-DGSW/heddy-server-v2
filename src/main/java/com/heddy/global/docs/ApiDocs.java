@@ -260,6 +260,23 @@ public final class ApiDocs {
     public @interface StylePreference {
     }
 
+    /** 카탈로그 스타일을 내 후보로 저장하는 API. */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "SAVED_STYLE_DUPLICATED — 같은 hairstyle_id·color_id 조합을 이미 저장했다",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "SAVED_STYLE_LIMIT_EXCEEDED — 저장 후보가 사용자당 20개를 넘었다",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public @interface SavedStyleCreation {
+    }
+
     /** 동의를 변경하는 API. */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

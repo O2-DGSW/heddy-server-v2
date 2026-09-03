@@ -27,7 +27,8 @@ public class StyleExceptionHandler {
         ApiErrorResponse response = switch (error) {
             case PREFERENCE_CONFLICT -> conflictResponse(error, requestId);
             case INVALID_TAG_IDS -> invalidTagIdsResponse(exception, requestId);
-            case PREFERENCE_LIMIT_EXCEEDED ->
+            case PREFERENCE_LIMIT_EXCEEDED, SAVED_STYLE_DUPLICATED,
+                    SAVED_STYLE_LIMIT_EXCEEDED ->
                     ApiErrorResponse.of(error.code(), error.message(), requestId);
         };
         return ResponseEntity.status(status(error)).body(response);
@@ -65,9 +66,9 @@ public class StyleExceptionHandler {
 
     private HttpStatus status(StyleError error) {
         return switch (error) {
-            case PREFERENCE_LIMIT_EXCEEDED, INVALID_TAG_IDS ->
+            case PREFERENCE_LIMIT_EXCEEDED, INVALID_TAG_IDS, SAVED_STYLE_LIMIT_EXCEEDED ->
                     HttpStatus.UNPROCESSABLE_CONTENT;
-            case PREFERENCE_CONFLICT -> HttpStatus.CONFLICT;
+            case PREFERENCE_CONFLICT, SAVED_STYLE_DUPLICATED -> HttpStatus.CONFLICT;
         };
     }
 }

@@ -116,9 +116,9 @@ public class ProfileService implements ProfileUseCase {
     }
 
     private MyProfileResult result(Account account, UserProfile profile) {
-        return new MyProfileResult(account.userId(), account.email(), profile.nickname(),
-                profile.phone(), profile.preferredDesigner(), profile.hairCautions(),
-                account.status(), account.createdAt(), profile.updatedAt());
+        return new MyProfileResult(account.userId(), account.email(), account.authProvider(),
+                profile.nickname(), profile.phone(), profile.preferredDesigner(),
+                profile.hairCautions(), account.status(), account.createdAt(), profile.updatedAt());
     }
 
     private Account getNonDeletedAccount(UUID userId) {

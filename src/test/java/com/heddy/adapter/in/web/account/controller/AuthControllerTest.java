@@ -12,6 +12,7 @@ import com.heddy.domain.account.port.in.EmailLoginUseCase;
 import com.heddy.domain.account.port.in.EmailSignupUseCase;
 import com.heddy.domain.account.port.in.LogoutUseCase;
 import com.heddy.domain.account.port.in.ReauthenticateUseCase;
+import com.heddy.domain.account.port.in.ReauthenticateResult;
 import com.heddy.domain.account.port.in.RefreshTokenUseCase;
 import com.heddy.domain.account.port.in.ResetPasswordUseCase;
 import com.heddy.domain.account.port.in.SendSmsCodeUseCase;
@@ -175,6 +176,35 @@ class AuthControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(logoutUseCase).logout(USER_ID, "raw-refresh");
+    }
+
+    @Test
+    void mapsSocialReauthenticationContract() throws Exception {
+        given(reauthenticateUseCase.reauthenticate(any()))
+                .willReturn(new ReauthenticateResult("one-time-token", 300));
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(USER_ID, null, java.util.List.of());
+
+        mockMvc.perform(post("/auth/reauthenticate")
+                        .with(authentication(auth))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "method":"SOCIAL_TOKEN",
+                                  "provider":"GOOGLE",
+                                  "provider_token":"fresh-provider-token"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.reauthentication_token").value("one-time-token"))
+                .andExpect(jsonPath("$.data.expires_in").value(300));
+
+        verify(reauthenticateUseCase).reauthenticate(
+                org.mockito.ArgumentMatchers.argThat(command ->
+                        command.userId().equals(USER_ID)
+                                && command.method().name().equals("SOCIAL_TOKEN")
+                                && command.provider() == AuthProvider.GOOGLE
+                                && command.providerToken().equals("fresh-provider-token")));
     }
 
     private AuthResult authResult() {

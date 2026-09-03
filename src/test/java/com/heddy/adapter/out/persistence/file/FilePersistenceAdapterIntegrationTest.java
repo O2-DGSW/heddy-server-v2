@@ -4,6 +4,7 @@ import com.heddy.domain.file.exception.FileError;
 import com.heddy.domain.file.exception.FileException;
 import com.heddy.domain.file.model.FilePurpose;
 import com.heddy.domain.file.model.FileStatus;
+import com.heddy.domain.file.model.StorageObject;
 import com.heddy.domain.file.model.StoredFile;
 import com.heddy.domain.file.model.VerifiedContent;
 import com.heddy.support.PostgresIntegrationTest;
@@ -247,6 +248,87 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
                 .doesNotContain(freshPending.fileId(), freshDeleted.fileId());
     }
 
+    /**
+     * READY 고아 판정은 파일을 직접 참조하는 모든 테이블을 알아야 한다. 참조 누락은 DB 행은
+     * READY 로 남긴 채 스토리지 객체만 먼저 지우므로, API 가 발급한 정상 서명 URL이
+     * {@code NoSuchKey} 로 깨지는 운영 장애가 된다.
+     */
+    @Test
+    void excludesEveryReferencedReadyFileFromCleanupCandidates() {
+        Instant now = Instant.now();
+        StoredFile treatmentPhoto = oldReadyUserFile(
+                "referenced-treatment.jpg", FilePurpose.TREATMENT_PHOTO, "image/jpeg", now);
+        StoredFile analysisOverlay = oldReadySystemFile(
+                "referenced-overlay.png", FilePurpose.ANALYSIS_OVERLAY_INTERNAL, "image/png", now);
+        StoredFile thumbnail = oldReadySystemFile(
+                "referenced-thumbnail.jpg", FilePurpose.HAIRSTYLE_THUMBNAIL, "image/jpeg", now);
+        StoredFile arBase = oldReadySystemFile(
+                "referenced-ar-base.png", FilePurpose.HAIRSTYLE_AR_BASE, "image/png", now);
+        StoredFile arMask = oldReadySystemFile(
+                "referenced-ar-mask.png", FilePurpose.HAIRSTYLE_AR_MASK, "image/png", now);
+        StoredFile savedCapture = oldReadyUserFile(
+                "referenced-capture.jpg", FilePurpose.AR_CAPTURE, "image/jpeg", now);
+        StoredFile orphan = oldReadyUserFile(
+                "unreferenced.jpg", FilePurpose.TREATMENT_PHOTO, "image/jpeg", now);
+
+        UUID recordId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO treatment_records (record_id, user_id, service_types, performed_at)
+                VALUES (?, ?, '[]'::jsonb, now())
+                """, recordId, USER_ID);
+        jdbcTemplate.update("""
+                INSERT INTO treatment_record_photos
+                    (photo_id, record_id, file_id, image_type, sort_order)
+                VALUES (?, ?, ?, 'BEFORE', 0)
+                """, UUID.randomUUID(), recordId, treatmentPhoto.fileId());
+
+        UUID jobId = UUID.randomUUID();
+        UUID analysisId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO analysis_jobs
+                    (job_id, user_id, record_id, status, progress, attempt_count)
+                VALUES (?, ?, ?, 'SUCCEEDED', 100, 1)
+                """, jobId, USER_ID, recordId);
+        jdbcTemplate.update("""
+                INSERT INTO analysis_results (
+                    analysis_id, job_id, user_id, record_id,
+                    color_uniformity_score, color_uniformity_grade,
+                    shape_symmetry_score, shape_symmetry_grade,
+                    volume_balance_score, volume_balance_grade,
+                    roughness_score, roughness_grade,
+                    confidence_score, confidence_grade, model_version, analyzed_at
+                ) VALUES (
+                    ?, ?, ?, ?, 80, 'HIGH', 80, 'HIGH', 80, 'HIGH',
+                    80, 'HIGH', 80, 'HIGH', 'test', now()
+                )
+                """, analysisId, jobId, USER_ID, recordId);
+        jdbcTemplate.update("""
+                INSERT INTO analysis_overlays (overlay_id, analysis_id, overlay_type, file_id)
+                VALUES (?, ?, 'HEATMAP', ?)
+                """, UUID.randomUUID(), analysisId, analysisOverlay.fileId());
+
+        UUID hairstyleId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO hairstyle_assets (
+                    hairstyle_id, style_name, category, thumbnail_file_id,
+                    base_file_id, mask_file_id, asset_version
+                ) VALUES (?, '정리 참조 테스트', 'TEST', ?, ?, ?, 'test')
+                """, hairstyleId, thumbnail.fileId(), arBase.fileId(), arMask.fileId());
+        jdbcTemplate.update("""
+                INSERT INTO saved_styles (saved_style_id, user_id, style_name, capture_id)
+                VALUES (?, ?, '저장 후보 정리 테스트', ?)
+                """, UUID.randomUUID(), USER_ID, savedCapture.fileId());
+
+        List<StoredFile> candidates = adapter.findCleanupCandidates(
+                now.minusSeconds(60), now.minusSeconds(86_400), 100);
+
+        assertThat(candidates).extracting(StoredFile::fileId)
+                .contains(orphan.fileId())
+                .doesNotContain(
+                        treatmentPhoto.fileId(), analysisOverlay.fileId(), thumbnail.fileId(),
+                        arBase.fileId(), arMask.fileId(), savedCapture.fileId());
+    }
+
     // ------------------------------------------------------------------ 스키마 대조
 
     @Test
@@ -329,6 +411,36 @@ class FilePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
                 USER_ID, FilePurpose.TREATMENT_PHOTO, "TREATMENT_PHOTO/" + USER_ID + "/" + name,
                 "image/jpeg", name, 1_024, DECLARED_SHA256,
                 Instant.now().minus(1, ChronoUnit.MINUTES));
+    }
+
+    private StoredFile oldReadyUserFile(
+            String name, FilePurpose purpose, String contentType, Instant now
+    ) {
+        StoredFile pending = adapter.insert(StoredFile.pending(
+                USER_ID, purpose, purpose + "/" + USER_ID + "/" + name,
+                contentType, name, 1_024, DECLARED_SHA256,
+                now.plus(5, ChronoUnit.MINUTES)));
+        StoredFile ready = adapter.transition(
+                pending.markReady(new StorageObject(contentType, 1_024)), FileStatus.PENDING);
+        makeOld(ready.fileId(), now);
+        return ready;
+    }
+
+    private StoredFile oldReadySystemFile(
+            String name, FilePurpose purpose, String contentType, Instant now
+    ) {
+        StoredFile pending = adapter.insert(StoredFile.pendingSystem(
+                purpose, purpose + "/system/" + name, contentType, name, 1_024,
+                DECLARED_SHA256, now.plus(5, ChronoUnit.MINUTES)));
+        StoredFile ready = adapter.transition(
+                pending.markReady(new StorageObject(contentType, 1_024)), FileStatus.PENDING);
+        makeOld(ready.fileId(), now);
+        return ready;
+    }
+
+    private void makeOld(UUID fileId, Instant now) {
+        jdbcTemplate.update("UPDATE files SET created_at = ? WHERE file_id = ?",
+                Timestamp.from(now.minusSeconds(172_800)), fileId);
     }
 
     private void insertUser(UUID userId, String email) {

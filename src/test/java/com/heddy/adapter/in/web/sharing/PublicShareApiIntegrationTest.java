@@ -226,7 +226,7 @@ class PublicShareApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         rawToken = new ObjectMapper().readTree(created).path("data").path("share_url")
-                .asText().substring("https://heddy.example.com/s/".length());
+                .asText().substring("https://heddy.site/s/".length());
         lastRecordId = recordId;
     }
 

@@ -38,6 +38,15 @@ class AccountDeletionWorkerIntegrationTest extends PostgresIntegrationTest {
                 "SELECT count(*) FROM treatment_records WHERE user_id = ?",
                 Integer.class, userId)).isZero();
         assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM saved_styles WHERE user_id = ?",
+                Integer.class, userId)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM shares WHERE user_id = ?",
+                Integer.class, userId)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM user_style_preferences WHERE user_id = ?",
+                Integer.class, userId)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
                 "SELECT status FROM files WHERE file_id = ?", String.class, fileId))
                 .isEqualTo("DELETED");
     }
@@ -98,6 +107,33 @@ class AccountDeletionWorkerIntegrationTest extends PostgresIntegrationTest {
                     photo_id, record_id, file_id, image_type, sort_order
                 ) VALUES (?, ?, ?, 'AFTER', 0)
                 """, UUID.randomUUID(), recordId, fileId);
+        UUID savedStyleId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO saved_styles (
+                    saved_style_id, user_id, style_name, image_url, reason, memo
+                ) VALUES (?, ?, '레이어드 커트', 'https://example.com/style.jpg',
+                          '과거 만족도가 높음', '상담 때 보여주기')
+                """, savedStyleId, userId);
+        UUID shareId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO shares (
+                    share_id, user_id, token_hash, status, expires_at
+                ) VALUES (?, ?, ?, 'ACTIVE', now() + interval '1 day')
+                """, shareId, userId, UUID.randomUUID().toString().replace("-", "")
+                        + UUID.randomUUID().toString().replace("-", ""));
+        jdbcTemplate.update("""
+                INSERT INTO share_records (share_id, record_id) VALUES (?, ?)
+                """, shareId, recordId);
+        jdbcTemplate.update("""
+                INSERT INTO share_saved_styles (share_id, saved_style_id) VALUES (?, ?)
+                """, shareId, savedStyleId);
+        UUID styleTagId = jdbcTemplate.queryForObject(
+                "SELECT style_tag_id FROM style_tags ORDER BY style_tag_id LIMIT 1", UUID.class);
+        jdbcTemplate.update("""
+                INSERT INTO user_style_preferences (
+                    preference_id, user_id, style_tag_id, preference_type
+                ) VALUES (?, ?, ?, 'PREFERRED')
+                """, UUID.randomUUID(), userId, styleTagId);
         return fileId;
     }
 

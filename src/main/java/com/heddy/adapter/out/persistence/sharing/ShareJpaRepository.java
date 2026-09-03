@@ -22,6 +22,8 @@ interface ShareJpaRepository extends JpaRepository<ShareEntity, UUID> {
 
     Page<ShareEntity> findByUserIdAndStatus(UUID userId, String status, Pageable pageable);
 
+    void deleteAllByUserId(UUID userId);
+
     /**
      * 공유 중인 기록 ID 만 골라낸다. 공유 엔티티를 통째로 읽지 않고 조인 행의 record_id 만
      * 뽑는다 — 목록 배지에 필요한 건 "있다/없다" 뿐이라 항목·후보까지 끌고 올 이유가 없다.

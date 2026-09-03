@@ -26,4 +26,7 @@ public interface ShareRepositoryPort {
 
     /** 소유자의 공유를 최신순으로 페이지 조회한다. 상태 필터는 생략 가능하다. */
     SharePage findPage(UUID userId, ShareStatus status, int page, int size);
+
+    /** 회원 탈퇴 시 공개 링크와 연결 행을 함께 제거한다. */
+    void deleteAllByUserId(UUID userId);
 }

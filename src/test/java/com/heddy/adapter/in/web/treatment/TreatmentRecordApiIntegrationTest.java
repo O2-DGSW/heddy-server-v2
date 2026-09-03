@@ -431,6 +431,56 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
     }
 
+    @Test
+    void storesThePriceWithTheDefaultCurrencyWhenItIsOmitted() throws Exception {
+        // 기록 추가 화면에는 통화 입력란이 없다. 금액만 보내도 가격이 저장돼야 한다.
+        String created = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"service_types":["CUT"],"performed_at":"2026-08-01T10:00:00Z",
+                                 "salon_name":"준헤어","price_amount":35000}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.price.amount").value(35000))
+                .andExpect(jsonPath("$.data.price.currency").value("KRW"))
+                .andReturn().getResponse().getContentAsString();
+        String recordId = new ObjectMapper()
+                .readTree(created).path("data").path("record_id").asText();
+
+        var stored = jdbcTemplate.queryForMap(
+                "SELECT price_amount, price_currency FROM treatment_records WHERE record_id = ?",
+                UUID.fromString(recordId));
+        assertThat(stored.get("price_currency")).isEqualTo("KRW");
+
+        // 금액만 지우면 남아 있던 통화도 함께 비운다.
+        mockMvc.perform(patch("/treatment-records/" + recordId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"price_amount\":null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.price").doesNotExist());
+
+        stored = jdbcTemplate.queryForMap(
+                "SELECT price_amount, price_currency FROM treatment_records WHERE record_id = ?",
+                UUID.fromString(recordId));
+        assertThat(stored.get("price_amount")).isNull();
+        assertThat(stored.get("price_currency")).isNull();
+    }
+
+    @Test
+    void stillRejectsACurrencyThatCarriesNoAmount() throws Exception {
+        mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"service_types":["CUT"],"performed_at":"2026-08-01T10:00:00Z",
+                                 "price_currency":"KRW"}
+                                """))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("TREATMENT_PRICE_INCOMPLETE"));
+    }
+
     // ------------------------------------------------------------------ 수정·삭제
 
     @Test

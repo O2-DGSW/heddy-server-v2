@@ -97,16 +97,25 @@ class TreatmentRecordTest {
     // ------------------------------------------------------------------ 가격
 
     @Test
-    void rejectsAmountWithoutCurrencyAndViceVersa() {
+    void rejectsCurrencyWithoutAmount() {
+        // 금액이 없으면 무엇의 통화인지 알 수 없다.
         assertThatThrownBy(() -> record(null, "KRW"))
                 .isInstanceOf(TreatmentException.class)
                 .extracting(e -> ((TreatmentException) e).error())
                 .isEqualTo(TreatmentError.PRICE_INCOMPLETE);
+    }
 
-        assertThatThrownBy(() -> record(50_000L, null))
-                .isInstanceOf(TreatmentException.class)
-                .extracting(e -> ((TreatmentException) e).error())
-                .isEqualTo(TreatmentError.PRICE_INCOMPLETE);
+    @Test
+    void fillsTheDefaultCurrencyWhenOnlyTheAmountIsGiven() {
+        // 화면에 통화 입력란이 없다. 클라이언트가 상수를 실어 보내야만 가격이 저장되면 안 된다.
+        assertThat(record(50_000L, null).priceCurrency()).isEqualTo("KRW");
+        assertThat(record(50_000L, null).priceAmount()).isEqualTo(50_000L);
+    }
+
+    @Test
+    void keepsBothSidesNullWhenNoPriceIsGiven() {
+        assertThat(record(null, null).priceAmount()).isNull();
+        assertThat(record(null, null).priceCurrency()).isNull();
     }
 
     @Test

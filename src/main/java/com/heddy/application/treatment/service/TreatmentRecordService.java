@@ -181,14 +181,23 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     @Transactional
     public TreatmentRecord update(UpdateTreatmentRecordUseCase.Command command) {
         TreatmentRecord current = ownedRecord(command.requesterId(), command.recordId());
+        Long priceAmount = command.priceAmount().orElse(current.priceAmount());
+        String priceCurrency = command.priceCurrency().orElse(current.priceCurrency());
+        // 금액을 지우면 저장돼 있던 통화도 함께 지운다. 금액 없는 통화는 무엇의 통화인지
+        // 알 수 없어 도메인이 거절하는데, 가격을 비우려고 price_amount 에만 null 을 보낸
+        // 요청이 그 오류를 맞는 건 클라이언트가 풀 수 없는 문제다. 통화를 이번 요청에서
+        // 직접 지정했다면 그 값은 존중하고 도메인 판단에 맡긴다.
+        if (priceAmount == null && !command.priceCurrency().present()) {
+            priceCurrency = null;
+        }
         TreatmentRecord updated = current.update(
                 command.serviceTypes().orElse(current.serviceTypes()),
                 command.salonName().orElse(current.salonName()),
                 command.designerName().orElse(current.designerName()),
                 command.performedAt().orElse(current.performedAt()),
                 command.satisfaction().orElse(current.satisfaction()),
-                command.priceAmount().orElse(current.priceAmount()),
-                command.priceCurrency().orElse(current.priceCurrency()),
+                priceAmount,
+                priceCurrency,
                 command.appointmentId().orElse(current.appointmentId()),
                 command.memo().orElse(current.memo()),
                 command.nextVisitCautions().orElse(current.nextVisitCautions()),

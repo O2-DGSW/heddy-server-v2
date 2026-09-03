@@ -4,6 +4,7 @@ import com.heddy.domain.sharing.model.Share;
 import com.heddy.domain.sharing.model.SharePage;
 import com.heddy.domain.sharing.model.ShareStatus;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,8 +31,14 @@ public interface ShareRepositoryPort {
      */
     void detachSavedStyle(UUID savedStyleId);
 
-    /** 소유자의 공유를 최신순으로 페이지 조회한다. 상태 필터는 생략 가능하다. */
-    SharePage findPage(UUID userId, ShareStatus status, int page, int size);
+    /**
+     * 소유자의 공유를 최신순으로 페이지 조회한다. 상태 필터는 생략 가능하다.
+     *
+     * <p>ACTIVE 필터는 {@code expiresAt > now} 까지 함께 본다. 만료는 상태가 아니라 시각
+     * 비교로 판정하는 것이 이 도메인의 설계라(V19 주석) 상태 컬럼만 보면 이미 죽은 링크가
+     * 활성으로 잡힌다.
+     */
+    SharePage findPage(UUID userId, ShareStatus status, int page, int size, Instant now);
 
     /** 회원 탈퇴 시 공개 링크와 연결 행을 함께 제거한다. */
     void deleteAllByUserId(UUID userId);

@@ -75,11 +75,13 @@ public class ShareController {
     @ApiDocs.ListQuery
     @Operation(summary = "내 공유 목록 조회",
             description = "내 공유를 최신순으로 페이지 조회합니다. 상태 필터는 생략할 수 있고, "
-                    + "결과가 없으면 200과 빈 items를 반환합니다. share_url 은 저장된 것이 없어 "
+                    + "결과가 없으면 200과 빈 items를 반환합니다. ACTIVE 필터는 만료 시각이 "
+                    + "지나지 않은 것만 돌려줍니다. share_url 은 저장된 것이 없어 "
                     + "생성 응답으로만 내려간다.")
     public ApiResponse<PageResponse<ShareSummaryResponse>> list(
             @AuthenticationPrincipal UUID userId,
-            @Parameter(description = "상태 필터(ACTIVE/REVOKED). 생략 시 전체")
+            @Parameter(description = "상태 필터(ACTIVE/REVOKED). 생략 시 전체. "
+                    + "ACTIVE 는 만료되지 않은 것만 포함한다")
             @RequestParam(required = false) ShareStatus status,
             @Parameter(description = "0부터 시작하는 페이지 번호. 음수면 400 INVALID_REQUEST")
             @RequestParam(defaultValue = "0") int page,

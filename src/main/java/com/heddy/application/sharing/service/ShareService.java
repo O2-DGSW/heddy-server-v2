@@ -82,7 +82,7 @@ public class ShareService implements CreateShareUseCase, ListSharesUseCase,
             throw new ApplicationException(ErrorCode.INVALID_REQUEST);
         }
         SharePage page = shareRepositoryPort.findPage(
-                query.requesterId(), query.status(), query.page(), query.size());
+                query.requesterId(), query.status(), query.page(), query.size(), Instant.now());
         return new ListSharesUseCase.Result(
                 page.items(), query.page(), query.size(), page.totalElements());
     }

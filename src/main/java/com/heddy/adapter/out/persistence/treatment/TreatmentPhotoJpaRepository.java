@@ -14,6 +14,8 @@ interface TreatmentPhotoJpaRepository extends JpaRepository<TreatmentPhotoEntity
      */
     List<TreatmentPhotoEntity> findByRecordIdOrderBySortOrderAscCreatedAtAscPhotoIdAsc(UUID recordId);
 
+    boolean existsByFileId(UUID fileId);
+
     /**
      * 여러 기록의 사진을 정렬 규칙을 유지한 채 질의 한 번으로 읽는다. 시술기록 목록의 페이지
      * 조립이 기록마다 사진을 다시 읽던 N+1(#66)을 이 IN 조회 하나로 끊는다.

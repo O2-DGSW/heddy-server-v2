@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * 무인증 공개 조회. 토큰 해시 대조 → 철회·만료 검증(스펙 19절 매 요청) → 선택 항목 게이트를
@@ -96,13 +97,29 @@ public class PublicShareQueryService implements GetPublicShareUseCase {
         return savedStyleRepositoryPort
                 .findAllByUserIdAndIds(share.userId(), share.savedStyleIds())
                 .stream()
-                .map(PublicShareQueryService::toView)
+                .map(this::toView)
                 .toList();
     }
 
-    private static SharedSavedStyleView toView(SavedStyle savedStyle) {
-        return new SharedSavedStyleView(
-                savedStyle.styleName(), savedStyle.imageUrl(), savedStyle.reason());
+    /**
+     * 후보의 이미지 자리는 두 가지로 채워진다. AI 추천 스냅샷은 저장해 둔 {@code imageUrl} 을
+     * 그대로 쓰고, AR 에서 저장한 후보는 {@code captureId} 가 가리키는 파일에 조회 시점 서명
+     * URL 을 발급한다. 사진과 같은 규칙으로 READY 가 아닌 파일은 URL 자리를 비워 둔다.
+     */
+    private SharedSavedStyleView toView(SavedStyle savedStyle) {
+        String imageUrl = savedStyle.imageUrl() != null
+                ? savedStyle.imageUrl()
+                : captureUrl(savedStyle.captureId()).map(URI::toString).orElse(null);
+        return new SharedSavedStyleView(savedStyle.styleName(), imageUrl, savedStyle.reason());
+    }
+
+    private Optional<URI> captureUrl(UUID captureId) {
+        if (captureId == null) {
+            return Optional.empty();
+        }
+        return fileRepositoryPort.findById(captureId)
+                .filter(file -> file.status() == FileStatus.READY)
+                .map(fileStoragePort::createDownloadUrl);
     }
 
     /** 선택 항목이 아닌 값은 버린다. 남아 있는 것은 화면에 나갈 값뿐이다. */

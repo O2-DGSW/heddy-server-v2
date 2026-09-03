@@ -486,6 +486,37 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
+    void appendsPhotoBehindExistingOnesWhenSortOrderIsOmitted() throws Exception {
+        UUID firstFile = readyFile(USER_ID);
+        String created = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody("2026-08-01T10:00:00Z", photoRefs(firstFile))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String recordId = new ObjectMapper()
+                .readTree(created).path("data").path("record_id").asText();
+
+        // sort_order 를 생략한 추가는 기존 0 번과 동점이 되면 안 된다. 동점이면 정렬이
+        // created_at 으로 풀려 새 사진이 뒤로 밀리고 목록 썸네일은 옛 사진을 가리킨다.
+        UUID secondFile = readyFile(USER_ID);
+        mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\",\"image_type\":\"AFTER\"}"
+                                .formatted(secondFile)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.sort_order").value(1));
+
+        mockMvc.perform(get("/treatment-records/" + recordId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.photos", hasSize(2)))
+                .andExpect(jsonPath("$.data.photos[0].sort_order").value(0))
+                .andExpect(jsonPath("$.data.photos[1].sort_order").value(1));
+    }
+
+    @Test
     void deletesOwnRecordAndMarksItsFilesForCleanup() throws Exception {
         UUID fileId = readyFile(USER_ID);
         String created = mockMvc.perform(post("/treatment-records")

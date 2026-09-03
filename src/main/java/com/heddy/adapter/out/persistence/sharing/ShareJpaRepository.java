@@ -32,6 +32,10 @@ interface ShareJpaRepository extends JpaRepository<ShareEntity, UUID> {
 
     Page<ShareEntity> findByUserIdAndStatus(UUID userId, String status, Pageable pageable);
 
+    /** ACTIVE 필터 전용. 상태가 ACTIVE 라도 만료 시각이 지났으면 더 이상 열리지 않는다. */
+    Page<ShareEntity> findByUserIdAndStatusAndExpiresAtAfter(
+            UUID userId, String status, Instant now, Pageable pageable);
+
     void deleteAllByUserId(UUID userId);
 
     /**

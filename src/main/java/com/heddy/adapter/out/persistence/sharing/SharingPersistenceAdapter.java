@@ -60,11 +60,9 @@ public class SharingPersistenceAdapter implements ShareRepositoryPort, SharedRec
     }
 
     @Override
-    public SharePage findPage(UUID userId, ShareStatus status, int page, int size) {
-        Page<ShareEntity> result = status == null
-                ? shareRepository.findByUserId(userId, pageRequest(page, size))
-                : shareRepository.findByUserIdAndStatus(userId, status.name(),
-                        pageRequest(page, size));
+    public SharePage findPage(
+            UUID userId, ShareStatus status, int page, int size, Instant now) {
+        Page<ShareEntity> result = findEntityPage(userId, status, pageRequest(page, size), now);
         return new SharePage(
                 result.getContent().stream().map(ShareEntity::toDomain).toList(),
                 result.getTotalElements());
@@ -84,6 +82,22 @@ public class SharingPersistenceAdapter implements ShareRepositoryPort, SharedRec
         }
         return shareRepository.findSharedRecordIds(
                 ownerId, recordIds, ShareStatus.ACTIVE.name(), now);
+    }
+
+    /**
+     * ACTIVE 만 만료 조건이 붙는다. REVOKED 는 철회 시각이 이미 상태로 굳었고, 전체 조회는
+     * 만료된 링크까지 보여 주는 것이 목록의 목적이라 그대로 둔다.
+     */
+    private Page<ShareEntity> findEntityPage(
+            UUID userId, ShareStatus status, PageRequest pageRequest, Instant now) {
+        if (status == null) {
+            return shareRepository.findByUserId(userId, pageRequest);
+        }
+        if (status == ShareStatus.ACTIVE) {
+            return shareRepository.findByUserIdAndStatusAndExpiresAtAfter(
+                    userId, status.name(), now, pageRequest);
+        }
+        return shareRepository.findByUserIdAndStatus(userId, status.name(), pageRequest);
     }
 
     private PageRequest pageRequest(int page, int size) {

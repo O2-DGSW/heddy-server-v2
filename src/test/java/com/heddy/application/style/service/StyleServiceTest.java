@@ -12,6 +12,7 @@ import com.heddy.domain.style.model.StyleTag;
 import com.heddy.domain.style.model.StyleTagCategory;
 import com.heddy.domain.style.model.UserStylePreference;
 import com.heddy.domain.style.port.in.SaveStylePreferencesCommand;
+import com.heddy.domain.style.port.out.HairColorRepositoryPort;
 import com.heddy.domain.style.port.out.StyleTagRepositoryPort;
 import com.heddy.domain.style.port.out.UserStylePreferenceRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,7 @@ class StyleServiceTest {
 
     @Mock AccountRepositoryPort accountRepositoryPort;
     @Mock StyleTagRepositoryPort styleTagRepositoryPort;
+    @Mock HairColorRepositoryPort hairColorRepositoryPort;
     @Mock UserStylePreferenceRepositoryPort preferenceRepositoryPort;
 
     private StyleService service;
@@ -49,7 +51,8 @@ class StyleServiceTest {
     @BeforeEach
     void setUp() {
         service = new StyleService(
-                accountRepositoryPort, styleTagRepositoryPort, preferenceRepositoryPort);
+                accountRepositoryPort, styleTagRepositoryPort, hairColorRepositoryPort,
+                preferenceRepositoryPort);
     }
 
     @Test

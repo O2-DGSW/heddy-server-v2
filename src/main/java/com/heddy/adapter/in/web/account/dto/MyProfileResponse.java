@@ -2,6 +2,7 @@ package com.heddy.adapter.in.web.account.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.heddy.domain.account.model.AccountStatus;
+import com.heddy.domain.account.model.AuthProvider;
 import com.heddy.domain.account.port.in.MyProfileResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -15,6 +16,10 @@ public record MyProfileResponse(
 
         @Schema(description = "계정 이메일. 소문자로 정규화된 값이다. 소셜 가입 계정은 비어 있을 수 있다")
         String email,
+
+        @Schema(description = "재인증 방식 판단에 사용하는 가입 제공자",
+                allowableValues = {"EMAIL", "GOOGLE", "KAKAO", "APPLE"})
+        @JsonProperty("auth_provider") AuthProvider authProvider,
 
         @Schema(description = "표시 이름")
         String nickname,
@@ -39,8 +44,8 @@ public record MyProfileResponse(
         @JsonProperty("updated_at") Instant updatedAt
 ) {
     public static MyProfileResponse from(MyProfileResult result) {
-        return new MyProfileResponse(result.userId(), result.email(), result.nickname(),
-                result.phone(), result.preferredDesigner(), result.hairCautions(), result.status(),
-                result.createdAt(), result.updatedAt());
+        return new MyProfileResponse(result.userId(), result.email(), result.authProvider(),
+                result.nickname(), result.phone(), result.preferredDesigner(),
+                result.hairCautions(), result.status(), result.createdAt(), result.updatedAt());
     }
 }

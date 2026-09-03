@@ -207,6 +207,17 @@ public record TreatmentRecord(
      * <p>이 검사는 모델이 들고 있는 사진 목록 기준이다. 두 요청이 동시에 같은 기록을 고르면
      * 저장 계층에서 둘 다 통과할 수 있으니, 유스케이스(#31)가 이 경합을 잠그는 책임을 진다.
      */
+    /**
+     * 새 사진을 맨 뒤에 놓을 때 쓸 표시 순서. 현재 최대값 다음이며, 사진이 없으면 0 이다.
+     *
+     * <p>추가 요청이 순서를 생략했을 때 0 을 쓰면 이미 0 인 사진과 동점이 된다. 조회 정렬이
+     * 동점을 {@code created_at} 오름차순으로 푸는 탓에 새로 올린 사진이 뒤로 밀리고, 목록
+     * 썸네일은 계속 옛 사진을 가리킨다. 사용자 눈에는 사진을 바꿔도 그대로인 것처럼 보인다.
+     */
+    public int nextSortOrder() {
+        return photos.stream().mapToInt(TreatmentPhoto::sortOrder).max().orElse(-1) + 1;
+    }
+
     public TreatmentRecord attachPhoto(TreatmentPhoto photo) {
         Objects.requireNonNull(photo, "photo");
         if (!photo.recordId().equals(recordId)) {

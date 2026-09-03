@@ -221,8 +221,11 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     @Transactional
     public ManageTreatmentPhotosUseCase.Result add(ManageTreatmentPhotosUseCase.AddCommand command) {
         TreatmentRecord record = ownedLockedRecord(command.requesterId(), command.recordId());
+        // 기록 행을 잠근 뒤 계산해야 동시 추가가 같은 순번을 집지 않는다.
+        int sortOrder = command.sortOrder() == null
+                ? record.nextSortOrder() : command.sortOrder();
         TreatmentPhoto photo = TreatmentPhoto.create(
-                record.recordId(), command.fileId(), command.imageType(), command.sortOrder());
+                record.recordId(), command.fileId(), command.imageType(), sortOrder);
         record.attachPhoto(photo);
         requireOwnedReadyFile(command.requesterId(), command.fileId());
         TreatmentPhoto saved = recordRepositoryPort.insertPhoto(photo);

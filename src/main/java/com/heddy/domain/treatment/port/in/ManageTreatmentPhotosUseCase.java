@@ -14,12 +14,13 @@ public interface ManageTreatmentPhotosUseCase {
 
     void delete(DeleteCommand command);
 
+    /** {@code sortOrder} 가 null 이면 기존 사진들 뒤에 붙인다. */
     record AddCommand(
             UUID requesterId,
             UUID recordId,
             UUID fileId,
             ImageType imageType,
-            int sortOrder
+            Integer sortOrder
     ) {
     }
 

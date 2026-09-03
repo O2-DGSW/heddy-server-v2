@@ -2,6 +2,7 @@ package com.heddy.adapter.out.persistence.sharing;
 
 import com.heddy.domain.sharing.model.Share;
 import com.heddy.domain.sharing.model.ShareFieldType;
+import com.heddy.domain.sharing.model.SharePage;
 import com.heddy.domain.sharing.model.ShareStatus;
 import com.heddy.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -106,6 +107,49 @@ class SharingPersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
     @Test
     void answersWithoutQueryingWhenThereAreNoRecords() {
         assertThat(adapter.findSharedRecordIds(OWNER_ID, List.of(), NOW)).isEmpty();
+    }
+
+    // ------------------------------------------------------------- 목록 상태 필터
+
+    /**
+     * ACTIVE 필터는 상태만 보면 안 된다. 만료는 상태가 아니라 시각 비교로 판정하는 설계라
+     * 이미 열리지 않는 링크가 상태 컬럼에는 그대로 ACTIVE 로 남아 있다.
+     */
+    @Test
+    void excludesExpiredSharesFromTheActiveFilter() {
+        UUID recordId = insertRecord(OWNER_ID);
+        insertShare(OWNER_ID, recordId, ShareStatus.ACTIVE, NOW.minusSeconds(1));
+        insertShare(OWNER_ID, recordId, ShareStatus.ACTIVE, NOW.plusSeconds(60));
+
+        SharePage page = adapter.findPage(OWNER_ID, ShareStatus.ACTIVE, 0, 20, NOW);
+
+        assertThat(page.items()).hasSize(1);
+        assertThat(page.totalElements()).isEqualTo(1);
+        assertThat(page.items().getFirst().expiresAt()).isEqualTo(NOW.plusSeconds(60));
+    }
+
+    /** 만료 시각이 현재와 같으면 이미 지난 것으로 본다. 공개 조회 판정과 같은 기준이다. */
+    @Test
+    void treatsAnExpiryEqualToNowAsExpiredInTheActiveFilter() {
+        insertShare(OWNER_ID, insertRecord(OWNER_ID), ShareStatus.ACTIVE, NOW);
+
+        assertThat(adapter.findPage(OWNER_ID, ShareStatus.ACTIVE, 0, 20, NOW).items()).isEmpty();
+    }
+
+    /** 전체 조회는 만료 여부로 거르지 않는다. 만료된 링크도 내 공유 이력이다. */
+    @Test
+    void keepsExpiredSharesWhenNoStatusFilterIsGiven() {
+        insertShare(OWNER_ID, insertRecord(OWNER_ID), ShareStatus.ACTIVE, NOW.minusSeconds(1));
+
+        assertThat(adapter.findPage(OWNER_ID, null, 0, 20, NOW).items()).hasSize(1);
+    }
+
+    /** REVOKED 필터에는 만료 조건이 붙지 않는다. 철회 시각이 이미 상태로 굳어 있다. */
+    @Test
+    void keepsExpiredSharesInTheRevokedFilter() {
+        insertShare(OWNER_ID, insertRecord(OWNER_ID), ShareStatus.REVOKED, NOW.minusSeconds(1));
+
+        assertThat(adapter.findPage(OWNER_ID, ShareStatus.REVOKED, 0, 20, NOW).items()).hasSize(1);
     }
 
     // ------------------------------------------------------------------ 헬퍼

@@ -39,6 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
@@ -171,7 +173,8 @@ class ShareServiceTest {
     @Test
     void listsOwnSharesWithStatusFilterAndPagination() {
         List<Share> items = List.of(share(ShareStatus.REVOKED), share(ShareStatus.ACTIVE));
-        given(shareRepositoryPort.findPage(USER_ID, ShareStatus.ACTIVE, 0, 20))
+        given(shareRepositoryPort.findPage(eq(USER_ID), eq(ShareStatus.ACTIVE), eq(0), eq(20),
+                any(Instant.class)))
                 .willReturn(new SharePage(items, 2));
 
         ListSharesUseCase.Result result = service.list(
@@ -185,7 +188,8 @@ class ShareServiceTest {
 
     @Test
     void answersAnEmptyPageInsteadOfAnError() {
-        given(shareRepositoryPort.findPage(USER_ID, null, 0, 20))
+        given(shareRepositoryPort.findPage(eq(USER_ID), isNull(), eq(0), eq(20),
+                any(Instant.class)))
                 .willReturn(new SharePage(List.of(), 0));
 
         ListSharesUseCase.Result result = service.list(

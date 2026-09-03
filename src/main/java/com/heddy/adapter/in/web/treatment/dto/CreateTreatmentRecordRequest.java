@@ -43,10 +43,12 @@ public record CreateTreatmentRecordRequest(
                 + "적는다", example = "애쉬브라운 전체 염색")
         @JsonProperty("treatment_content") String treatmentContent,
 
-        @Schema(description = "가격 금액. price_currency 와 함께 넣거나 함께 뺀다")
+        @Schema(description = "가격 금액. 선택 입력", example = "35000")
         @JsonProperty("price_amount") Long priceAmount,
 
-        @Schema(description = "통화 코드(3자). price_amount 와 함께 넣거나 함께 뺀다")
+        @Schema(description = "통화 코드(3자). 생략하면 KRW 로 채운다. price_amount 없이 "
+                + "이 값만 보내면 422 TREATMENT_PRICE_INCOMPLETE",
+                defaultValue = "KRW", example = "KRW")
         @JsonProperty("price_currency") String priceCurrency,
 
         @Schema(description = "연결할 예약 식별자. 선택 입력")

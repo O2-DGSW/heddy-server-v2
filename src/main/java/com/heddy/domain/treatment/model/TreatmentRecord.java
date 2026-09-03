@@ -50,6 +50,12 @@ public record TreatmentRecord(
     private static final int DESIGNER_NAME_MAX_LENGTH = 30;
     private static final int TREATMENT_CONTENT_MAX_LENGTH = 255;
 
+    /**
+     * 통화를 생략한 가격에 채울 기본값. 국내 전용 서비스라 통화를 고를 자리가 화면에 없다.
+     * 컬럼과 응답 필드는 그대로 두었으므로, 통화를 다뤄야 할 때 이 기본값만 걷어내면 된다.
+     */
+    private static final String DEFAULT_PRICE_CURRENCY = "KRW";
+
     public TreatmentRecord {
         Objects.requireNonNull(recordId, "recordId");
         Objects.requireNonNull(userId, "userId");
@@ -69,14 +75,18 @@ public record TreatmentRecord(
             throw new TreatmentException(TreatmentError.SATISFACTION_OUT_OF_RANGE);
         }
 
-        if ((priceAmount == null) != (priceCurrency == null)) {
+        // 통화만 있고 금액이 없으면 무엇의 통화인지 알 수 없다. 반대로 금액만 있으면
+        // 기본 통화로 채운다 — 기록 추가 화면에 통화 입력란이 없고 생길 계획도 없어,
+        // 클라이언트가 상수 "KRW" 를 매 요청에 실어야만 가격이 저장되는 상태였다.
+        if (priceAmount == null && priceCurrency != null) {
             throw new TreatmentException(TreatmentError.PRICE_INCOMPLETE);
         }
         if (priceAmount != null) {
             if (priceAmount < 0) {
                 throw new TreatmentException(TreatmentError.PRICE_AMOUNT_NEGATIVE);
             }
-            priceCurrency = normalizeCurrency(priceCurrency);
+            priceCurrency = priceCurrency == null
+                    ? DEFAULT_PRICE_CURRENCY : normalizeCurrency(priceCurrency);
         }
 
         if (performedAt.isAfter(Instant.now())) {

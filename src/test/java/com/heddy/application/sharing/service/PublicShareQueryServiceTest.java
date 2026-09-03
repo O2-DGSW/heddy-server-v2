@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class PublicShareQueryServiceTest {
@@ -175,7 +176,8 @@ class PublicShareQueryServiceTest {
                 OWNER_ID, Set.of(SAVED_STYLE_ID)))
                 .willReturn(List.of(new SavedStyle(
                         SAVED_STYLE_ID, OWNER_ID, "레이어드 커트",
-                        "https://images.example.com/layered.jpg", "추천 이유", NOW)));
+                        "https://images.example.com/layered.jpg", "추천 이유",
+                        null, null, null, null, NOW)));
 
         GetPublicShareUseCase.Result result = getOrFail();
 
@@ -188,6 +190,50 @@ class PublicShareQueryServiceTest {
             assertThat(style.imageUrl()).isEqualTo("https://images.example.com/layered.jpg");
             assertThat(style.reason()).isEqualTo("추천 이유");
         });
+    }
+
+    @Test
+    void signsTheCaptureOfACatalogBackedSavedStyleThatHasNoStoredUrl() {
+        UUID captureId = UUID.randomUUID();
+        stubActiveShare(Set.of(ShareFieldType.SAVED_STYLES), Set.of(SAVED_STYLE_ID));
+        given(sharedContentPort.load(OWNER_ID, Set.of(RECORD_ID)))
+                .willReturn(new SharedContentSnapshot("gangmin", List.of()));
+        StoredFile capture = readyFile(captureId);
+        given(fileRepositoryPort.findById(captureId)).willReturn(Optional.of(capture));
+        given(fileStoragePort.createDownloadUrl(capture))
+                .willReturn(URI.create("https://signed/capture"));
+        given(savedStyleRepositoryPort.findAllByUserIdAndIds(
+                OWNER_ID, Set.of(SAVED_STYLE_ID)))
+                .willReturn(List.of(new SavedStyle(
+                        SAVED_STYLE_ID, OWNER_ID, "남자 다운펌", null, null,
+                        UUID.randomUUID(), null, captureId, null, NOW)));
+
+        GetPublicShareUseCase.Result result = getOrFail();
+
+        assertThat(result.content().savedStyles()).singleElement().satisfies(style -> {
+            assertThat(style.styleName()).isEqualTo("남자 다운펌");
+            // 저장된 URL 이 없으면 캡처 파일에 조회 시점 서명 URL 을 발급한다.
+            assertThat(style.imageUrl()).isEqualTo("https://signed/capture");
+            assertThat(style.reason()).isNull();
+        });
+    }
+
+    @Test
+    void leavesTheSavedStyleImageEmptyWhenItHasNeitherUrlNorCapture() {
+        stubActiveShare(Set.of(ShareFieldType.SAVED_STYLES), Set.of(SAVED_STYLE_ID));
+        given(sharedContentPort.load(OWNER_ID, Set.of(RECORD_ID)))
+                .willReturn(new SharedContentSnapshot("gangmin", List.of()));
+        given(savedStyleRepositoryPort.findAllByUserIdAndIds(
+                OWNER_ID, Set.of(SAVED_STYLE_ID)))
+                .willReturn(List.of(new SavedStyle(
+                        SAVED_STYLE_ID, OWNER_ID, "남자 다운펌", null, null,
+                        UUID.randomUUID(), null, null, null, NOW)));
+
+        GetPublicShareUseCase.Result result = getOrFail();
+
+        assertThat(result.content().savedStyles()).singleElement()
+                .satisfies(style -> assertThat(style.imageUrl()).isNull());
+        verifyNoInteractions(fileStoragePort);
     }
 
     @Test

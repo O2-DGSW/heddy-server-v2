@@ -80,10 +80,9 @@ interface FileJpaRepository extends JpaRepository<FileEntity, UUID> {
 
     /**
      * READY 고아 판정 분기다. 네이티브 SQL 은 바인드 파라미터로 테이블 이름을 받을 수 없어,
-     * "파일을 참조하는 테이블" 목록이 이 상수 안에 하드코딩된다. 현재 READY 파일을 참조하는
-     * 도메인은 시술기록 사진({@code treatment_record_photos}) 하나뿐이다. 새 도메인이 READY
-     * 파일을 참조하게 되면 여기에 조건을 덧대지 않으면 그 도메인이 붙인 파일까지 고아로
-     * 판정돼 사진이 통째로 정리된다 — 파일 참조 기능을 추가할 때는 반드시 이 상수를 함께 고친다.
+     * "파일을 참조하는 테이블" 목록이 이 상수 안에 하드코딩된다. 새 도메인이 READY 파일을
+     * 참조하게 되면 여기에 조건을 덧대지 않을 경우 사용 중인 파일까지 고아로 오판해 스토리지
+     * 객체를 지운다. 파일 참조 기능을 추가할 때는 반드시 이 상수를 함께 고친다.
      */
     String READY_ORPHAN_CLAUSE = """
                OR (
@@ -92,6 +91,20 @@ interface FileJpaRepository extends JpaRepository<FileEntity, UUID> {
                    AND NOT EXISTS (
                        SELECT 1 FROM treatment_record_photos photo
                        WHERE photo.file_id = f.file_id
+                   )
+                   AND NOT EXISTS (
+                       SELECT 1 FROM analysis_overlays overlay
+                       WHERE overlay.file_id = f.file_id
+                   )
+                   AND NOT EXISTS (
+                       SELECT 1 FROM hairstyle_assets hairstyle
+                       WHERE hairstyle.thumbnail_file_id = f.file_id
+                          OR hairstyle.base_file_id = f.file_id
+                          OR hairstyle.mask_file_id = f.file_id
+                   )
+                   AND NOT EXISTS (
+                       SELECT 1 FROM saved_styles saved_style
+                       WHERE saved_style.capture_id = f.file_id
                    )
                )""";
 

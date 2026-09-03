@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 interface SavedStyleJpaRepository extends JpaRepository<SavedStyleEntity, UUID> {
@@ -14,6 +15,12 @@ interface SavedStyleJpaRepository extends JpaRepository<SavedStyleEntity, UUID> 
             UUID userId,
             Collection<UUID> savedStyleIds
     );
+
+    List<SavedStyleEntity> findAllByUserIdOrderByCreatedAtDescSavedStyleIdDesc(UUID userId);
+
+    Optional<SavedStyleEntity> findBySavedStyleIdAndUserId(UUID savedStyleId, UUID userId);
+
+    int deleteBySavedStyleId(UUID savedStyleId);
 
     @Query(value = """
             SELECT DISTINCT hairstyle_id FROM saved_styles

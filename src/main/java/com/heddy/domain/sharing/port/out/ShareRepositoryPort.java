@@ -24,6 +24,12 @@ public interface ShareRepositoryPort {
     /** 토큰 해시 대조로 조회한다. 공개 조회(#51)의 유일한 진입 경로다. */
     Optional<Share> findByTokenHash(String tokenHash);
 
+    /**
+     * 후보 스타일이 지워지기 전에 그 후보를 가리키는 공유 연결을 먼저 끊는다. 공유 링크는
+     * 살려 두고 사라진 내용만 빠지게 한다 — 기록이 지워졌을 때와 같은 처리다.
+     */
+    void detachSavedStyle(UUID savedStyleId);
+
     /** 소유자의 공유를 최신순으로 페이지 조회한다. 상태 필터는 생략 가능하다. */
     SharePage findPage(UUID userId, ShareStatus status, int page, int size);
 }

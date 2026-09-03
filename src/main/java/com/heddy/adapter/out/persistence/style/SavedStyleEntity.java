@@ -29,6 +29,9 @@ class SavedStyleEntity extends BaseEntity {
     @Column(nullable = false, length = 500, updatable = false)
     private String reason;
 
+    @Column(length = 500)
+    private String memo;
+
     protected SavedStyleEntity() {
     }
 
@@ -38,10 +41,16 @@ class SavedStyleEntity extends BaseEntity {
         styleName = savedStyle.styleName();
         imageUrl = savedStyle.imageUrl();
         reason = savedStyle.reason();
+        memo = savedStyle.memo();
+    }
+
+    void updateMemo(String memo) {
+        this.memo = memo;
     }
 
     SavedStyle toDomain() {
         return new SavedStyle(
-                savedStyleId, userId, styleName, imageUrl, reason, getCreatedAt());
+                savedStyleId, userId, styleName, imageUrl, reason, memo,
+                getCreatedAt(), getUpdatedAt());
     }
 }

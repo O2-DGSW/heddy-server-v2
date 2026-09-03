@@ -599,6 +599,74 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
     // ------------------------------------------------------------------ 사진 관리·비교
 
     @Test
+    void replacesThePhotoFileWithoutChangingThePhotoIdentifier() throws Exception {
+        String recordId = createRecord(USER_ID);
+        UUID oldFile = readyFile(USER_ID);
+        String added = mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\",\"image_type\":\"BEFORE\",\"sort_order\":3}"
+                                .formatted(oldFile)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String photoId = new ObjectMapper().readTree(added).path("data").path("photo_id").asText();
+
+        UUID newFile = readyFile(USER_ID);
+        mockMvc.perform(patch("/treatment-records/" + recordId + "/photos/" + photoId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\"}".formatted(newFile)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.photo_id").value(photoId))
+                // 함께 보내지 않은 값은 그대로 남는다.
+                .andExpect(jsonPath("$.data.image_type").value("BEFORE"))
+                .andExpect(jsonPath("$.data.sort_order").value(3));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT file_id FROM treatment_record_photos WHERE photo_id = ?",
+                UUID.class, UUID.fromString(photoId))).isEqualTo(newFile);
+
+        // 이미 이 사진이 쓰는 파일을 다른 사진에 다시 붙이려 하면 막는다. 한 파일을 둘이
+        // 공유하면 한쪽을 지울 때 남은 쪽 사진이 깨진다.
+        String secondAdded = mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\",\"image_type\":\"AFTER\"}"
+                                .formatted(readyFile(USER_ID))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String secondPhotoId = new ObjectMapper()
+                .readTree(secondAdded).path("data").path("photo_id").asText();
+
+        mockMvc.perform(patch("/treatment-records/" + recordId + "/photos/" + secondPhotoId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\"}".formatted(newFile)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("FILE_INVALID_STATE"));
+    }
+
+    @Test
+    void refusesToReplaceAPhotoWithSomeoneElsesFile() throws Exception {
+        String recordId = createRecord(USER_ID);
+        String added = mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\",\"image_type\":\"BEFORE\"}"
+                                .formatted(readyFile(USER_ID))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String photoId = new ObjectMapper().readTree(added).path("data").path("photo_id").asText();
+
+        mockMvc.perform(patch("/treatment-records/" + recordId + "/photos/" + photoId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\"}".formatted(readyFile(OTHER_USER_ID))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN_RESOURCE"));
+    }
+
+    @Test
     void addsUpdatesAndDeletesPhoto() throws Exception {
         String recordId = createRecord(USER_ID);
         UUID fileId = readyFile(USER_ID);

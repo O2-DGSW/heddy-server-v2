@@ -6,6 +6,8 @@ import com.heddy.domain.file.model.StoredFile;
 import com.heddy.domain.file.port.out.FileRepositoryPort;
 import com.heddy.domain.file.port.out.FileStoragePort;
 import com.heddy.domain.sharing.port.out.ShareRepositoryPort;
+import com.heddy.domain.style.exception.StyleError;
+import com.heddy.domain.style.exception.StyleException;
 import com.heddy.domain.style.model.CatalogHairstyle;
 import com.heddy.domain.style.model.HairColor;
 import com.heddy.domain.style.model.SavedStyle;
@@ -24,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -36,6 +39,9 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class SavedStyleService implements SavedStyleUseCase {
 
+    private static final int MAX_SAVED_STYLES = 20;
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final SavedStyleRepositoryPort savedStyleRepositoryPort;
     private final HairColorRepositoryPort hairColorRepositoryPort;
     private final HairstyleCatalogLookupPort hairstyleCatalogLookupPort;
@@ -44,21 +50,39 @@ public class SavedStyleService implements SavedStyleUseCase {
     private final ShareRepositoryPort shareRepositoryPort;
 
     @Override
-    public List<Item> list(UUID requesterId) {
-        List<SavedStyle> savedStyles = savedStyleRepositoryPort.findAllByUserId(requesterId);
+    public Page list(UUID requesterId, int page, int size) {
+        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
+            throw new ApplicationException(ErrorCode.INVALID_REQUEST);
+        }
+        List<SavedStyle> all = savedStyleRepositoryPort.findAllByUserId(requesterId);
+        int fromIndex = (int) Math.min((long) page * size, all.size());
+        int toIndex = Math.min(fromIndex + size, all.size());
+        List<SavedStyle> savedStyles = all.subList(fromIndex, toIndex);
         Map<UUID, HairColor> colors = colorsOf(savedStyles);
         Map<UUID, UUID> thumbnails = thumbnailFileIdsOf(savedStyles);
-        return savedStyles.stream()
+        List<Item> items = savedStyles.stream()
                 .map(style -> new Item(
                         style,
                         style.colorId() == null ? null : colors.get(style.colorId()),
                         imageUrl(style, thumbnails)))
                 .toList();
+        return new Page(items, all.size());
     }
 
     @Override
     @Transactional
     public Item save(SaveCommand command) {
+        List<SavedStyle> existing = savedStyleRepositoryPort
+                .findAllByUserId(command.requesterId());
+        boolean duplicated = existing.stream().anyMatch(saved ->
+                Objects.equals(saved.hairstyleId(), command.hairstyleId())
+                        && Objects.equals(saved.colorId(), command.colorId()));
+        if (duplicated) {
+            throw new StyleException(StyleError.SAVED_STYLE_DUPLICATED);
+        }
+        if (existing.size() >= MAX_SAVED_STYLES) {
+            throw new StyleException(StyleError.SAVED_STYLE_LIMIT_EXCEEDED);
+        }
         CatalogHairstyle hairstyle = requireActiveHairstyle(command.hairstyleId());
         HairColor color = command.colorId() == null ? null : requireColor(command.colorId());
         if (command.captureId() != null) {
@@ -71,6 +95,21 @@ public class SavedStyleService implements SavedStyleUseCase {
         Map<UUID, UUID> thumbnail = hairstyle.thumbnailFileId() == null
                 ? Map.of() : Map.of(hairstyle.hairstyleId(), hairstyle.thumbnailFileId());
         return new Item(saved, color, imageUrl(saved, thumbnail));
+    }
+
+    @Override
+    @Transactional
+    public Item updateMemo(UpdateMemoCommand command) {
+        if (!command.memoPresent()) {
+            throw new ApplicationException(ErrorCode.INVALID_REQUEST);
+        }
+        SavedStyle current = savedStyleRepositoryPort
+                .findByIdAndUserId(command.savedStyleId(), command.requesterId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
+        SavedStyle updated = savedStyleRepositoryPort.update(current.updateMemo(command.memo()));
+        HairColor color = updated.colorId() == null
+                ? null : hairColorRepositoryPort.findById(updated.colorId()).orElse(null);
+        return new Item(updated, color, imageUrl(updated, thumbnailFileIdsOf(List.of(updated))));
     }
 
     /**

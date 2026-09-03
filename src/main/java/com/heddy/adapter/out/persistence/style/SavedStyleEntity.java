@@ -38,7 +38,7 @@ class SavedStyleEntity extends BaseEntity {
     @Column(name = "capture_id", updatable = false)
     private UUID captureId;
 
-    @Column(length = 500, updatable = false)
+    @Column(length = 500)
     private String memo;
 
     protected SavedStyleEntity() {
@@ -54,6 +54,10 @@ class SavedStyleEntity extends BaseEntity {
         colorId = savedStyle.colorId();
         captureId = savedStyle.captureId();
         memo = savedStyle.memo();
+    }
+
+    void updateMemo(String updatedMemo) {
+        memo = updatedMemo;
     }
 
     SavedStyle toDomain() {

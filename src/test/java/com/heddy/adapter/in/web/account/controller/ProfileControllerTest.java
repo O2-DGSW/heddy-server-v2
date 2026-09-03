@@ -4,6 +4,7 @@ import com.heddy.config.TestSecurityConfig;
 import com.heddy.domain.account.exception.AccountError;
 import com.heddy.domain.account.exception.AccountException;
 import com.heddy.domain.account.model.AccountStatus;
+import com.heddy.domain.account.model.AuthProvider;
 import com.heddy.domain.account.model.HairProfile;
 import com.heddy.domain.account.model.HairProfile.HairCondition;
 import com.heddy.domain.account.model.HairProfile.HairLength;
@@ -90,6 +91,7 @@ class ProfileControllerTest {
                         .header(RequestIdFilter.HEADER, "request-20"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.user_id").value(USER_ID.toString()))
+                .andExpect(jsonPath("$.data.auth_provider").value("EMAIL"))
                 .andExpect(jsonPath("$.data.preferred_designer").value("김디자이너"))
                 .andExpect(jsonPath("$.data.hair_cautions").value("두피 자극 주의"))
                 .andExpect(jsonPath("$.request_id").value("request-20"));
@@ -182,8 +184,9 @@ class ProfileControllerTest {
     }
 
     private MyProfileResult profileResult() {
-        return new MyProfileResult(USER_ID, "user@example.com", "헤디", "01012345678",
-                "김디자이너", "두피 자극 주의", AccountStatus.ACTIVE, NOW, NOW);
+        return new MyProfileResult(USER_ID, "user@example.com", AuthProvider.EMAIL,
+                "헤디", "01012345678", "김디자이너", "두피 자극 주의",
+                AccountStatus.ACTIVE, NOW, NOW);
     }
 
     private HairProfile hairProfile() {

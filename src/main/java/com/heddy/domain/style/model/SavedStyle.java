@@ -70,6 +70,12 @@ public record SavedStyle(
                 null, null, null, null, null);
     }
 
+    public SavedStyle updateMemo(String updatedMemo) {
+        return new SavedStyle(
+                savedStyleId, userId, styleName, imageUrl, reason,
+                hairstyleId, colorId, captureId, updatedMemo, createdAt);
+    }
+
     private static String requireText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + "은(는) 비어 있을 수 없습니다.");

@@ -22,6 +22,15 @@ public class SavedStylePersistenceAdapter implements SavedStyleRepositoryPort {
     }
 
     @Override
+    public SavedStyle update(SavedStyle savedStyle) {
+        SavedStyleEntity entity = repository
+                .findBySavedStyleIdAndUserId(savedStyle.savedStyleId(), savedStyle.userId())
+                .orElseThrow(() -> new IllegalStateException("수정할 저장 후보가 존재하지 않습니다."));
+        entity.updateMemo(savedStyle.memo());
+        return repository.saveAndFlush(entity).toDomain();
+    }
+
+    @Override
     public List<SavedStyle> findAllByUserIdAndIds(
             UUID userId,
             Collection<UUID> savedStyleIds
@@ -62,5 +71,11 @@ public class SavedStylePersistenceAdapter implements SavedStyleRepositoryPort {
     @Override
     public List<UUID> findHairstyleIdsByUserId(UUID userId) {
         return repository.findHairstyleIdsByUserId(userId);
+    }
+
+    @Override
+    public void deleteAllByUserId(UUID userId) {
+        repository.deleteAllByUserId(userId);
+        repository.flush();
     }
 }

@@ -22,6 +22,8 @@ interface SavedStyleJpaRepository extends JpaRepository<SavedStyleEntity, UUID> 
 
     int deleteBySavedStyleId(UUID savedStyleId);
 
+    void deleteAllByUserId(UUID userId);
+
     @Query(value = """
             SELECT DISTINCT hairstyle_id FROM saved_styles
             WHERE user_id = :userId AND hairstyle_id IS NOT NULL

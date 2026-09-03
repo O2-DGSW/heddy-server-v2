@@ -117,8 +117,8 @@ class AccountDeletionWorkerIntegrationTest extends PostgresIntegrationTest {
         UUID shareId = UUID.randomUUID();
         jdbcTemplate.update("""
                 INSERT INTO shares (
-                    share_id, user_id, token_hash, status, expires_at
-                ) VALUES (?, ?, ?, 'ACTIVE', now() + interval '1 day')
+                    share_id, user_id, token_hash, target_hash, status, expires_at
+                ) VALUES (?, ?, ?, md5(random()::text), 'ACTIVE', now() + interval '1 day')
                 """, shareId, userId, UUID.randomUUID().toString().replace("-", "")
                         + UUID.randomUUID().toString().replace("-", ""));
         jdbcTemplate.update("""

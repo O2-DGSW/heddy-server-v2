@@ -117,9 +117,9 @@ class SharingPersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
      */
     @Test
     void excludesExpiredSharesFromTheActiveFilter() {
-        UUID recordId = insertRecord(OWNER_ID);
-        insertShare(OWNER_ID, recordId, ShareStatus.ACTIVE, NOW.minusSeconds(1));
-        insertShare(OWNER_ID, recordId, ShareStatus.ACTIVE, NOW.plusSeconds(60));
+        // 대상이 서로 달라야 한다 — 같은 대상의 활성 링크는 하나뿐이다(V31).
+        insertShare(OWNER_ID, insertRecord(OWNER_ID), ShareStatus.ACTIVE, NOW.minusSeconds(1));
+        insertShare(OWNER_ID, insertRecord(OWNER_ID), ShareStatus.ACTIVE, NOW.plusSeconds(60));
 
         SharePage page = adapter.findPage(OWNER_ID, ShareStatus.ACTIVE, 0, 20, NOW);
 
@@ -150,6 +150,61 @@ class SharingPersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
         insertShare(OWNER_ID, insertRecord(OWNER_ID), ShareStatus.REVOKED, NOW.minusSeconds(1));
 
         assertThat(adapter.findPage(OWNER_ID, ShareStatus.REVOKED, 0, 20, NOW).items()).hasSize(1);
+    }
+
+    // ------------------------------------------------------------- 대상 해시
+
+    /**
+     * 애플리케이션이 만드는 해시와 V31 백필이 만드는 해시가 같아야 한다. 어긋나면 기존 행과
+     * 새 행이 같은 대상인데도 다른 해시를 갖게 되고, 중복 제거가 조용히 무력해진다.
+     *
+     * <p>여기서 쓰는 SQL 은 V31 의 백필 식과 같은 모양이다.
+     */
+    @Test
+    void computesTheSameTargetHashAsTheBackfill() {
+        UUID first = insertRecord(OWNER_ID);
+        UUID second = insertRecord(OWNER_ID);
+        adapter.insert(Share.reconstitute(
+                UUID.randomUUID(), OWNER_ID, UUID.randomUUID().toString().replace("-", ""),
+                ShareStatus.ACTIVE, NOW.plusSeconds(60), null,
+                Set.of(first, second), Set.of(ShareFieldType.PHOTOS), Set.of(), NOW));
+
+        Boolean matches = jdbcTemplate.queryForObject("""
+                SELECT s.target_hash = encode(sha256(convert_to(t.payload, 'UTF8')), 'hex')
+                  FROM shares s
+                  JOIN (SELECT sh.share_id,
+                               coalesce((SELECT string_agg(r.record_id::text, ','
+                                                           ORDER BY r.record_id::text)
+                                         FROM share_records r WHERE r.share_id = sh.share_id), '')
+                               || '|'
+                               || coalesce((SELECT string_agg(ss.saved_style_id::text, ','
+                                                              ORDER BY ss.saved_style_id::text)
+                                            FROM share_saved_styles ss
+                                           WHERE ss.share_id = sh.share_id), '') AS payload
+                          FROM shares sh) t ON t.share_id = s.share_id
+                 WHERE s.user_id = ?
+                """, Boolean.class, OWNER_ID);
+
+        assertThat(matches).isTrue();
+    }
+
+    /**
+     * 같은 대상의 활성 링크만 닫는다. 만료된 ACTIVE 행도 닫아야 한다 — 부분 유니크 인덱스가
+     * 만료를 보지 못하므로 남겨 두면 다음 발급이 인덱스에 걸린다.
+     */
+    @Test
+    void revokesEveryActiveLinkOnTheSameTargetRegardlessOfExpiry() {
+        UUID recordId = insertRecord(OWNER_ID);
+        UUID untouched = insertRecord(OWNER_ID);
+        insertShare(OWNER_ID, recordId, ShareStatus.ACTIVE, NOW.minusSeconds(1));
+        insertShare(OWNER_ID, untouched, ShareStatus.ACTIVE, NOW.plusSeconds(60));
+
+        int revoked = adapter.revokeActiveWithSameTarget(OWNER_ID, recordId + "|", NOW);
+
+        assertThat(revoked).isEqualTo(1);
+        assertThat(adapter.findPage(OWNER_ID, ShareStatus.ACTIVE, 0, 20, NOW).items())
+                .singleElement()
+                .satisfies(share -> assertThat(share.recordIds()).containsExactly(untouched));
     }
 
     // ------------------------------------------------------------------ 헬퍼

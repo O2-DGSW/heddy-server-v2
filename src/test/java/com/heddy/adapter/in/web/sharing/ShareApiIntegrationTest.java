@@ -431,6 +431,123 @@ class ShareApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
+    // ------------------------------------------------------- 대상당 활성 링크 1개
+
+    /**
+     * 같은 기록을 다시 공유하면 이전 링크는 닫힌다. 발급할 때마다 링크가 쌓이면 사용자가
+     * 닫은 줄 아는 URL 이 계속 열려 있게 되고, 살아있는 링크 수에 상한이 없어진다.
+     */
+    @Test
+    void revokesThePreviousLinkWhenTheSameTargetIsSharedAgain() throws Exception {
+        UUID recordId = insertRecord(USER_ID);
+        String firstToken = tokenOf(createShare(createBody(recordId, 7)));
+
+        createShare(createBody(recordId, 7));
+
+        mockMvc.perform(get("/public/shares/" + firstToken))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("SHARE_REVOKED"));
+        Integer active = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM shares WHERE user_id = ? AND status = 'ACTIVE'",
+                Integer.class, USER_ID);
+        assertThat(active).isEqualTo(1);
+    }
+
+    /** 대상이 다르면 공존한다. 막는 것은 같은 대상의 중복이지 링크 발급 자체가 아니다. */
+    @Test
+    void keepsLinksThatPointAtDifferentTargets() throws Exception {
+        UUID first = insertRecord(USER_ID);
+        UUID second = insertRecord(USER_ID);
+
+        createShare(createBody(first, 7));
+        createShare(createBody(second, 7));
+
+        Integer active = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM shares WHERE user_id = ? AND status = 'ACTIVE'",
+                Integer.class, USER_ID);
+        assertThat(active).isEqualTo(2);
+    }
+
+    /**
+     * 기록 순서를 바꿔 보내도 같은 대상이다. 정규형이 순서를 지우지 못하면 같은 조합으로
+     * 링크가 무한히 쌓인다.
+     */
+    @Test
+    void treatsTheSameRecordsInADifferentOrderAsOneTarget() throws Exception {
+        UUID first = insertRecord(USER_ID);
+        UUID second = insertRecord(USER_ID);
+        String body = """
+                {"record_ids":["%s","%s"],"fields":["PHOTOS"],"expires_in_days":7}
+                """;
+
+        createShare(body.formatted(first, second));
+        createShare(body.formatted(second, first));
+
+        Integer active = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM shares WHERE user_id = ? AND status = 'ACTIVE'",
+                Integer.class, USER_ID);
+        assertThat(active).isEqualTo(1);
+    }
+
+    /**
+     * 만료됐지만 상태가 ACTIVE 인 행이 남아 있어도 다음 발급이 막히지 않아야 한다. 부분 유니크
+     * 인덱스는 만료를 보지 못하므로(now() 는 불변 표현식이 아니다) 폐기가 만료 여부와 무관하게
+     * 이루어져야 한다.
+     */
+    @Test
+    void reissuesOverAnExpiredButStillActiveRow() throws Exception {
+        UUID recordId = insertRecord(USER_ID);
+        createShare(createBody(recordId, 7));
+        jdbcTemplate.update(
+                "UPDATE shares SET expires_at = now() - interval '1 day' WHERE user_id = ?",
+                USER_ID);
+
+        createShare(createBody(recordId, 7));
+
+        Integer active = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM shares WHERE user_id = ? AND status = 'ACTIVE'",
+                Integer.class, USER_ID);
+        assertThat(active).isEqualTo(1);
+    }
+
+    /** 남의 공유는 건드리지 않는다. 대상이 같아도 소유자가 다르면 별개의 링크다. */
+    @Test
+    void leavesAnotherOwnersLinkAloneEvenOnTheSameRecord() throws Exception {
+        UUID recordId = insertRecord(USER_ID);
+        UUID otherRecord = insertRecord(OTHER_USER_ID);
+        createShare(createBody(recordId, 7));
+        UUID otherShareId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO shares (
+                    share_id, user_id, token_hash, target_hash, status, expires_at
+                ) VALUES (?, ?, ?, md5(random()::text), 'ACTIVE', now() + interval '1 day')
+                """, otherShareId, OTHER_USER_ID, UUID.randomUUID().toString().replace("-", ""));
+        jdbcTemplate.update(
+                "INSERT INTO share_records (share_id, record_id) VALUES (?, ?)",
+                otherShareId, otherRecord);
+
+        createShare(createBody(recordId, 7));
+
+        String otherStatus = jdbcTemplate.queryForObject(
+                "SELECT status FROM shares WHERE share_id = ?", String.class, otherShareId);
+        assertThat(otherStatus).isEqualTo("ACTIVE");
+    }
+
+    private String createShare(String body) throws Exception {
+        return mockMvc.perform(post("/shares")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    private String tokenOf(String createResponse) throws Exception {
+        String shareUrl = new ObjectMapper().readTree(createResponse)
+                .path("data").path("share_url").asText();
+        return shareUrl.substring(shareUrl.lastIndexOf('/') + 1);
+    }
+
     // ------------------------------------------------------------------ 헬퍼
 
     private String createShare(UUID recordId) throws Exception {

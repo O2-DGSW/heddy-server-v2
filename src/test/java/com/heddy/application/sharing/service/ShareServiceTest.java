@@ -23,6 +23,7 @@ import com.heddy.global.error.ApplicationException;
 import com.heddy.global.error.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -42,6 +43,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -166,6 +169,29 @@ class ShareServiceTest {
                 .isInstanceOfSatisfying(SharingException.class, e ->
                         assertThat(e.error()).isEqualTo(SharingError.EMPTY_SELECTION));
         then(treatmentRecordRepositoryPort).shouldHaveNoInteractions();
+    }
+
+    /**
+     * 폐기가 반드시 저장보다 먼저다. 순서가 뒤집히면 같은 대상의 활성 링크가 잠깐 둘이 되고,
+     * 부분 유니크 인덱스(V31)에 걸려 발급 자체가 실패한다.
+     */
+    @Test
+    void closesThePreviousLinkBeforeInsertingTheNewOne() {
+        UUID recordId = UUID.randomUUID();
+        given(treatmentRecordRepositoryPort.findByIdAndUserId(recordId, USER_ID))
+                .willReturn(Optional.of(mock(TreatmentRecord.class)));
+        given(tokenGeneratorPort.generate()).willReturn("raw-token");
+        given(tokenHasherPort.hash("raw-token")).willReturn("hashed");
+        given(shareRepositoryPort.insert(any(Share.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        service.create(new CreateShareUseCase.Command(
+                USER_ID, Set.of(recordId), Set.of(), Set.of(ShareFieldType.PHOTOS), 7));
+
+        InOrder inOrder = inOrder(shareRepositoryPort);
+        inOrder.verify(shareRepositoryPort).revokeActiveWithSameTarget(
+                eq(USER_ID), eq(recordId + "|"), any(Instant.class));
+        inOrder.verify(shareRepositoryPort).insert(any(Share.class));
     }
 
     // ------------------------------------------------------------------ 목록

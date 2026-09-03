@@ -66,7 +66,7 @@ public class HairstyleCatalogPersistenceAdapter implements HairstyleCatalogRepos
             Map<UUID, String> tags
     ) {
         return new HairstyleCandidate(asset.hairstyleId(), asset.styleName(), asset.category(),
-                asset.thumbnailFileId(), asset.active(), asset.assetVersion(),
+                asset.thumbnailFileId(), asset.arMode(), asset.active(), asset.assetVersion(),
                 parse(profile.serviceTypes(), ServiceType.class),
                 parse(profile.compatibleHairLengths(), HairLength.class),
                 parse(profile.compatibleHairTypes(), HairType.class),

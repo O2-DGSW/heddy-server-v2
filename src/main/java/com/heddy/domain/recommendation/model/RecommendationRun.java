@@ -11,6 +11,7 @@ public record RecommendationRun(
         Status status,
         String inputHash,
         boolean fallback,
+        RecommendationBasis recommendationBasis,
         Instant generatedAt,
         List<RecommendationItem> items
 ) {
@@ -23,6 +24,6 @@ public record RecommendationRun(
 
     public RecommendationRun markStale() {
         return new RecommendationRun(recommendationRunId, userId, strategy, Status.STALE,
-                inputHash, fallback, generatedAt, items);
+                inputHash, fallback, recommendationBasis, generatedAt, items);
     }
 }

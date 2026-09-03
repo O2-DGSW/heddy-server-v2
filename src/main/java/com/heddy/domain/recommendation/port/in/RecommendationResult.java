@@ -2,6 +2,7 @@ package com.heddy.domain.recommendation.port.in;
 
 import com.heddy.domain.recommendation.model.HairstyleCandidate;
 import com.heddy.domain.recommendation.model.RecommendationItem;
+import com.heddy.domain.recommendation.model.RecommendationBasis;
 import com.heddy.domain.recommendation.model.RecommendationRun;
 
 import java.net.URI;
@@ -15,6 +16,7 @@ public record RecommendationResult(
         RecommendationRun.Status status,
         Instant generatedAt,
         boolean fallback,
+        RecommendationBasis recommendationBasis,
         List<Item> items
 ) {
     public RecommendationResult {

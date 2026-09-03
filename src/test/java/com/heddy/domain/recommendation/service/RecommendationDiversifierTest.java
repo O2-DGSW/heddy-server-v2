@@ -39,7 +39,7 @@ class RecommendationDiversifierTest {
 
     private ScoredRecommendation item(String category, UUID tagId, double score) {
         HairstyleCandidate candidate = new HairstyleCandidate(UUID.randomUUID(), "style", category,
-                UUID.randomUUID(), true, "1", Set.of(), Set.of(), Set.of(), Set.of(), Set.of(),
+                UUID.randomUUID(), "NONE", true, "1", Set.of(), Set.of(), Set.of(), Set.of(), Set.of(),
                 Set.of(), null, 0, ManagementDifficulty.LOW, ChemicalStressLevel.LOW,
                 0, "1", Map.of(tagId, "tag"));
         ScoreBreakdown breakdown = new ScoreBreakdown(0, 0, 0, 0, 0, 0, 100, score);

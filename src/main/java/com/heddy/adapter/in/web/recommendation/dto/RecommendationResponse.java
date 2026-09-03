@@ -2,6 +2,7 @@ package com.heddy.adapter.in.web.recommendation.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.heddy.domain.recommendation.model.RecommendationReason;
+import com.heddy.domain.recommendation.model.RecommendationBasis;
 import com.heddy.domain.recommendation.model.RecommendationReference;
 import com.heddy.domain.recommendation.port.in.RecommendationResult;
 
@@ -17,12 +18,62 @@ public record RecommendationResponse(
         String status,
         @JsonProperty("generated_at") Instant generatedAt,
         boolean fallback,
+        @JsonProperty("recommendation_basis") Basis recommendationBasis,
         List<Item> items
 ) {
     public static RecommendationResponse from(RecommendationResult result) {
         return new RecommendationResponse(result.recommendationRunId(), result.strategy().name(),
                 result.status().name(), result.generatedAt(), result.fallback(),
+                Basis.from(result.recommendationBasis()),
                 result.items().stream().map(Item::from).toList());
+    }
+
+    public record Basis(
+            @JsonProperty("treatment_history") TreatmentHistory treatmentHistory,
+            @JsonProperty("ar_candidate_style_count") int arCandidateStyleCount,
+            @JsonProperty("style_preferences") StylePreferences stylePreferences,
+            @JsonProperty("current_hair") CurrentHair currentHair,
+            @JsonProperty("available_care_time_minutes") Integer availableCareTimeMinutes
+    ) {
+        static Basis from(RecommendationBasis basis) {
+            if (basis == null) {
+                return null;
+            }
+            return new Basis(
+                    new TreatmentHistory(basis.treatmentHistory().count(),
+                            basis.treatmentHistory().highestSatisfaction()),
+                    basis.arCandidateStyleCount(),
+                    new StylePreferences(basis.stylePreferences().preferredCount(),
+                            basis.stylePreferences().excludedCount()),
+                    CurrentHair.from(basis.currentHair()), basis.availableCareTimeMinutes());
+        }
+    }
+
+    public record TreatmentHistory(
+            long count,
+            @JsonProperty("highest_satisfaction") Integer highestSatisfaction
+    ) { }
+
+    public record StylePreferences(
+            @JsonProperty("preferred_count") int preferredCount,
+            @JsonProperty("excluded_count") int excludedCount
+    ) { }
+
+    public record CurrentHair(
+            @JsonProperty("hair_type") String hairType,
+            @JsonProperty("hair_condition") String hairCondition,
+            @JsonProperty("hair_length") String hairLength,
+            @JsonProperty("hair_thickness") String hairThickness
+    ) {
+        static CurrentHair from(RecommendationBasis.CurrentHair hair) {
+            return hair == null ? null : new CurrentHair(name(hair.hairType()),
+                    name(hair.hairCondition()), name(hair.hairLength()),
+                    name(hair.hairThickness()));
+        }
+
+        private static String name(Enum<?> value) {
+            return value == null ? null : value.name();
+        }
     }
 
     public record Item(
@@ -41,7 +92,7 @@ public record RecommendationResponse(
             return new Item(item.displayRank(), item.score(), new Hairstyle(
                     value.hairstyle().hairstyleId(), value.hairstyle().styleName(),
                     value.thumbnailUrl() == null ? null : value.thumbnailUrl().toString(),
-                    value.hairstyle().assetVersion()), item.colorId(),
+                    value.hairstyle().arMode(), value.hairstyle().assetVersion()), item.colorId(),
                     item.managementDifficulty().name(), item.estimatedDailyCareMinutes(),
                     item.reasons().stream().map(Reason::from).toList(),
                     reference == null ? List.of() : List.of(ReferenceRecord.from(reference)));
@@ -52,6 +103,7 @@ public record RecommendationResponse(
             @JsonProperty("hairstyle_id") UUID hairstyleId,
             @JsonProperty("style_name") String styleName,
             @JsonProperty("thumbnail_url") String thumbnailUrl,
+            @JsonProperty("ar_mode") String arMode,
             @JsonProperty("asset_version") String assetVersion
     ) { }
 

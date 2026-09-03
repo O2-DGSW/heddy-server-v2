@@ -98,8 +98,9 @@ class SummaryApiIntegrationTest extends PostgresIntegrationTest {
     private void insertActiveShare(UUID recordId) {
         UUID shareId = UUID.randomUUID();
         jdbcTemplate.update("""
-                INSERT INTO shares (share_id, user_id, token_hash, status, expires_at)
-                VALUES (?, ?, ?, 'ACTIVE', now() + interval '7 days')
+                INSERT INTO shares (
+                    share_id, user_id, token_hash, target_hash, status, expires_at
+                ) VALUES (?, ?, ?, md5(random()::text), 'ACTIVE', now() + interval '7 days')
                 """, shareId, USER_ID, UUID.randomUUID().toString().replace("-", ""));
         jdbcTemplate.update(
                 "INSERT INTO share_records (share_id, record_id) VALUES (?, ?)",

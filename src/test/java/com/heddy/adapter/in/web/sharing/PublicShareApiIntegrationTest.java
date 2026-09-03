@@ -272,8 +272,8 @@ class PublicShareApiIntegrationTest extends PostgresIntegrationTest {
         UUID shareId = UUID.randomUUID();
         jdbcTemplate.update("""
                 INSERT INTO shares (
-                    share_id, user_id, token_hash, status, expires_at
-                ) VALUES (?, ?, ?, ?, ?)
+                    share_id, user_id, token_hash, target_hash, status, expires_at
+                ) VALUES (?, ?, ?, md5(random()::text), ?, ?)
                 """, shareId, USER_ID, sha256Quiet(token), status,
                 Timestamp.from(expiresAt));
         jdbcTemplate.update("""

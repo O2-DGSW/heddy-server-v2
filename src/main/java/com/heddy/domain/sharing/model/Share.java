@@ -6,6 +6,7 @@ import com.heddy.domain.sharing.exception.SharingException;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.UUID;
 
 /**
@@ -81,6 +82,21 @@ public record Share(
         }
         return new Share(UUID.randomUUID(), userId, tokenHash, ShareStatus.ACTIVE,
                 now.plusSeconds((long) days * 86_400), null, recordIds, fields, savedStyleIds, now);
+    }
+
+    /**
+     * 대상 구성의 정규형. 같은 기록·후보를 고른 두 공유는 고르는 순서와 무관하게 같은 문자열을
+     * 낸다. 해싱은 이 문자열을 받는 쪽의 일이고, 여기서는 "무엇이 같은 대상인가" 만 정한다.
+     *
+     * <p>정렬은 UUID 문자열 기준이다. V31 의 백필도 같은 기준을 쓴다 — 두 정렬이 어긋나면
+     * 같은 대상이 서로 다른 해시를 갖고 중복 제거가 통째로 무력해진다.
+     */
+    public String targetKey() {
+        return join(recordIds) + "|" + join(savedStyleIds);
+    }
+
+    private static String join(Set<UUID> ids) {
+        return ids.stream().map(UUID::toString).sorted().collect(Collectors.joining(","));
     }
 
     /** 이미 읽어 온 행을 도메인으로 되돌릴 때 쓰는 재구성용 팩터리다. 불변식을 다시 통과한다. */

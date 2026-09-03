@@ -310,8 +310,10 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
     private UUID insertShareCarrying(UUID savedStyleId) {
         UUID shareId = UUID.randomUUID();
         jdbcTemplate.update("""
-                INSERT INTO shares (share_id, user_id, token_hash, status, expires_at, created_at)
-                VALUES (?, ?, ?, 'ACTIVE', now() + interval '1 day', now())
+                INSERT INTO shares (
+                    share_id, user_id, token_hash, target_hash, status, expires_at, created_at
+                ) VALUES (?, ?, ?, md5(random()::text), 'ACTIVE',
+                          now() + interval '1 day', now())
                 """, shareId, USER_ID, "hash-" + shareId);
         jdbcTemplate.update(
                 "INSERT INTO share_saved_styles (share_id, saved_style_id) VALUES (?, ?)",

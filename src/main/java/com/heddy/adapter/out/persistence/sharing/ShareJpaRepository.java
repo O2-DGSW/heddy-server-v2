@@ -26,6 +26,23 @@ interface ShareJpaRepository extends JpaRepository<ShareEntity, UUID> {
             nativeQuery = true)
     void deleteSavedStyleLinks(@Param("savedStyleId") UUID savedStyleId);
 
+    /**
+     * 같은 대상의 활성 공유를 한 번에 폐기한다. 만료 여부는 보지 않는다 — 부분 유니크 인덱스가
+     * 상태만 보므로(V31) 만료된 ACTIVE 행을 남기면 다음 발급이 인덱스에 걸린다.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            UPDATE ShareEntity share
+               SET share.status = 'REVOKED', share.revokedAt = :revokedAt
+             WHERE share.userId = :userId
+               AND share.targetHash = :targetHash
+               AND share.status = 'ACTIVE'
+            """)
+    int revokeActiveWithSameTarget(
+            @Param("userId") UUID userId,
+            @Param("targetHash") String targetHash,
+            @Param("revokedAt") Instant revokedAt);
+
     Optional<ShareEntity> findByTokenHash(String tokenHash);
 
     Page<ShareEntity> findByUserId(UUID userId, Pageable pageable);

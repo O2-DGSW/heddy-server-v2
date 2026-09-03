@@ -1,5 +1,6 @@
 package com.heddy.adapter.in.web.style.controller;
 
+import com.heddy.adapter.in.web.style.dto.HairColorsResponse;
 import com.heddy.adapter.in.web.style.dto.StylePreferencesRequest;
 import com.heddy.adapter.in.web.style.dto.StylePreferencesResponse;
 import com.heddy.adapter.in.web.style.dto.StyleTagsResponse;
@@ -43,6 +44,19 @@ public class StyleController {
     ) {
         return ApiResponse.success(
                 StyleTagsResponse.from(styleUseCase.getStyleTags(category)),
+                RequestIdFilter.get(servletRequest));
+    }
+
+    @GetMapping("/hair-colors")
+    @ApiDocs.Ok
+    @ApiDocs.Authenticated
+    @Operation(summary = "헤어 컬러 팔레트 조회",
+            description = "후보 스타일 저장·추천 응답·AR 이 함께 쓰는 색상 카탈로그입니다. "
+                    + "노출 순서대로 정렬되며, 더 쓰지 않는 색은 목록에서 빠집니다 "
+                    + "(이미 저장된 후보가 가리키는 색은 그대로 남습니다).")
+    public ApiResponse<HairColorsResponse> getHairColors(HttpServletRequest servletRequest) {
+        return ApiResponse.success(
+                HairColorsResponse.from(styleUseCase.getHairColors()),
                 RequestIdFilter.get(servletRequest));
     }
 

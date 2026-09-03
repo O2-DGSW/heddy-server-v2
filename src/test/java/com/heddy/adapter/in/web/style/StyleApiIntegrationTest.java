@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -78,6 +80,42 @@ class StyleApiIntegrationTest extends PostgresIntegrationTest {
                         .with(authentication(userAuthentication(USER_ID))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items.length()").value(24));
+    }
+
+    @Test
+    void getsSeededHairColorsInDisplayOrder() throws Exception {
+        mockMvc.perform(get("/hair-colors")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .header(RequestIdFilter.HEADER, "request-hair-color"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(10))
+                // 노출 순서대로 내려간다. 화면 팔레트가 이 순서를 그대로 쓴다.
+                .andExpect(jsonPath("$.data.items[0].code").value("NATURAL_BLACK"))
+                .andExpect(jsonPath("$.data.items[0].name").value("내추럴 블랙"))
+                .andExpect(jsonPath("$.data.items[0].hex_code").value("#1C1C1C"))
+                .andExpect(jsonPath("$.data.items[0].color_id")
+                        .value("c0100000-0000-4000-8000-000000000001"))
+                .andExpect(jsonPath("$.data.items[9].code").value("BLONDE"))
+                .andExpect(jsonPath("$.request_id").value("request-hair-color"));
+    }
+
+    @Test
+    void hidesRetiredHairColorsFromThePalette() throws Exception {
+        jdbcTemplate.update(
+                "UPDATE hair_colors SET active = FALSE WHERE code = ?", "BLONDE");
+
+        mockMvc.perform(get("/hair-colors")
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(9))
+                .andExpect(jsonPath("$.data.items[*].code", not(hasItem("BLONDE"))));
+    }
+
+    @Test
+    void requiresAuthenticationForTheHairColorPalette() throws Exception {
+        mockMvc.perform(get("/hair-colors"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("AUTHENTICATION_REQUIRED"));
     }
 
     @Test

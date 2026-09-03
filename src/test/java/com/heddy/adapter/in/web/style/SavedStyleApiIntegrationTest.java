@@ -72,7 +72,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
         UUID hairstyleId = insertHairstyle("남자 다운펌", null);
         UUID captureId = readyCapture(USER_ID);
 
-        String created = mockMvc.perform(post("/saved-styles")
+        String created = mockMvc.perform(post("/me/saved-styles")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -90,7 +90,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
         String savedStyleId = new ObjectMapper()
                 .readTree(created).path("data").path("saved_style_id").asText();
 
-        mockMvc.perform(get("/saved-styles")
+        mockMvc.perform(get("/me/saved-styles")
                         .with(authentication(userAuthentication(USER_ID))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items.length()").value(1))
@@ -105,7 +105,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
         UUID thumbnailFileId = readyCapture(null);
         UUID hairstyleId = insertHairstyle("레이어드 컷", thumbnailFileId);
 
-        mockMvc.perform(post("/saved-styles")
+        mockMvc.perform(post("/me/saved-styles")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"hairstyle_id\":\"%s\"}".formatted(hairstyleId)))
@@ -122,7 +122,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
         UUID retired = insertHairstyle("단종 스타일", null);
         jdbcTemplate.update("UPDATE hairstyle_assets SET active = FALSE WHERE hairstyle_id = ?",
                 retired);
-        mockMvc.perform(post("/saved-styles")
+        mockMvc.perform(post("/me/saved-styles")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"hairstyle_id\":\"%s\"}".formatted(retired)))
@@ -130,7 +130,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
 
         // 남의 캡처
-        mockMvc.perform(post("/saved-styles")
+        mockMvc.perform(post("/me/saved-styles")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"hairstyle_id\":\"%s\",\"capture_id\":\"%s\"}"
@@ -139,7 +139,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.error.code").value("FORBIDDEN_RESOURCE"));
 
         // 업로드가 끝나지 않은 캡처
-        mockMvc.perform(post("/saved-styles")
+        mockMvc.perform(post("/me/saved-styles")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"hairstyle_id\":\"%s\",\"capture_id\":\"%s\"}"
@@ -152,7 +152,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
     void deletesOwnCandidateAndDropsItFromSharesWithoutBreakingTheLink() throws Exception {
         UUID hairstyleId = insertHairstyle("남자 다운펌", null);
         UUID captureId = readyCapture(USER_ID);
-        String created = mockMvc.perform(post("/saved-styles")
+        String created = mockMvc.perform(post("/me/saved-styles")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"hairstyle_id\":\"%s\",\"capture_id\":\"%s\"}"
@@ -163,7 +163,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
                 .readTree(created).path("data").path("saved_style_id").asText());
         UUID shareId = insertShareCarrying(savedStyleId);
 
-        mockMvc.perform(delete("/saved-styles/" + savedStyleId)
+        mockMvc.perform(delete("/me/saved-styles/" + savedStyleId)
                         .with(authentication(userAuthentication(USER_ID))))
                 .andExpect(status().isNoContent());
 
@@ -183,7 +183,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
     @Test
     void hidesAnotherUsersCandidateBehindTheSameNotFound() throws Exception {
         UUID hairstyleId = insertHairstyle("남자 다운펌", null);
-        String created = mockMvc.perform(post("/saved-styles")
+        String created = mockMvc.perform(post("/me/saved-styles")
                         .with(authentication(userAuthentication(OTHER_USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"hairstyle_id\":\"%s\"}".formatted(hairstyleId)))
@@ -192,12 +192,12 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
         String foreignId = new ObjectMapper()
                 .readTree(created).path("data").path("saved_style_id").asText();
 
-        mockMvc.perform(delete("/saved-styles/" + foreignId)
+        mockMvc.perform(delete("/me/saved-styles/" + foreignId)
                         .with(authentication(userAuthentication(USER_ID))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
 
-        mockMvc.perform(get("/saved-styles")
+        mockMvc.perform(get("/me/saved-styles")
                         .with(authentication(userAuthentication(USER_ID))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items.length()").value(0));
@@ -208,21 +208,21 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
         UUID hairstyleId = insertHairstyle("레이어드 컷", null);
         UUID savedStyleId = saveCandidate(USER_ID, hairstyleId, null);
 
-        mockMvc.perform(patch("/saved-styles/" + savedStyleId)
+        mockMvc.perform(patch("/me/saved-styles/" + savedStyleId)
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"memo\":\"다음 상담 때 보여주기\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.memo").value("다음 상담 때 보여주기"));
 
-        mockMvc.perform(patch("/saved-styles/" + savedStyleId)
+        mockMvc.perform(patch("/me/saved-styles/" + savedStyleId)
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"memo\":null}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.memo").doesNotExist());
 
-        mockMvc.perform(patch("/saved-styles/" + savedStyleId)
+        mockMvc.perform(patch("/me/saved-styles/" + savedStyleId)
                         .with(authentication(userAuthentication(OTHER_USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"memo\":\"가져오기\"}"))
@@ -235,7 +235,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
         UUID duplicatedHairstyleId = insertHairstyle("중복 후보", null);
         saveCandidate(USER_ID, duplicatedHairstyleId, NATURAL_BLACK);
 
-        mockMvc.perform(post("/saved-styles")
+        mockMvc.perform(post("/me/saved-styles")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"hairstyle_id\":\"%s\",\"color_id\":\"%s\"}"
@@ -246,7 +246,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
         for (int index = 1; index < 20; index++) {
             saveCandidate(USER_ID, insertHairstyle("후보 " + index, null), null);
         }
-        mockMvc.perform(post("/saved-styles")
+        mockMvc.perform(post("/me/saved-styles")
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"hairstyle_id\":\"%s\"}"
@@ -256,22 +256,21 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
-    void returnsPagedCandidatesAndRejectsAnEmptyPatch() throws Exception {
-        saveCandidate(USER_ID, insertHairstyle("후보 하나", null), null);
+    void returnsEveryCandidateNewestFirstAndRejectsAnEmptyPatch() throws Exception {
+        UUID first = saveCandidate(USER_ID, insertHairstyle("후보 하나", null), null);
         UUID second = saveCandidate(USER_ID, insertHairstyle("후보 둘", null), null);
 
-        mockMvc.perform(get("/saved-styles")
-                        .with(authentication(userAuthentication(USER_ID)))
-                        .param("page", "0")
-                        .param("size", "1"))
+        mockMvc.perform(get("/me/saved-styles")
+                        .with(authentication(userAuthentication(USER_ID))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items.length()").value(2))
                 .andExpect(jsonPath("$.data.items[0].saved_style_id")
                         .value(second.toString()))
-                .andExpect(jsonPath("$.data.page.total_elements").value(2))
-                .andExpect(jsonPath("$.data.page.total_pages").value(2));
+                .andExpect(jsonPath("$.data.items[1].saved_style_id")
+                        .value(first.toString()))
+                .andExpect(jsonPath("$.data.page").doesNotExist());
 
-        mockMvc.perform(patch("/saved-styles/" + second)
+        mockMvc.perform(patch("/me/saved-styles/" + second)
                         .with(authentication(userAuthentication(USER_ID)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -281,15 +280,15 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
 
     @Test
     void requiresAuthenticationForEveryEndpoint() throws Exception {
-        mockMvc.perform(get("/saved-styles"))
+        mockMvc.perform(get("/me/saved-styles"))
                 .andExpect(status().isUnauthorized());
-        mockMvc.perform(post("/saved-styles")
+        mockMvc.perform(post("/me/saved-styles")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"hairstyle_id\":\"%s\"}".formatted(UUID.randomUUID())))
                 .andExpect(status().isUnauthorized());
-        mockMvc.perform(delete("/saved-styles/" + UUID.randomUUID()))
+        mockMvc.perform(delete("/me/saved-styles/" + UUID.randomUUID()))
                 .andExpect(status().isUnauthorized());
-        mockMvc.perform(patch("/saved-styles/" + UUID.randomUUID())
+        mockMvc.perform(patch("/me/saved-styles/" + UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"memo\":null}"))
                 .andExpect(status().isUnauthorized());
@@ -297,7 +296,7 @@ class SavedStyleApiIntegrationTest extends PostgresIntegrationTest {
 
     private UUID saveCandidate(UUID userId, UUID hairstyleId, UUID colorId) throws Exception {
         String colorField = colorId == null ? "" : ",\"color_id\":\"" + colorId + "\"";
-        String created = mockMvc.perform(post("/saved-styles")
+        String created = mockMvc.perform(post("/me/saved-styles")
                         .with(authentication(userAuthentication(userId)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"hairstyle_id\":\"%s\"%s}"

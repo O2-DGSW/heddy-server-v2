@@ -22,11 +22,11 @@ public record AddTreatmentPhotoRequest(
 
         @PositiveOrZero
         @JsonProperty("sort_order")
-        @Schema(description = "표시 순서", defaultValue = "0")
+        @Schema(description = "표시 순서. 생략하면 기존 사진들 뒤에 붙는다")
         Integer sortOrder
 ) {
     public ManageTreatmentPhotosUseCase.AddCommand toCommand(UUID userId, UUID recordId) {
         return new ManageTreatmentPhotosUseCase.AddCommand(
-                userId, recordId, fileId, imageType, sortOrder == null ? 0 : sortOrder);
+                userId, recordId, fileId, imageType, sortOrder);
     }
 }

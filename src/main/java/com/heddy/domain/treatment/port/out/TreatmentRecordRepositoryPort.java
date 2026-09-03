@@ -22,8 +22,12 @@ public interface TreatmentRecordRepositoryPort {
      */
     TreatmentPhoto insertPhoto(TreatmentPhoto photo);
 
-    /** 사진 유형과 표시 순서를 저장한다. */
+    /** 사진이 가리키는 파일과 유형·표시 순서를 저장한다. */
     Optional<TreatmentPhoto> updatePhoto(TreatmentPhoto photo);
+
+    /** 어느 사진이든 이미 이 파일을 가리키고 있는지 본다. 한 파일을 두 사진이 공유하면
+     *  한쪽을 지울 때 파일이 정리 대상이 되어 남은 쪽의 사진이 깨진다. */
+    boolean isFileAttached(UUID fileId);
 
     /** 사진 연결 한 건을 삭제한다. */
     boolean deletePhoto(UUID photoId);

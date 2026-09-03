@@ -51,7 +51,15 @@ public record TreatmentPhoto(
     }
 
     public TreatmentPhoto update(ImageType newImageType, int newSortOrder) {
+        return update(fileId, newImageType, newSortOrder);
+    }
+
+    /**
+     * 가리키는 파일까지 바꾼 사진을 만든다. {@code photoId} 는 그대로 두어 순서와 이 사진을
+     * 참조하는 분석 결과가 끊기지 않게 한다 — 삭제 후 재등록으로 교체하면 식별자가 바뀐다.
+     */
+    public TreatmentPhoto update(UUID newFileId, ImageType newImageType, int newSortOrder) {
         return new TreatmentPhoto(
-                photoId, recordId, fileId, newImageType, newSortOrder, createdAt);
+                photoId, recordId, newFileId, newImageType, newSortOrder, createdAt);
     }
 }

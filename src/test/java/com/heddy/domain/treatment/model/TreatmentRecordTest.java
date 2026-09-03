@@ -316,6 +316,23 @@ class TreatmentRecordTest {
                 null, null, null, null);
     }
 
+    @Test
+    void nextSortOrderPutsAnAddedPhotoBehindTheExistingOnes() {
+        TreatmentRecord empty = TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.CUT), null, null,
+                Instant.now().minusSeconds(60), null, null, null, null, null, null, null, null);
+        assertThat(empty.nextSortOrder()).isZero();
+
+        TreatmentRecord withZero = empty.attachPhoto(TreatmentPhoto.create(
+                empty.recordId(), UUID.randomUUID(), ImageType.BEFORE, 0));
+        assertThat(withZero.nextSortOrder()).isEqualTo(1);
+
+        // 순서가 비어 있어도 최대값 다음이라야 새 사진이 뒤로 간다.
+        TreatmentRecord withGap = withZero.attachPhoto(TreatmentPhoto.create(
+                withZero.recordId(), UUID.randomUUID(), ImageType.AFTER, 7));
+        assertThat(withGap.nextSortOrder()).isEqualTo(8);
+    }
+
     private static TreatmentPhoto photoFor(TreatmentRecord record) {
         return TreatmentPhoto.create(record.recordId(), UUID.randomUUID(), ImageType.BEFORE);
     }

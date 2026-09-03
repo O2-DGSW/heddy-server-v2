@@ -54,7 +54,10 @@ app:
     access-key: ${AWS_S3_ACCESS_KEY:}
     secret-key: ${AWS_S3_SECRET_KEY:}
     # 업로드 URL 만료는 업로드 세션(files.expires_at)을 따른다. 조회 URL 만 여기서 정한다.
-    download-url-ttl-seconds: 60
+    # 만료를 없앨 수는 없다. 버킷이 비공개라 Presigned GET URL 자체가 인증 수단이고,
+    # 새어 나가면 로그인 없이 사진이 열린다. 다만 60초는 목록을 열어둔 채 스크롤하는
+    # 정상 사용에도 짧아 이미지가 403 으로 깨졌다. 화면 체류 시간과 노출 창의 절충값이다.
+    download-url-ttl-seconds: ${DOWNLOAD_URL_TTL_SECONDS:300}
     # 업로드 세션 수명. presign 부터 complete 까지 클라이언트가 직접 올릴 시간을 준다.
     upload-session-ttl-seconds: ${UPLOAD_SESSION_TTL_SECONDS:600}
   file-cleanup:

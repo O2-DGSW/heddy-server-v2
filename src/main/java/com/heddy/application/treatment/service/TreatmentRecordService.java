@@ -221,8 +221,11 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     @Transactional
     public ManageTreatmentPhotosUseCase.Result add(ManageTreatmentPhotosUseCase.AddCommand command) {
         TreatmentRecord record = ownedLockedRecord(command.requesterId(), command.recordId());
+        // 기록 행을 잠근 뒤 계산해야 동시 추가가 같은 순번을 집지 않는다.
+        int sortOrder = command.sortOrder() == null
+                ? record.nextSortOrder() : command.sortOrder();
         TreatmentPhoto photo = TreatmentPhoto.create(
-                record.recordId(), command.fileId(), command.imageType(), command.sortOrder());
+                record.recordId(), command.fileId(), command.imageType(), sortOrder);
         record.attachPhoto(photo);
         requireOwnedReadyFile(command.requesterId(), command.fileId());
         TreatmentPhoto saved = recordRepositoryPort.insertPhoto(photo);
@@ -237,16 +240,25 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     public ManageTreatmentPhotosUseCase.Result update(ManageTreatmentPhotosUseCase.UpdateCommand command) {
         TreatmentRecord record = ownedRecord(command.requesterId(), command.recordId());
         TreatmentPhoto current = ownedPhoto(record, command.photoId());
-        if (command.imageType() == null && command.sortOrder() == null) {
+        if (command.fileId() == null && command.imageType() == null && command.sortOrder() == null) {
             throw new ApplicationException(ErrorCode.INVALID_REQUEST);
+        }
+        UUID fileId = command.fileId() == null ? current.fileId() : command.fileId();
+        if (!fileId.equals(current.fileId())) {
+            requireOwnedReadyFile(command.requesterId(), fileId);
+            requireUnattachedFile(fileId);
         }
         ImageType imageType = command.imageType() == null ? current.imageType() : command.imageType();
         int sortOrder = command.sortOrder() == null ? current.sortOrder() : command.sortOrder();
-        TreatmentPhoto updated = current.update(imageType, sortOrder);
+        TreatmentPhoto updated = current.update(fileId, imageType, sortOrder);
         TreatmentPhoto saved = recordRepositoryPort.updatePhoto(updated)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
-        if (current.imageType() != saved.imageType()
-                && (current.imageType() == ImageType.AFTER || saved.imageType() == ImageType.AFTER)) {
+        boolean typeCrossedAfter = current.imageType() != saved.imageType()
+                && (current.imageType() == ImageType.AFTER || saved.imageType() == ImageType.AFTER);
+        // 사진이 바뀌면 그 사진을 근거로 낸 분석 결과는 더 이상 맞지 않는다.
+        boolean afterFileReplaced = saved.imageType() == ImageType.AFTER
+                && !saved.fileId().equals(current.fileId());
+        if (typeCrossedAfter || afterFileReplaced) {
             analysisStalenessPort.markLatestStale(record.recordId());
         }
         return new ManageTreatmentPhotosUseCase.Result(saved, downloadUrl(saved));
@@ -388,6 +400,16 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
             throw new ApplicationException(ErrorCode.FORBIDDEN_RESOURCE);
         }
         if (!file.isReady()) {
+            throw new ApplicationException(ErrorCode.FILE_INVALID_STATE);
+        }
+    }
+
+    /**
+     * 이미 다른 사진이 가리키는 파일은 붙이지 않는다. 한 파일을 두 사진이 공유하면 한쪽을
+     * 지울 때 파일이 정리 대상이 되어 남은 사진의 URL 이 조용히 비게 된다.
+     */
+    private void requireUnattachedFile(UUID fileId) {
+        if (recordRepositoryPort.isFileAttached(fileId)) {
             throw new ApplicationException(ErrorCode.FILE_INVALID_STATE);
         }
     }

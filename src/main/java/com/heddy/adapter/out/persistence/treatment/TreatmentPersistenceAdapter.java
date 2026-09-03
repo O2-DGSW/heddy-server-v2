@@ -47,6 +47,11 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
     }
 
     @Override
+    public boolean isFileAttached(UUID fileId) {
+        return photoRepository.existsByFileId(fileId);
+    }
+
+    @Override
     public boolean deletePhoto(UUID photoId) {
         boolean deleted = photoRepository.deleteByPhotoId(photoId) == 1;
         if (deleted) {

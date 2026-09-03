@@ -40,7 +40,6 @@ import java.util.UUID;
 public class SavedStyleService implements SavedStyleUseCase {
 
     private static final int MAX_SAVED_STYLES = 20;
-    private static final int MAX_PAGE_SIZE = 100;
 
     private final SavedStyleRepositoryPort savedStyleRepositoryPort;
     private final HairColorRepositoryPort hairColorRepositoryPort;
@@ -49,24 +48,21 @@ public class SavedStyleService implements SavedStyleUseCase {
     private final FileStoragePort fileStoragePort;
     private final ShareRepositoryPort shareRepositoryPort;
 
+    /**
+     * 보관함은 {@link #MAX_SAVED_STYLES} 개가 상한이라 한 번에 다 내려도 부담이 없다.
+     * 페이지를 나누면 화면이 얻는 것 없이 계약만 복잡해져 목록을 통째로 돌려준다.
+     */
     @Override
-    public Page list(UUID requesterId, int page, int size) {
-        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
-            throw new ApplicationException(ErrorCode.INVALID_REQUEST);
-        }
-        List<SavedStyle> all = savedStyleRepositoryPort.findAllByUserId(requesterId);
-        int fromIndex = (int) Math.min((long) page * size, all.size());
-        int toIndex = Math.min(fromIndex + size, all.size());
-        List<SavedStyle> savedStyles = all.subList(fromIndex, toIndex);
+    public List<Item> list(UUID requesterId) {
+        List<SavedStyle> savedStyles = savedStyleRepositoryPort.findAllByUserId(requesterId);
         Map<UUID, HairColor> colors = colorsOf(savedStyles);
         Map<UUID, UUID> thumbnails = thumbnailFileIdsOf(savedStyles);
-        List<Item> items = savedStyles.stream()
+        return savedStyles.stream()
                 .map(style -> new Item(
                         style,
                         style.colorId() == null ? null : colors.get(style.colorId()),
                         imageUrl(style, thumbnails)))
                 .toList();
-        return new Page(items, all.size());
     }
 
     @Override

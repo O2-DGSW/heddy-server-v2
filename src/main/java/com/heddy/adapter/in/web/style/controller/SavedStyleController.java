@@ -2,12 +2,12 @@ package com.heddy.adapter.in.web.style.controller;
 
 import com.heddy.adapter.in.web.style.dto.SaveStyleRequest;
 import com.heddy.adapter.in.web.style.dto.SavedStyleResponse;
+import com.heddy.adapter.in.web.style.dto.SavedStylesResponse;
 import com.heddy.adapter.in.web.style.dto.UpdateSavedStyleRequest;
 import com.heddy.domain.style.port.in.SavedStyleUseCase;
 import com.heddy.global.docs.ApiDocs;
 import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
-import com.heddy.global.response.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -26,13 +26,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/saved-styles")
+@RequestMapping("/me/saved-styles")
 @Tag(name = "저장한 후보 스타일", description = "AR 로 시연한 스타일을 보관하고 다시 꺼내 쓴다")
 @SecurityRequirement(name = "bearerAuth")
 public class SavedStyleController {
@@ -43,19 +42,15 @@ public class SavedStyleController {
     @ApiDocs.Ok
     @ApiDocs.Authenticated
     @Operation(summary = "저장한 후보 스타일 목록",
-            description = "최신 저장순으로 돌려줍니다. 이미지 URL 은 저장값이 아니라 조회 시점에 "
-                    + "짧은 만료의 Presigned GET 으로 발급합니다.")
-    public ApiResponse<PageResponse<SavedStyleResponse>> list(
+            description = "최신 저장순으로 전부 돌려줍니다. 보관함은 최대 20개라 페이지를 "
+                    + "나누지 않습니다. 이미지 URL 은 저장값이 아니라 조회 시점에 짧은 만료의 "
+                    + "Presigned GET 으로 발급합니다.")
+    public ApiResponse<SavedStylesResponse> list(
             @AuthenticationPrincipal UUID userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
             HttpServletRequest servletRequest
     ) {
-        SavedStyleUseCase.Page result = savedStyleUseCase.list(userId, page, size);
         return ApiResponse.success(
-                PageResponse.of(
-                        result.items().stream().map(SavedStyleResponse::from).toList(),
-                        page, size, result.totalElements()),
+                SavedStylesResponse.from(savedStyleUseCase.list(userId)),
                 RequestIdFilter.get(servletRequest));
     }
 

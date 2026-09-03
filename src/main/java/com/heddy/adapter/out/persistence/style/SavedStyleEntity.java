@@ -23,11 +23,23 @@ class SavedStyleEntity extends BaseEntity {
     @Column(name = "style_name", nullable = false, length = 100, updatable = false)
     private String styleName;
 
-    @Column(name = "image_url", nullable = false, length = 2048, updatable = false)
+    @Column(name = "image_url", length = 2048, updatable = false)
     private String imageUrl;
 
-    @Column(nullable = false, length = 500, updatable = false)
+    @Column(length = 500, updatable = false)
     private String reason;
+
+    @Column(name = "hairstyle_id", updatable = false)
+    private UUID hairstyleId;
+
+    @Column(name = "color_id", updatable = false)
+    private UUID colorId;
+
+    @Column(name = "capture_id", updatable = false)
+    private UUID captureId;
+
+    @Column(length = 500, updatable = false)
+    private String memo;
 
     protected SavedStyleEntity() {
     }
@@ -38,10 +50,15 @@ class SavedStyleEntity extends BaseEntity {
         styleName = savedStyle.styleName();
         imageUrl = savedStyle.imageUrl();
         reason = savedStyle.reason();
+        hairstyleId = savedStyle.hairstyleId();
+        colorId = savedStyle.colorId();
+        captureId = savedStyle.captureId();
+        memo = savedStyle.memo();
     }
 
     SavedStyle toDomain() {
         return new SavedStyle(
-                savedStyleId, userId, styleName, imageUrl, reason, getCreatedAt());
+                savedStyleId, userId, styleName, imageUrl, reason,
+                hairstyleId, colorId, captureId, memo, getCreatedAt());
     }
 }

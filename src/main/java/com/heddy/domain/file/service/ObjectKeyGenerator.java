@@ -24,7 +24,8 @@ public final class ObjectKeyGenerator {
     private static final Map<String, String> EXTENSIONS = Map.of(
             "image/jpeg", "jpg",
             "image/png", "png",
-            "image/heic", "heic");
+            "image/heic", "heic",
+            "image/webp", "webp");
 
     private ObjectKeyGenerator() {
     }

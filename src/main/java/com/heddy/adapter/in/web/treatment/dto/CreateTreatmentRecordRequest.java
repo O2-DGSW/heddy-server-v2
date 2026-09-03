@@ -36,10 +36,19 @@ public record CreateTreatmentRecordRequest(
         @Schema(description = "만족도. 선택 입력, 1~5")
         @JsonProperty("satisfaction") Integer satisfaction,
 
-        @Schema(description = "가격 금액. price_currency 와 함께 넣거나 함께 뺀다")
+        @Schema(description = "소요 시간(분). 선택 입력, 0 이상", example = "90")
+        @JsonProperty("duration_minutes") Integer durationMinutes,
+
+        @Schema(description = "시술 내용. 선택 입력, 최대 255자. 메모와 별개로 무엇을 했는지 "
+                + "적는다", example = "애쉬브라운 전체 염색")
+        @JsonProperty("treatment_content") String treatmentContent,
+
+        @Schema(description = "가격 금액. 선택 입력", example = "35000")
         @JsonProperty("price_amount") Long priceAmount,
 
-        @Schema(description = "통화 코드(3자). price_amount 와 함께 넣거나 함께 뺀다")
+        @Schema(description = "통화 코드(3자). 생략하면 KRW 로 채운다. price_amount 없이 "
+                + "이 값만 보내면 422 TREATMENT_PRICE_INCOMPLETE",
+                defaultValue = "KRW", example = "KRW")
         @JsonProperty("price_currency") String priceCurrency,
 
         @Schema(description = "연결할 예약 식별자. 선택 입력")
@@ -76,7 +85,7 @@ public record CreateTreatmentRecordRequest(
     public CreateTreatmentRecordUseCase.Command toCommand(UUID userId) {
         return new CreateTreatmentRecordUseCase.Command(userId, serviceTypes, salonName, designerName,
                 performedAt, satisfaction, priceAmount, priceCurrency, appointmentId,
-                memo, nextVisitCautions,
+                memo, nextVisitCautions, durationMinutes, treatmentContent,
                 photos == null ? List.of() : java.util.stream.IntStream.range(0, photos.size())
                         .mapToObj(index -> {
                             PhotoRequest photo = photos.get(index);

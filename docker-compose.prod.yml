@@ -29,6 +29,11 @@ services:
       # 실제 S3 를 쓰므로 운영 값은 빈 문자열이다. unset 만 아니면 통과시킨다.
       AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT:-}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required}
+      # QR/공유 버튼이 발급하는 URL의 앞부분. 운영 기본 도메인은 heddy.site 다.
+      SHARE_PUBLIC_BASE_URL: ${SHARE_PUBLIC_BASE_URL:-https://heddy.site/s}
+      # 사진 조회 Presigned GET URL 의 만료(초). 짧을수록 URL 유출 창이 좁지만,
+      # 화면 체류 시간보다 짧으면 이미지가 403 으로 깨진다.
+      DOWNLOAD_URL_TTL_SECONDS: ${DOWNLOAD_URL_TTL_SECONDS:-300}
     ports:
       - "8080:8080"
     healthcheck:

@@ -362,6 +362,53 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.items[2].analysis_status").value(nullValue()));
     }
 
+    /** 기록 추가 화면의 "소요 시간"·"시술 내용" 입력란이 실제로 저장되고 조회된다. */
+    @Test
+    void storesAndReturnsDurationAndTreatmentContent() throws Exception {
+        String created = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "service_types": ["COLOR"],
+                                  "performed_at": "2026-08-20T10:00:00Z",
+                                  "duration_minutes": 90,
+                                  "treatment_content": "애쉬브라운 전체 염색",
+                                  "memo": "개인 메모"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.duration_minutes").value(90))
+                .andExpect(jsonPath("$.data.treatment_content").value("애쉬브라운 전체 염색"))
+                // 시술 내용과 메모는 별개 필드다. 한쪽이 다른 쪽을 덮어쓰면 안 된다.
+                .andExpect(jsonPath("$.data.memo").value("개인 메모"))
+                .andReturn().getResponse().getContentAsString();
+        String recordId = new ObjectMapper().readTree(created).path("data").path("record_id").asText();
+
+        mockMvc.perform(get("/treatment-records/{recordId}", recordId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.duration_minutes").value(90))
+                .andExpect(jsonPath("$.data.treatment_content").value("애쉬브라운 전체 염색"));
+    }
+
+    @Test
+    void rejectsNegativeDurationMinutes() throws Exception {
+        mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "service_types": ["CUT"],
+                                  "performed_at": "2026-08-20T10:00:00Z",
+                                  "duration_minutes": -1
+                                }
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code")
+                        .value("TREATMENT_DURATION_MINUTES_NEGATIVE"));
+    }
+
     @Test
     void rejectsInvalidListRangePageAndSortAsBadRequest() throws Exception {
         mockMvc.perform(get("/treatment-records")
@@ -382,6 +429,56 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                         .param("sort", "createdAt,desc"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void storesThePriceWithTheDefaultCurrencyWhenItIsOmitted() throws Exception {
+        // 기록 추가 화면에는 통화 입력란이 없다. 금액만 보내도 가격이 저장돼야 한다.
+        String created = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"service_types":["CUT"],"performed_at":"2026-08-01T10:00:00Z",
+                                 "salon_name":"준헤어","price_amount":35000}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.price.amount").value(35000))
+                .andExpect(jsonPath("$.data.price.currency").value("KRW"))
+                .andReturn().getResponse().getContentAsString();
+        String recordId = new ObjectMapper()
+                .readTree(created).path("data").path("record_id").asText();
+
+        var stored = jdbcTemplate.queryForMap(
+                "SELECT price_amount, price_currency FROM treatment_records WHERE record_id = ?",
+                UUID.fromString(recordId));
+        assertThat(stored.get("price_currency")).isEqualTo("KRW");
+
+        // 금액만 지우면 남아 있던 통화도 함께 비운다.
+        mockMvc.perform(patch("/treatment-records/" + recordId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"price_amount\":null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.price").doesNotExist());
+
+        stored = jdbcTemplate.queryForMap(
+                "SELECT price_amount, price_currency FROM treatment_records WHERE record_id = ?",
+                UUID.fromString(recordId));
+        assertThat(stored.get("price_amount")).isNull();
+        assertThat(stored.get("price_currency")).isNull();
+    }
+
+    @Test
+    void stillRejectsACurrencyThatCarriesNoAmount() throws Exception {
+        mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"service_types":["CUT"],"performed_at":"2026-08-01T10:00:00Z",
+                                 "price_currency":"KRW"}
+                                """))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("TREATMENT_PRICE_INCOMPLETE"));
     }
 
     // ------------------------------------------------------------------ 수정·삭제
@@ -417,6 +514,34 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
+    void rejectsUnknownFieldsInPatchInsteadOfSilentlyDroppingThem() throws Exception {
+        UUID fileId = readyFile(USER_ID);
+        String recordId = createRecord(USER_ID);
+
+        // photos 는 이 API 가 받지 않는 필드다. 조용히 버리고 200 을 주면 클라이언트는
+        // 사진이 교체된 줄 알고 옛 사진이 남은 화면을 본다.
+        mockMvc.perform(patch("/treatment-records/" + recordId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"memo":"메모는 정상 필드",
+                                 "photos":[{"file_id":"%s","image_type":"BEFORE"}]}
+                                """.formatted(fileId)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.error.field_errors[*].field")
+                        .value(hasItem("known_fields_only")))
+                .andExpect(jsonPath("$.error.field_errors[*].reason")
+                        .value(hasItem(containsString("/photos"))));
+
+        // 거절된 요청은 정상 필드까지 포함해 아무것도 반영하지 않는다.
+        var stored = jdbcTemplate.queryForMap(
+                "SELECT memo FROM treatment_records WHERE record_id = ?",
+                UUID.fromString(recordId));
+        assertThat(stored.get("memo")).isEqualTo("기존 메모");
+    }
+
+    @Test
     void rejectsFuturePerformedAtAndHidesForeignRecordDuringPatch() throws Exception {
         String ownRecordId = createRecord(USER_ID);
         mockMvc.perform(patch("/treatment-records/" + ownRecordId)
@@ -436,6 +561,37 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
                         .content("{\"memo\":\"볼 수 없어야 함\"}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
+    void appendsPhotoBehindExistingOnesWhenSortOrderIsOmitted() throws Exception {
+        UUID firstFile = readyFile(USER_ID);
+        String created = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody("2026-08-01T10:00:00Z", photoRefs(firstFile))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String recordId = new ObjectMapper()
+                .readTree(created).path("data").path("record_id").asText();
+
+        // sort_order 를 생략한 추가는 기존 0 번과 동점이 되면 안 된다. 동점이면 정렬이
+        // created_at 으로 풀려 새 사진이 뒤로 밀리고 목록 썸네일은 옛 사진을 가리킨다.
+        UUID secondFile = readyFile(USER_ID);
+        mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\",\"image_type\":\"AFTER\"}"
+                                .formatted(secondFile)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.sort_order").value(1));
+
+        mockMvc.perform(get("/treatment-records/" + recordId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.photos", hasSize(2)))
+                .andExpect(jsonPath("$.data.photos[0].sort_order").value(0))
+                .andExpect(jsonPath("$.data.photos[1].sort_order").value(1));
     }
 
     @Test
@@ -550,6 +706,74 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     // ------------------------------------------------------------------ 사진 관리·비교
+
+    @Test
+    void replacesThePhotoFileWithoutChangingThePhotoIdentifier() throws Exception {
+        String recordId = createRecord(USER_ID);
+        UUID oldFile = readyFile(USER_ID);
+        String added = mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\",\"image_type\":\"BEFORE\",\"sort_order\":3}"
+                                .formatted(oldFile)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String photoId = new ObjectMapper().readTree(added).path("data").path("photo_id").asText();
+
+        UUID newFile = readyFile(USER_ID);
+        mockMvc.perform(patch("/treatment-records/" + recordId + "/photos/" + photoId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\"}".formatted(newFile)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.photo_id").value(photoId))
+                // 함께 보내지 않은 값은 그대로 남는다.
+                .andExpect(jsonPath("$.data.image_type").value("BEFORE"))
+                .andExpect(jsonPath("$.data.sort_order").value(3));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT file_id FROM treatment_record_photos WHERE photo_id = ?",
+                UUID.class, UUID.fromString(photoId))).isEqualTo(newFile);
+
+        // 이미 이 사진이 쓰는 파일을 다른 사진에 다시 붙이려 하면 막는다. 한 파일을 둘이
+        // 공유하면 한쪽을 지울 때 남은 쪽 사진이 깨진다.
+        String secondAdded = mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\",\"image_type\":\"AFTER\"}"
+                                .formatted(readyFile(USER_ID))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String secondPhotoId = new ObjectMapper()
+                .readTree(secondAdded).path("data").path("photo_id").asText();
+
+        mockMvc.perform(patch("/treatment-records/" + recordId + "/photos/" + secondPhotoId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\"}".formatted(newFile)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("FILE_INVALID_STATE"));
+    }
+
+    @Test
+    void refusesToReplaceAPhotoWithSomeoneElsesFile() throws Exception {
+        String recordId = createRecord(USER_ID);
+        String added = mockMvc.perform(post("/treatment-records/" + recordId + "/photos")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\",\"image_type\":\"BEFORE\"}"
+                                .formatted(readyFile(USER_ID))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String photoId = new ObjectMapper().readTree(added).path("data").path("photo_id").asText();
+
+        mockMvc.perform(patch("/treatment-records/" + recordId + "/photos/" + photoId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"file_id\":\"%s\"}".formatted(readyFile(OTHER_USER_ID))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN_RESOURCE"));
+    }
 
     @Test
     void addsUpdatesAndDeletesPhoto() throws Exception {

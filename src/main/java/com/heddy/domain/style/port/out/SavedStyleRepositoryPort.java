@@ -1,7 +1,6 @@
 package com.heddy.domain.style.port.out;
 
 import com.heddy.domain.style.model.SavedStyle;
-import com.heddy.domain.style.model.SavedStylePage;
 
 import java.util.Collection;
 import java.util.List;
@@ -12,20 +11,24 @@ public interface SavedStyleRepositoryPort {
 
     SavedStyle insert(SavedStyle savedStyle);
 
-    /** 소유자 조건을 포함해 여러 후보를 최신 저장순으로 읽는다. 없는 식별자는 결과에서 빠진다. */
-    List<SavedStyle> findAllByUserIdAndIds(UUID userId, Collection<UUID> savedStyleIds);
-
-    Optional<SavedStyle> findByIdAndUserId(UUID savedStyleId, UUID userId);
-
-    SavedStylePage findPage(UUID userId, int page, int size);
-
-    long countByUserId(UUID userId);
-
-    boolean existsBySnapshot(UUID userId, String styleName, String imageUrl);
-
+    /** 메모가 수정된 후보를 저장한다. */
     SavedStyle update(SavedStyle savedStyle);
 
-    boolean deleteByIdAndUserId(UUID savedStyleId, UUID userId);
+    /** 내 후보를 최신 저장순으로 읽는다. */
+    List<SavedStyle> findAllByUserId(UUID userId);
 
+    /** 소유자 조건을 포함해 한 건을 읽어 다른 사용자의 후보 존재 여부를 감춘다. */
+    Optional<SavedStyle> findByIdAndUserId(UUID savedStyleId, UUID userId);
+
+    /** 후보 한 건을 삭제한다. 지운 행이 없으면 false. */
+    boolean deleteById(UUID savedStyleId);
+
+    /** 소유자 조건을 포함해 여러 후보를 최신 저장순으로 읽는다. */
+    List<SavedStyle> findAllByUserIdAndIds(UUID userId, Collection<UUID> savedStyleIds);
+
+    /** 카탈로그에 연결된 내 저장 스타일 식별자만 추천 입력으로 읽는다. */
+    List<UUID> findHairstyleIdsByUserId(UUID userId);
+
+    /** 회원 탈퇴 시 사용자의 저장 후보를 모두 제거한다. */
     void deleteAllByUserId(UUID userId);
 }

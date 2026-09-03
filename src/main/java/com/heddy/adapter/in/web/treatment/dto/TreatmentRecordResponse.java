@@ -47,6 +47,13 @@ public record TreatmentRecordResponse(
         @Schema(description = "다음 방문 시 주의사항. 없으면 비어 있다")
         @JsonProperty("next_visit_cautions") String nextVisitCautions,
 
+        @Schema(description = "소요 시간(분). 입력하지 않았으면 비어 있다", example = "90")
+        @JsonProperty("duration_minutes") Integer durationMinutes,
+
+        @Schema(description = "시술 내용. 메모와 별개로 무엇을 했는지 적는 한 줄 요약이며, "
+                + "입력하지 않았으면 비어 있다", example = "애쉬브라운 전체 염색")
+        @JsonProperty("treatment_content") String treatmentContent,
+
         @Schema(description = "기록 생성 시각")
         @JsonProperty("created_at") Instant createdAt,
 
@@ -136,6 +143,7 @@ public record TreatmentRecordResponse(
                 record.priceAmount() == null ? null
                         : new Price(record.priceAmount(), record.priceCurrency()),
                 record.appointmentId(), record.memo(), record.nextVisitCautions(),
+                record.durationMinutes(), record.treatmentContent(),
                 record.createdAt(), photos);
     }
 }

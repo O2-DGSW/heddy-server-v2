@@ -44,6 +44,12 @@ public class SharingPersistenceAdapter implements ShareRepositoryPort, SharedRec
     }
 
     @Override
+    public void detachSavedStyle(UUID savedStyleId) {
+        shareRepository.deleteSavedStyleLinks(savedStyleId);
+        shareRepository.flush();
+    }
+
+    @Override
     public Optional<Share> findByIdAndUserId(UUID shareId, UUID userId) {
         return shareRepository.findByShareIdAndUserId(shareId, userId).map(ShareEntity::toDomain);
     }

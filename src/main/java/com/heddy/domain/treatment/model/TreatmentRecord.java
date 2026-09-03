@@ -40,12 +40,21 @@ public record TreatmentRecord(
         UUID appointmentId,
         String memo,
         String nextVisitCautions,
+        Integer durationMinutes,
+        String treatmentContent,
         List<TreatmentPhoto> photos,
         Instant createdAt
 ) {
     public static final int MAX_PHOTOS = 10;
     private static final int SALON_NAME_MAX_LENGTH = 50;
     private static final int DESIGNER_NAME_MAX_LENGTH = 30;
+    private static final int TREATMENT_CONTENT_MAX_LENGTH = 255;
+
+    /**
+     * 통화를 생략한 가격에 채울 기본값. 국내 전용 서비스라 통화를 고를 자리가 화면에 없다.
+     * 컬럼과 응답 필드는 그대로 두었으므로, 통화를 다뤄야 할 때 이 기본값만 걷어내면 된다.
+     */
+    private static final String DEFAULT_PRICE_CURRENCY = "KRW";
 
     public TreatmentRecord {
         Objects.requireNonNull(recordId, "recordId");
@@ -66,14 +75,18 @@ public record TreatmentRecord(
             throw new TreatmentException(TreatmentError.SATISFACTION_OUT_OF_RANGE);
         }
 
-        if ((priceAmount == null) != (priceCurrency == null)) {
+        // 통화만 있고 금액이 없으면 무엇의 통화인지 알 수 없다. 반대로 금액만 있으면
+        // 기본 통화로 채운다 — 기록 추가 화면에 통화 입력란이 없고 생길 계획도 없어,
+        // 클라이언트가 상수 "KRW" 를 매 요청에 실어야만 가격이 저장되는 상태였다.
+        if (priceAmount == null && priceCurrency != null) {
             throw new TreatmentException(TreatmentError.PRICE_INCOMPLETE);
         }
         if (priceAmount != null) {
             if (priceAmount < 0) {
                 throw new TreatmentException(TreatmentError.PRICE_AMOUNT_NEGATIVE);
             }
-            priceCurrency = normalizeCurrency(priceCurrency);
+            priceCurrency = priceCurrency == null
+                    ? DEFAULT_PRICE_CURRENCY : normalizeCurrency(priceCurrency);
         }
 
         if (performedAt.isAfter(Instant.now())) {
@@ -82,6 +95,12 @@ public record TreatmentRecord(
 
         memo = normalizeText(memo);
         nextVisitCautions = normalizeText(nextVisitCautions);
+
+        if (durationMinutes != null && durationMinutes < 0) {
+            throw new TreatmentException(TreatmentError.DURATION_MINUTES_NEGATIVE);
+        }
+        treatmentContent = normalizeName(treatmentContent, TREATMENT_CONTENT_MAX_LENGTH,
+                TreatmentError.TREATMENT_CONTENT_TOO_LONG);
 
         photos = photos == null ? List.of() : List.copyOf(photos);
         if (photos.size() > MAX_PHOTOS) {
@@ -92,6 +111,28 @@ public record TreatmentRecord(
                 throw new TreatmentException(TreatmentError.PHOTO_RECORD_MISMATCH);
             }
         });
+    }
+
+    /** 소요 시간·시술 내용 도입 전 호출부와의 호환을 위한 생성자. */
+    public TreatmentRecord(
+            UUID recordId,
+            UUID userId,
+            Set<ServiceType> serviceTypes,
+            String salonName,
+            String designerName,
+            Instant performedAt,
+            Integer satisfaction,
+            Long priceAmount,
+            String priceCurrency,
+            UUID appointmentId,
+            String memo,
+            String nextVisitCautions,
+            List<TreatmentPhoto> photos,
+            Instant createdAt
+    ) {
+        this(recordId, userId, serviceTypes, salonName, designerName, performedAt,
+                satisfaction, priceAmount, priceCurrency, appointmentId,
+                memo, nextVisitCautions, null, null, photos, createdAt);
     }
 
     /** 메모 컬럼 도입 전 호출부와의 호환을 위한 생성자. */
@@ -111,7 +152,7 @@ public record TreatmentRecord(
     ) {
         this(recordId, userId, serviceTypes, salonName, designerName, performedAt,
                 satisfaction, priceAmount, priceCurrency, appointmentId,
-                null, null, photos, createdAt);
+                null, null, null, null, photos, createdAt);
     }
 
     /** 새 기록을 만든다. 식별자는 도메인이 발급하고 사진은 빈 채로 시작한다. */
@@ -144,10 +185,30 @@ public record TreatmentRecord(
             String memo,
             String nextVisitCautions
     ) {
+        return create(userId, serviceTypes, salonName, designerName, performedAt, satisfaction,
+                priceAmount, priceCurrency, appointmentId, memo, nextVisitCautions, null, null);
+    }
+
+    /** 소요 시간과 시술 내용까지 포함해 새 기록을 만든다. */
+    public static TreatmentRecord create(
+            UUID userId,
+            Set<ServiceType> serviceTypes,
+            String salonName,
+            String designerName,
+            Instant performedAt,
+            Integer satisfaction,
+            Long priceAmount,
+            String priceCurrency,
+            UUID appointmentId,
+            String memo,
+            String nextVisitCautions,
+            Integer durationMinutes,
+            String treatmentContent
+    ) {
         return new TreatmentRecord(
                 UUID.randomUUID(), userId, serviceTypes, salonName, designerName,
                 performedAt, satisfaction, priceAmount, priceCurrency, appointmentId,
-                memo, nextVisitCautions, List.of(), null);
+                memo, nextVisitCautions, durationMinutes, treatmentContent, List.of(), null);
     }
 
     /**
@@ -156,6 +217,17 @@ public record TreatmentRecord(
      * <p>이 검사는 모델이 들고 있는 사진 목록 기준이다. 두 요청이 동시에 같은 기록을 고르면
      * 저장 계층에서 둘 다 통과할 수 있으니, 유스케이스(#31)가 이 경합을 잠그는 책임을 진다.
      */
+    /**
+     * 새 사진을 맨 뒤에 놓을 때 쓸 표시 순서. 현재 최대값 다음이며, 사진이 없으면 0 이다.
+     *
+     * <p>추가 요청이 순서를 생략했을 때 0 을 쓰면 이미 0 인 사진과 동점이 된다. 조회 정렬이
+     * 동점을 {@code created_at} 오름차순으로 푸는 탓에 새로 올린 사진이 뒤로 밀리고, 목록
+     * 썸네일은 계속 옛 사진을 가리킨다. 사용자 눈에는 사진을 바꿔도 그대로인 것처럼 보인다.
+     */
+    public int nextSortOrder() {
+        return photos.stream().mapToInt(TreatmentPhoto::sortOrder).max().orElse(-1) + 1;
+    }
+
     public TreatmentRecord attachPhoto(TreatmentPhoto photo) {
         Objects.requireNonNull(photo, "photo");
         if (!photo.recordId().equals(recordId)) {
@@ -169,10 +241,11 @@ public record TreatmentRecord(
         return new TreatmentRecord(
                 recordId, userId, serviceTypes, salonName, designerName, performedAt,
                 satisfaction, priceAmount, priceCurrency, appointmentId,
-                memo, nextVisitCautions, attached, createdAt);
+                memo, nextVisitCautions, durationMinutes, treatmentContent, attached, createdAt);
     }
 
     /** 부분 수정에서 결정된 최종 값으로 기록의 새 스냅샷을 만든다. */
+    /** 소요 시간·시술 내용 도입 전 호출부와의 호환을 위한 수정 메서드. */
     public TreatmentRecord update(
             Set<ServiceType> serviceTypes,
             String salonName,
@@ -185,10 +258,29 @@ public record TreatmentRecord(
             String memo,
             String nextVisitCautions
     ) {
+        return update(serviceTypes, salonName, designerName, performedAt, satisfaction,
+                priceAmount, priceCurrency, appointmentId, memo, nextVisitCautions,
+                durationMinutes, treatmentContent);
+    }
+
+    public TreatmentRecord update(
+            Set<ServiceType> serviceTypes,
+            String salonName,
+            String designerName,
+            Instant performedAt,
+            Integer satisfaction,
+            Long priceAmount,
+            String priceCurrency,
+            UUID appointmentId,
+            String memo,
+            String nextVisitCautions,
+            Integer durationMinutes,
+            String treatmentContent
+    ) {
         return new TreatmentRecord(
                 recordId, userId, serviceTypes, salonName, designerName, performedAt,
                 satisfaction, priceAmount, priceCurrency, appointmentId,
-                memo, nextVisitCautions, photos, createdAt);
+                memo, nextVisitCautions, durationMinutes, treatmentContent, photos, createdAt);
     }
 
     private static String normalizeName(String value, int maxLength, TreatmentError tooLong) {

@@ -260,14 +260,14 @@ public final class ApiDocs {
     public @interface StylePreference {
     }
 
-    /** 추천 결과를 내 후보 스타일로 저장하는 API. */
+    /** 카탈로그 스타일을 내 후보로 저장하는 API. */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @ApiResponses({
             @ApiResponse(
                     responseCode = "409",
-                    description = "SAVED_STYLE_DUPLICATED — 같은 이름·이미지의 후보를 이미 저장했다",
+                    description = "SAVED_STYLE_DUPLICATED — 같은 hairstyle_id·color_id 조합을 이미 저장했다",
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(
                     responseCode = "422",

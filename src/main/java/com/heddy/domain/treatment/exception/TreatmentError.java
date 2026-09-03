@@ -14,7 +14,11 @@ public enum TreatmentError {
     PHOTO_LIMIT_EXCEEDED("TREATMENT_PHOTO_LIMIT_EXCEEDED", "사진은 기록당 최대 10장까지 등록할 수 있습니다."),
     PHOTO_RECORD_MISMATCH("TREATMENT_PHOTO_RECORD_MISMATCH", "다른 기록에 속한 사진은 등록할 수 없습니다."),
     PHOTO_SORT_ORDER_NEGATIVE("TREATMENT_PHOTO_SORT_ORDER_NEGATIVE", "사진 순서는 0 이상이어야 합니다."),
-    PHOTO_COMPARISON_NOT_AVAILABLE("PHOTO_COMPARISON_NOT_AVAILABLE", "시술 전후 사진이 모두 있어야 비교할 수 있습니다.");
+    PHOTO_COMPARISON_NOT_AVAILABLE("PHOTO_COMPARISON_NOT_AVAILABLE", "시술 전후 사진이 모두 있어야 비교할 수 있습니다."),
+    DURATION_MINUTES_NEGATIVE(
+            "TREATMENT_DURATION_MINUTES_NEGATIVE", "소요 시간은 0분 이상이어야 합니다."),
+    TREATMENT_CONTENT_TOO_LONG(
+            "TREATMENT_CONTENT_TOO_LONG", "시술 내용은 255자를 넘을 수 없습니다.");
 
     private final String code;
     private final String message;

@@ -10,12 +10,9 @@ import com.heddy.domain.style.exception.StyleError;
 import com.heddy.domain.style.exception.StyleException;
 import com.heddy.domain.style.model.StyleTag;
 import com.heddy.domain.style.model.StyleTagCategory;
-import com.heddy.domain.style.model.SavedStyle;
-import com.heddy.domain.style.model.SavedStylePage;
 import com.heddy.domain.style.model.UserStylePreference;
 import com.heddy.domain.style.port.in.SaveStylePreferencesCommand;
-import com.heddy.domain.style.port.in.SavedStyleUseCase;
-import com.heddy.domain.style.port.out.SavedStyleRepositoryPort;
+import com.heddy.domain.style.port.out.HairColorRepositoryPort;
 import com.heddy.domain.style.port.out.StyleTagRepositoryPort;
 import com.heddy.domain.style.port.out.UserStylePreferenceRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,16 +43,16 @@ class StyleServiceTest {
 
     @Mock AccountRepositoryPort accountRepositoryPort;
     @Mock StyleTagRepositoryPort styleTagRepositoryPort;
+    @Mock HairColorRepositoryPort hairColorRepositoryPort;
     @Mock UserStylePreferenceRepositoryPort preferenceRepositoryPort;
-    @Mock SavedStyleRepositoryPort savedStyleRepositoryPort;
 
     private StyleService service;
 
     @BeforeEach
     void setUp() {
         service = new StyleService(
-                accountRepositoryPort, styleTagRepositoryPort, preferenceRepositoryPort,
-                savedStyleRepositoryPort);
+                accountRepositoryPort, styleTagRepositoryPort, hairColorRepositoryPort,
+                preferenceRepositoryPort);
     }
 
     @Test
@@ -177,77 +174,6 @@ class StyleServiceTest {
                         new SaveStylePreferencesCommand(USER_ID, List.of(), List.of())),
                 AccountError.ACCOUNT_DELETED);
         verifyNoInteractions(styleTagRepositoryPort, preferenceRepositoryPort);
-    }
-
-    @Test
-    void createsSavedStyleAfterLockingAccountAndCheckingLimitAndDuplicate() {
-        givenActiveAccountForUpdate();
-        given(savedStyleRepositoryPort.existsBySnapshot(
-                USER_ID, "레이어드 커트", "https://example.com/style.jpg"))
-                .willReturn(false);
-        given(savedStyleRepositoryPort.countByUserId(USER_ID)).willReturn(19L);
-        given(savedStyleRepositoryPort.insert(any()))
-                .willAnswer(invocation -> invocation.getArgument(0));
-
-        SavedStyle saved = service.create(new SavedStyleUseCase.CreateCommand(
-                USER_ID, " 레이어드 커트 ", " https://example.com/style.jpg ",
-                " 잘 어울리는 스타일 ", " 상담 때 보여주기 "));
-
-        assertThat(saved.styleName()).isEqualTo("레이어드 커트");
-        assertThat(saved.imageUrl()).isEqualTo("https://example.com/style.jpg");
-        assertThat(saved.memo()).isEqualTo("상담 때 보여주기");
-        verify(accountRepositoryPort).findByIdForUpdate(USER_ID);
-    }
-
-    @Test
-    void rejectsDuplicatedSavedStyleBeforeCountingOrInserting() {
-        givenActiveAccountForUpdate();
-        given(savedStyleRepositoryPort.existsBySnapshot(USER_ID, "스타일", "https://image"))
-                .willReturn(true);
-
-        assertError(() -> service.create(new SavedStyleUseCase.CreateCommand(
-                        USER_ID, "스타일", "https://image", "이유", null)),
-                StyleError.SAVED_STYLE_DUPLICATED);
-        verify(savedStyleRepositoryPort, never()).countByUserId(any());
-        verify(savedStyleRepositoryPort, never()).insert(any());
-    }
-
-    @Test
-    void rejectsTwentyFirstSavedStyle() {
-        givenActiveAccountForUpdate();
-        given(savedStyleRepositoryPort.existsBySnapshot(USER_ID, "스타일", "https://image"))
-                .willReturn(false);
-        given(savedStyleRepositoryPort.countByUserId(USER_ID)).willReturn(20L);
-
-        assertError(() -> service.create(new SavedStyleUseCase.CreateCommand(
-                        USER_ID, "스타일", "https://image", "이유", null)),
-                StyleError.SAVED_STYLE_LIMIT_EXCEEDED);
-        verify(savedStyleRepositoryPort, never()).insert(any());
-    }
-
-    @Test
-    void listsUpdatesAndDeletesOnlyOwnedSavedStyles() {
-        givenActiveAccount();
-        SavedStyle saved = SavedStyle.create(USER_ID, "스타일", "https://image", "이유");
-        given(savedStyleRepositoryPort.findPage(USER_ID, 0, 20))
-                .willReturn(new SavedStylePage(List.of(saved), 1));
-
-        assertThat(service.list(new SavedStyleUseCase.ListQuery(USER_ID, 0, 20)).items())
-                .containsExactly(saved);
-
-        givenActiveAccount();
-        given(savedStyleRepositoryPort.findByIdAndUserId(saved.savedStyleId(), USER_ID))
-                .willReturn(Optional.of(saved));
-        given(savedStyleRepositoryPort.update(any()))
-                .willAnswer(invocation -> invocation.getArgument(0));
-        assertThat(service.updateMemo(new SavedStyleUseCase.UpdateMemoCommand(
-                USER_ID, saved.savedStyleId(), true, "메모")).memo()).isEqualTo("메모");
-
-        givenActiveAccount();
-        given(savedStyleRepositoryPort.deleteByIdAndUserId(saved.savedStyleId(), USER_ID))
-                .willReturn(true);
-        service.delete(new SavedStyleUseCase.DeleteCommand(USER_ID, saved.savedStyleId()));
-        verify(savedStyleRepositoryPort).deleteByIdAndUserId(saved.savedStyleId(), USER_ID);
     }
 
     private StyleTag tag(UUID tagId, StyleTagCategory category) {

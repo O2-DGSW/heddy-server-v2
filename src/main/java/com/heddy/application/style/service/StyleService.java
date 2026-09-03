@@ -6,21 +6,17 @@ import com.heddy.domain.account.model.Account;
 import com.heddy.domain.account.port.out.AccountRepositoryPort;
 import com.heddy.domain.style.exception.StyleError;
 import com.heddy.domain.style.exception.StyleException;
+import com.heddy.domain.style.model.HairColor;
 import com.heddy.domain.style.model.StyleTag;
 import com.heddy.domain.style.model.StyleTagCategory;
-import com.heddy.domain.style.model.SavedStyle;
-import com.heddy.domain.style.model.SavedStylePage;
 import com.heddy.domain.style.model.UserStylePreference;
 import com.heddy.domain.style.model.UserStylePreference.PreferenceType;
 import com.heddy.domain.style.port.in.SaveStylePreferencesCommand;
-import com.heddy.domain.style.port.in.SavedStyleUseCase;
 import com.heddy.domain.style.port.in.StylePreferencesResult;
 import com.heddy.domain.style.port.in.StyleUseCase;
-import com.heddy.domain.style.port.out.SavedStyleRepositoryPort;
+import com.heddy.domain.style.port.out.HairColorRepositoryPort;
 import com.heddy.domain.style.port.out.StyleTagRepositoryPort;
 import com.heddy.domain.style.port.out.UserStylePreferenceRepositoryPort;
-import com.heddy.global.error.ApplicationException;
-import com.heddy.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,20 +32,23 @@ import java.util.stream.Stream;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class StyleService implements StyleUseCase, SavedStyleUseCase {
+public class StyleService implements StyleUseCase {
 
     private static final int MAX_TAGS_PER_TYPE = 10;
-    private static final int MAX_SAVED_STYLES = 20;
-    private static final int MAX_PAGE_SIZE = 100;
 
     private final AccountRepositoryPort accountRepositoryPort;
     private final StyleTagRepositoryPort styleTagRepositoryPort;
+    private final HairColorRepositoryPort hairColorRepositoryPort;
     private final UserStylePreferenceRepositoryPort preferenceRepositoryPort;
-    private final SavedStyleRepositoryPort savedStyleRepositoryPort;
 
     @Override
     public List<StyleTag> getStyleTags(StyleTagCategory category) {
         return styleTagRepositoryPort.findAll(category);
+    }
+
+    @Override
+    public List<HairColor> getHairColors() {
+        return hairColorRepositoryPort.findAllActive();
     }
 
     @Override
@@ -76,54 +75,6 @@ public class StyleService implements StyleUseCase, SavedStyleUseCase {
                 .toList();
         return StylePreferencesResult.from(
                 preferenceRepositoryPort.replace(command.userId(), preferences));
-    }
-
-    @Override
-    @Transactional
-    public SavedStyle create(SavedStyleUseCase.CreateCommand command) {
-        lockAndValidateNonDeletedAccount(command.userId());
-        String styleName = command.styleName().strip();
-        String imageUrl = command.imageUrl().strip();
-        if (savedStyleRepositoryPort.existsBySnapshot(command.userId(), styleName, imageUrl)) {
-            throw new StyleException(StyleError.SAVED_STYLE_DUPLICATED);
-        }
-        if (savedStyleRepositoryPort.countByUserId(command.userId()) >= MAX_SAVED_STYLES) {
-            throw new StyleException(StyleError.SAVED_STYLE_LIMIT_EXCEEDED);
-        }
-        return savedStyleRepositoryPort.insert(SavedStyle.create(
-                command.userId(), styleName, imageUrl, command.reason(), command.memo()));
-    }
-
-    @Override
-    public SavedStylePage list(SavedStyleUseCase.ListQuery query) {
-        validateNonDeletedAccount(query.userId());
-        if (query.page() < 0 || query.size() < 1 || query.size() > MAX_PAGE_SIZE) {
-            throw new ApplicationException(ErrorCode.INVALID_REQUEST);
-        }
-        return savedStyleRepositoryPort.findPage(query.userId(), query.page(), query.size());
-    }
-
-    @Override
-    @Transactional
-    public SavedStyle updateMemo(SavedStyleUseCase.UpdateMemoCommand command) {
-        validateNonDeletedAccount(command.userId());
-        if (!command.memoPresent()) {
-            throw new ApplicationException(ErrorCode.INVALID_REQUEST);
-        }
-        SavedStyle current = savedStyleRepositoryPort
-                .findByIdAndUserId(command.savedStyleId(), command.userId())
-                .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
-        return savedStyleRepositoryPort.update(current.updateMemo(command.memo()));
-    }
-
-    @Override
-    @Transactional
-    public void delete(SavedStyleUseCase.DeleteCommand command) {
-        validateNonDeletedAccount(command.userId());
-        if (!savedStyleRepositoryPort.deleteByIdAndUserId(
-                command.savedStyleId(), command.userId())) {
-            throw new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND);
-        }
     }
 
     private void validateLimits(Set<UUID> preferredTagIds, Set<UUID> excludedTagIds) {

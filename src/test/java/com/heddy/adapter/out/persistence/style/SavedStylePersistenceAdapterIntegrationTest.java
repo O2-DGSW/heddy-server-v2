@@ -12,7 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.dao.DataIntegrityViolationException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class SavedStylePersistenceAdapterIntegrationTest extends PostgresIntegrationTest {
@@ -80,6 +83,46 @@ class SavedStylePersistenceAdapterIntegrationTest extends PostgresIntegrationTes
         assertThat(imageLength).isEqualTo(2048);
         assertThat(indexCount).isOne();
         assertThat(foreignKeyCount).isOne();
+    }
+
+    @Test
+    void roundTripsCatalogReferencesAndAllowsAnEmptySnapshot() {
+        UUID hairstyleId = insertHairstyle("남자 다운펌");
+        UUID colorId = UUID.fromString("c0100000-0000-4000-8000-000000000001");
+
+        SavedStyle saved = repositoryPort.insert(SavedStyle.fromCatalog(
+                USER_ID, hairstyleId, "남자 다운펌", colorId, null, "앞머리 살짝"));
+
+        SavedStyle found = repositoryPort
+                .findAllByUserIdAndIds(USER_ID, List.of(saved.savedStyleId()))
+                .getFirst();
+        assertThat(found.hairstyleId()).isEqualTo(hairstyleId);
+        assertThat(found.colorId()).isEqualTo(colorId);
+        assertThat(found.memo()).isEqualTo("앞머리 살짝");
+        // AR 저장 경로에는 추천 스냅샷이 없다. 제약이 풀렸는지 실제 저장으로 확인한다.
+        assertThat(found.imageUrl()).isNull();
+        assertThat(found.reason()).isNull();
+
+        assertThat(repositoryPort.findHairstyleIdsByUserId(USER_ID)).contains(hairstyleId);
+    }
+
+    @Test
+    void refusesAColorThatIsNotInTheCatalog() {
+        UUID hairstyleId = insertHairstyle("레이어드 컷");
+
+        assertThatThrownBy(() -> repositoryPort.insert(SavedStyle.fromCatalog(
+                USER_ID, hairstyleId, "레이어드 컷", UUID.randomUUID(), null, null)))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    private UUID insertHairstyle(String styleName) {
+        UUID hairstyleId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO hairstyle_assets (
+                    hairstyle_id, style_name, category, asset_version
+                ) VALUES (?, ?, 'CUT', 'v1')
+                """, hairstyleId, styleName);
+        return hairstyleId;
     }
 
     private void insertUser(UUID userId) {

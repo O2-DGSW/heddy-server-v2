@@ -97,7 +97,7 @@ public class UploadSessionService implements PresignUploadUseCase, CompleteUploa
         // 존재 확인보다 소유자 확인이 먼저다. 순서가 바뀌면 남의 uploadId 로 세션 존재를 훑을 수 있다.
         StoredFile file = fileRepositoryPort.findByUploadId(command.uploadId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
-        if (!file.userId().equals(command.userId())) {
+        if (!command.userId().equals(file.userId())) {
             throw new ApplicationException(ErrorCode.FORBIDDEN_RESOURCE);
         }
         return switch (file.status()) {
@@ -158,7 +158,7 @@ public class UploadSessionService implements PresignUploadUseCase, CompleteUploa
         // complete 과 같은 순서다. 존재를 먼저 알려주면 남의 uploadId 로 세션을 훑을 수 있다.
         StoredFile file = fileRepositoryPort.findByUploadId(command.uploadId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
-        if (!file.userId().equals(command.userId())) {
+        if (!command.userId().equals(file.userId())) {
             throw new ApplicationException(ErrorCode.FORBIDDEN_RESOURCE);
         }
         switch (file.status()) {

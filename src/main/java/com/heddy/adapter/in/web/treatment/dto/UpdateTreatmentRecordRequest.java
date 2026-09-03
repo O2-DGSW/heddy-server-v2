@@ -1,9 +1,11 @@
 package com.heddy.adapter.in.web.treatment.dto;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.heddy.domain.treatment.model.ServiceType;
 import com.heddy.domain.treatment.port.in.UpdateTreatmentRecordUseCase;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -11,6 +13,8 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -45,6 +49,33 @@ public class UpdateTreatmentRecordRequest {
     private boolean appointmentIdPresent;
     private boolean memoPresent;
     private boolean nextVisitCautionsPresent;
+    private Integer durationMinutes;
+    private boolean durationMinutesPresent;
+    private String treatmentContent;
+    private boolean treatmentContentPresent;
+
+    private final List<String> unknownFields = new ArrayList<>();
+
+    /**
+     * 이 요청이 모르는 필드를 모아 둔다. Spring Boot 는 {@code FAIL_ON_UNKNOWN_PROPERTIES} 를
+     * 꺼 두므로, 이 자리가 없으면 Jackson 이 모르는 필드를 조용히 버리고 200 이 나간다.
+     *
+     * <p>특히 {@code photos} 가 그렇다. 이 API 로는 사진을 바꿀 수 없는데도 성공 응답이
+     * 돌아가면, 클라이언트는 사진이 교체된 줄 알고 옛 사진이 남은 화면을 보게 된다.
+     * 조용히 무시하는 대신 어느 필드가 문제인지 알려 주고 거절한다.
+     */
+    @JsonAnySetter
+    @Schema(hidden = true)
+    public void collectUnknownField(String name, Object ignoredValue) {
+        unknownFields.add(name);
+    }
+
+    @AssertTrue(message = "이 API 가 지원하지 않는 필드입니다. "
+            + "사진은 /treatment-records/{recordId}/photos 로 추가·수정·삭제합니다")
+    @Schema(hidden = true)
+    public boolean isKnownFieldsOnly() {
+        return unknownFields.isEmpty();
+    }
 
     @JsonSetter("service_types")
     public void setServiceTypes(Set<ServiceType> serviceTypes) {
@@ -106,6 +137,18 @@ public class UpdateTreatmentRecordRequest {
         nextVisitCautionsPresent = true;
     }
 
+    @JsonSetter("duration_minutes")
+    public void setDurationMinutes(Integer durationMinutes) {
+        this.durationMinutes = durationMinutes;
+        durationMinutesPresent = true;
+    }
+
+    @JsonSetter("treatment_content")
+    public void setTreatmentContent(String treatmentContent) {
+        this.treatmentContent = treatmentContent;
+        treatmentContentPresent = true;
+    }
+
     public UpdateTreatmentRecordUseCase.Command toCommand(UUID requesterId, UUID recordId) {
         return new UpdateTreatmentRecordUseCase.Command(
                 requesterId, recordId,
@@ -118,7 +161,9 @@ public class UpdateTreatmentRecordRequest {
                 patch(priceCurrencyPresent, priceCurrency),
                 patch(appointmentIdPresent, appointmentId),
                 patch(memoPresent, memo),
-                patch(nextVisitCautionsPresent, nextVisitCautions));
+                patch(nextVisitCautionsPresent, nextVisitCautions),
+                patch(durationMinutesPresent, durationMinutes),
+                patch(treatmentContentPresent, treatmentContent));
     }
 
     private <T> UpdateTreatmentRecordUseCase.Patch<T> patch(boolean present, T value) {

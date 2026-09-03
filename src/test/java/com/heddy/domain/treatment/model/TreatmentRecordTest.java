@@ -97,16 +97,25 @@ class TreatmentRecordTest {
     // ------------------------------------------------------------------ 가격
 
     @Test
-    void rejectsAmountWithoutCurrencyAndViceVersa() {
+    void rejectsCurrencyWithoutAmount() {
+        // 금액이 없으면 무엇의 통화인지 알 수 없다.
         assertThatThrownBy(() -> record(null, "KRW"))
                 .isInstanceOf(TreatmentException.class)
                 .extracting(e -> ((TreatmentException) e).error())
                 .isEqualTo(TreatmentError.PRICE_INCOMPLETE);
+    }
 
-        assertThatThrownBy(() -> record(50_000L, null))
-                .isInstanceOf(TreatmentException.class)
-                .extracting(e -> ((TreatmentException) e).error())
-                .isEqualTo(TreatmentError.PRICE_INCOMPLETE);
+    @Test
+    void fillsTheDefaultCurrencyWhenOnlyTheAmountIsGiven() {
+        // 화면에 통화 입력란이 없다. 클라이언트가 상수를 실어 보내야만 가격이 저장되면 안 된다.
+        assertThat(record(50_000L, null).priceCurrency()).isEqualTo("KRW");
+        assertThat(record(50_000L, null).priceAmount()).isEqualTo(50_000L);
+    }
+
+    @Test
+    void keepsBothSidesNullWhenNoPriceIsGiven() {
+        assertThat(record(null, null).priceAmount()).isNull();
+        assertThat(record(null, null).priceCurrency()).isNull();
     }
 
     @Test
@@ -316,6 +325,23 @@ class TreatmentRecordTest {
                 null, null, null, null);
     }
 
+    @Test
+    void nextSortOrderPutsAnAddedPhotoBehindTheExistingOnes() {
+        TreatmentRecord empty = TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.CUT), null, null,
+                Instant.now().minusSeconds(60), null, null, null, null, null, null, null, null);
+        assertThat(empty.nextSortOrder()).isZero();
+
+        TreatmentRecord withZero = empty.attachPhoto(TreatmentPhoto.create(
+                empty.recordId(), UUID.randomUUID(), ImageType.BEFORE, 0));
+        assertThat(withZero.nextSortOrder()).isEqualTo(1);
+
+        // 순서가 비어 있어도 최대값 다음이라야 새 사진이 뒤로 간다.
+        TreatmentRecord withGap = withZero.attachPhoto(TreatmentPhoto.create(
+                withZero.recordId(), UUID.randomUUID(), ImageType.AFTER, 7));
+        assertThat(withGap.nextSortOrder()).isEqualTo(8);
+    }
+
     private static TreatmentPhoto photoFor(TreatmentRecord record) {
         return TreatmentPhoto.create(record.recordId(), UUID.randomUUID(), ImageType.BEFORE);
     }
@@ -327,4 +353,49 @@ class TreatmentRecordTest {
         }
         return record;
     }
+
+    /** 소요 시간은 0분 이상이다. 음수는 입력 실수이지 "모름"이 아니다. */
+    @Test
+    void refusesNegativeDurationMinutes() {
+        assertThatThrownBy(() -> TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.CUT), null, null,
+                Instant.now().minusSeconds(60), null, null, null, null, null, null, -1, null))
+                .isInstanceOf(TreatmentException.class)
+                .hasFieldOrPropertyWithValue("error", TreatmentError.DURATION_MINUTES_NEGATIVE);
+    }
+
+    /** 0분은 허용한다 — 실제로 걸린 시간을 모른다는 뜻이 아니라 값으로 받은 것이다. */
+    @Test
+    void keepsDurationAndContentAsGiven() {
+        TreatmentRecord record = TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.COLOR), null, null,
+                Instant.now().minusSeconds(60), null, null, null, null, null, null,
+                90, "  애쉬브라운 전체 염색  ");
+
+        assertThat(record.durationMinutes()).isEqualTo(90);
+        assertThat(record.treatmentContent()).isEqualTo("애쉬브라운 전체 염색");
+    }
+
+    /** 시술 내용은 메모와 별개 필드다. 한쪽만 넣어도 다른 쪽이 채워지지 않는다. */
+    @Test
+    void keepsTreatmentContentSeparateFromMemo() {
+        TreatmentRecord record = TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.COLOR), null, null,
+                Instant.now().minusSeconds(60), null, null, null, null, "개인 메모", null,
+                null, "애쉬브라운 전체 염색");
+
+        assertThat(record.memo()).isEqualTo("개인 메모");
+        assertThat(record.treatmentContent()).isEqualTo("애쉬브라운 전체 염색");
+    }
+
+    @Test
+    void refusesTreatmentContentLongerThanTheColumn() {
+        assertThatThrownBy(() -> TreatmentRecord.create(
+                UUID.randomUUID(), Set.of(ServiceType.CUT), null, null,
+                Instant.now().minusSeconds(60), null, null, null, null, null, null,
+                null, "가".repeat(256)))
+                .isInstanceOf(TreatmentException.class)
+                .hasFieldOrPropertyWithValue("error", TreatmentError.TREATMENT_CONTENT_TOO_LONG);
+    }
+
 }

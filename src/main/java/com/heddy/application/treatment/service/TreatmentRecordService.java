@@ -7,6 +7,7 @@ import com.heddy.domain.file.port.out.FileStoragePort;
 import com.heddy.domain.analysis.model.AnalysisJobStatus;
 import com.heddy.domain.analysis.port.out.AnalysisStalenessPort;
 import com.heddy.domain.analysis.port.out.LatestAnalysisStatusPort;
+import com.heddy.domain.recommendation.port.out.RecommendationStalenessPort;
 import com.heddy.domain.sharing.port.out.SharedRecordLookupPort;
 import com.heddy.domain.treatment.exception.TreatmentError;
 import com.heddy.domain.treatment.exception.TreatmentException;
@@ -60,6 +61,7 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     private final FileRepositoryPort fileRepositoryPort;
     private final FileStoragePort fileStoragePort;
     private final AnalysisStalenessPort analysisStalenessPort;
+    private final RecommendationStalenessPort recommendationStalenessPort;
     private final SharedRecordLookupPort sharedRecordLookupPort;
     private final LatestAnalysisStatusPort latestAnalysisStatusPort;
 
@@ -70,7 +72,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
             FileStoragePort fileStoragePort,
             ObjectProvider<AnalysisStalenessPort> analysisStalenessPortProvider,
             SharedRecordLookupPort sharedRecordLookupPort,
-            LatestAnalysisStatusPort latestAnalysisStatusPort
+            LatestAnalysisStatusPort latestAnalysisStatusPort,
+            ObjectProvider<RecommendationStalenessPort> recommendationStalenessPortProvider
     ) {
         this.recordRepositoryPort = recordRepositoryPort;
         this.fileRepositoryPort = fileRepositoryPort;
@@ -78,6 +81,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         this.analysisStalenessPort = analysisStalenessPortProvider.getIfAvailable(() -> recordId -> { });
         this.sharedRecordLookupPort = sharedRecordLookupPort;
         this.latestAnalysisStatusPort = latestAnalysisStatusPort;
+        this.recommendationStalenessPort = recommendationStalenessPortProvider
+                .getIfAvailable(() -> recordId -> { });
     }
 
     /** 분석 도메인이 없는 단위 테스트와의 호환을 위한 생성자. */
@@ -90,6 +95,7 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = recordId -> { };
+        this.recommendationStalenessPort = recordId -> { };
         this.sharedRecordLookupPort = (ownerId, recordIds, now) -> Set.of();
         this.latestAnalysisStatusPort = recordIds -> Map.of();
     }
@@ -106,6 +112,7 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
         this.analysisStalenessPort = analysisStalenessPort;
+        this.recommendationStalenessPort = recordId -> { };
         this.sharedRecordLookupPort = sharedRecordLookupPort;
         this.latestAnalysisStatusPort = latestAnalysisStatusPort;
     }
@@ -118,7 +125,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                 command.userId(), command.serviceTypes(), command.salonName(), command.designerName(),
                 command.performedAt(), command.satisfaction(), command.priceAmount(),
                 command.priceCurrency(), command.appointmentId(), command.memo(),
-                command.nextVisitCautions());
+                command.nextVisitCautions(), command.durationMinutes(),
+                command.treatmentContent());
         for (CreateTreatmentRecordUseCase.Command.Photo photo : command.photos()) {
             requireOwnedReadyFile(command.userId(), photo.fileId());
             record = record.attachPhoto(
@@ -162,7 +170,7 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                         record, thumbnails.get(record.recordId()),
                         // 분석을 한 번도 요청하지 않은 기록은 상태 자체가 없어 null 로 둔다.
                         // 별도 값으로 바꾸면 클라이언트가 상태 6종에 없는 값을 알아야 한다.
-                        statusNameOf(analysisStatuses.get(record.recordId())),
+                        analysisStatuses.get(record.recordId()),
                         sharedRecordIds.contains(record.recordId())))
                 .toList();
         return new ListTreatmentRecordsUseCase.Result(
@@ -173,17 +181,28 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     @Transactional
     public TreatmentRecord update(UpdateTreatmentRecordUseCase.Command command) {
         TreatmentRecord current = ownedRecord(command.requesterId(), command.recordId());
+        Long priceAmount = command.priceAmount().orElse(current.priceAmount());
+        String priceCurrency = command.priceCurrency().orElse(current.priceCurrency());
+        // 금액을 지우면 저장돼 있던 통화도 함께 지운다. 금액 없는 통화는 무엇의 통화인지
+        // 알 수 없어 도메인이 거절하는데, 가격을 비우려고 price_amount 에만 null 을 보낸
+        // 요청이 그 오류를 맞는 건 클라이언트가 풀 수 없는 문제다. 통화를 이번 요청에서
+        // 직접 지정했다면 그 값은 존중하고 도메인 판단에 맡긴다.
+        if (priceAmount == null && !command.priceCurrency().present()) {
+            priceCurrency = null;
+        }
         TreatmentRecord updated = current.update(
                 command.serviceTypes().orElse(current.serviceTypes()),
                 command.salonName().orElse(current.salonName()),
                 command.designerName().orElse(current.designerName()),
                 command.performedAt().orElse(current.performedAt()),
                 command.satisfaction().orElse(current.satisfaction()),
-                command.priceAmount().orElse(current.priceAmount()),
-                command.priceCurrency().orElse(current.priceCurrency()),
+                priceAmount,
+                priceCurrency,
                 command.appointmentId().orElse(current.appointmentId()),
                 command.memo().orElse(current.memo()),
-                command.nextVisitCautions().orElse(current.nextVisitCautions()));
+                command.nextVisitCautions().orElse(current.nextVisitCautions()),
+                command.durationMinutes().orElse(current.durationMinutes()),
+                command.treatmentContent().orElse(current.treatmentContent()));
         return recordRepositoryPort.update(updated)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -199,6 +218,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                 }
             });
         }
+        // FK CASCADE로 근거 행이 사라지기 전에 해당 추천 실행을 이력 상태로 전환한다.
+        recommendationStalenessPort.markByReferenceRecordStale(record.recordId());
         // 공개 API에 소프트 삭제 개념이 없으므로 기록은 하드 삭제하고 사진 행은 FK CASCADE에 맡긴다.
         if (!recordRepositoryPort.deleteById(record.recordId())) {
             throw new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND);
@@ -209,8 +230,11 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     @Transactional
     public ManageTreatmentPhotosUseCase.Result add(ManageTreatmentPhotosUseCase.AddCommand command) {
         TreatmentRecord record = ownedLockedRecord(command.requesterId(), command.recordId());
+        // 기록 행을 잠근 뒤 계산해야 동시 추가가 같은 순번을 집지 않는다.
+        int sortOrder = command.sortOrder() == null
+                ? record.nextSortOrder() : command.sortOrder();
         TreatmentPhoto photo = TreatmentPhoto.create(
-                record.recordId(), command.fileId(), command.imageType(), command.sortOrder());
+                record.recordId(), command.fileId(), command.imageType(), sortOrder);
         record.attachPhoto(photo);
         requireOwnedReadyFile(command.requesterId(), command.fileId());
         TreatmentPhoto saved = recordRepositoryPort.insertPhoto(photo);
@@ -225,16 +249,25 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     public ManageTreatmentPhotosUseCase.Result update(ManageTreatmentPhotosUseCase.UpdateCommand command) {
         TreatmentRecord record = ownedRecord(command.requesterId(), command.recordId());
         TreatmentPhoto current = ownedPhoto(record, command.photoId());
-        if (command.imageType() == null && command.sortOrder() == null) {
+        if (command.fileId() == null && command.imageType() == null && command.sortOrder() == null) {
             throw new ApplicationException(ErrorCode.INVALID_REQUEST);
+        }
+        UUID fileId = command.fileId() == null ? current.fileId() : command.fileId();
+        if (!fileId.equals(current.fileId())) {
+            requireOwnedReadyFile(command.requesterId(), fileId);
+            requireUnattachedFile(fileId);
         }
         ImageType imageType = command.imageType() == null ? current.imageType() : command.imageType();
         int sortOrder = command.sortOrder() == null ? current.sortOrder() : command.sortOrder();
-        TreatmentPhoto updated = current.update(imageType, sortOrder);
+        TreatmentPhoto updated = current.update(fileId, imageType, sortOrder);
         TreatmentPhoto saved = recordRepositoryPort.updatePhoto(updated)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
-        if (current.imageType() != saved.imageType()
-                && (current.imageType() == ImageType.AFTER || saved.imageType() == ImageType.AFTER)) {
+        boolean typeCrossedAfter = current.imageType() != saved.imageType()
+                && (current.imageType() == ImageType.AFTER || saved.imageType() == ImageType.AFTER);
+        // 사진이 바뀌면 그 사진을 근거로 낸 분석 결과는 더 이상 맞지 않는다.
+        boolean afterFileReplaced = saved.imageType() == ImageType.AFTER
+                && !saved.fileId().equals(current.fileId());
+        if (typeCrossedAfter || afterFileReplaced) {
             analysisStalenessPort.markLatestStale(record.recordId());
         }
         return new ManageTreatmentPhotosUseCase.Result(saved, downloadUrl(saved));
@@ -324,10 +357,6 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
         return value != null && value.strip().length() > maximum;
     }
 
-    private static String statusNameOf(AnalysisJobStatus status) {
-        return status == null ? null : status.name();
-    }
-
     private String normalizeFilter(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -376,10 +405,20 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
     private void requireOwnedReadyFile(UUID requesterId, UUID fileId) {
         StoredFile file = fileRepositoryPort.findById(fileId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
-        if (!file.userId().equals(requesterId)) {
+        if (!requesterId.equals(file.userId())) {
             throw new ApplicationException(ErrorCode.FORBIDDEN_RESOURCE);
         }
         if (!file.isReady()) {
+            throw new ApplicationException(ErrorCode.FILE_INVALID_STATE);
+        }
+    }
+
+    /**
+     * 이미 다른 사진이 가리키는 파일은 붙이지 않는다. 한 파일을 두 사진이 공유하면 한쪽을
+     * 지울 때 파일이 정리 대상이 되어 남은 사진의 URL 이 조용히 비게 된다.
+     */
+    private void requireUnattachedFile(UUID fileId) {
+        if (recordRepositoryPort.isFileAttached(fileId)) {
             throw new ApplicationException(ErrorCode.FILE_INVALID_STATE);
         }
     }

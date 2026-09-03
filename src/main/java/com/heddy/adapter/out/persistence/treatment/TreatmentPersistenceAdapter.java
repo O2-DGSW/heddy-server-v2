@@ -47,6 +47,11 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
     }
 
     @Override
+    public boolean isFileAttached(UUID fileId) {
+        return photoRepository.existsByFileId(fileId);
+    }
+
+    @Override
     public boolean deletePhoto(UUID photoId) {
         boolean deleted = photoRepository.deleteByPhotoId(photoId) == 1;
         if (deleted) {
@@ -106,6 +111,19 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
     public void deleteAllByUserId(UUID userId) {
         recordRepository.deleteAllByUserId(userId);
         recordRepository.flush();
+    }
+
+    @Override
+    public List<TreatmentRecord> findRecentByUserId(UUID userId, int limit) {
+        if (limit <= 0) {
+            return List.of();
+        }
+        // V1 상한은 10건이다. 사진은 점수에 쓰지 않으므로 추가 조회하지 않는다.
+        return recordRepository
+                .findTop10ByUserIdOrderByPerformedAtDescRecordIdDesc(userId)
+                .stream().limit(Math.min(limit, 10))
+                .map(entity -> entity.toDomain(List.of()))
+                .toList();
     }
 
     private List<TreatmentPhoto> photosOf(UUID recordId) {

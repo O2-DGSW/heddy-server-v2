@@ -1,9 +1,6 @@
 package com.heddy.adapter.out.persistence.style;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -19,20 +16,18 @@ interface SavedStyleJpaRepository extends JpaRepository<SavedStyleEntity, UUID> 
             Collection<UUID> savedStyleIds
     );
 
+    List<SavedStyleEntity> findAllByUserIdOrderByCreatedAtDescSavedStyleIdDesc(UUID userId);
+
     Optional<SavedStyleEntity> findBySavedStyleIdAndUserId(UUID savedStyleId, UUID userId);
 
-    Page<SavedStyleEntity> findAllByUserId(UUID userId, Pageable pageable);
-
-    long countByUserId(UUID userId);
-
-    boolean existsByUserIdAndStyleNameAndImageUrl(UUID userId, String styleName, String imageUrl);
-
-    long deleteBySavedStyleIdAndUserId(UUID savedStyleId, UUID userId);
-
-    @Modifying
-    @Query(value = "DELETE FROM share_saved_styles WHERE saved_style_id = :savedStyleId",
-            nativeQuery = true)
-    void deleteShareLinks(@Param("savedStyleId") UUID savedStyleId);
+    int deleteBySavedStyleId(UUID savedStyleId);
 
     void deleteAllByUserId(UUID userId);
+
+    @Query(value = """
+            SELECT DISTINCT hairstyle_id FROM saved_styles
+            WHERE user_id = :userId AND hairstyle_id IS NOT NULL
+            ORDER BY hairstyle_id
+            """, nativeQuery = true)
+    List<UUID> findHairstyleIdsByUserId(@Param("userId") UUID userId);
 }

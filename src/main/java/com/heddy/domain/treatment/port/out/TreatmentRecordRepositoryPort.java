@@ -6,6 +6,7 @@ import com.heddy.domain.treatment.model.TreatmentRecordFilter;
 import com.heddy.domain.treatment.model.TreatmentRecordPage;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 public interface TreatmentRecordRepositoryPort {
@@ -21,8 +22,12 @@ public interface TreatmentRecordRepositoryPort {
      */
     TreatmentPhoto insertPhoto(TreatmentPhoto photo);
 
-    /** 사진 유형과 표시 순서를 저장한다. */
+    /** 사진이 가리키는 파일과 유형·표시 순서를 저장한다. */
     Optional<TreatmentPhoto> updatePhoto(TreatmentPhoto photo);
+
+    /** 어느 사진이든 이미 이 파일을 가리키고 있는지 본다. 한 파일을 두 사진이 공유하면
+     *  한쪽을 지울 때 파일이 정리 대상이 되어 남은 쪽의 사진이 깨진다. */
+    boolean isFileAttached(UUID fileId);
 
     /** 사진 연결 한 건을 삭제한다. */
     boolean deletePhoto(UUID photoId);
@@ -49,4 +54,7 @@ public interface TreatmentRecordRepositoryPort {
 
     /** 계정 탈퇴 정리에서 사용자의 모든 기록을 하드 삭제한다. */
     void deleteAllByUserId(UUID userId);
+
+    /** 추천 계산용 최근 기록. 사진은 적재하지 않고 점수 계산기가 만족도 없는 기록을 제외한다. */
+    List<TreatmentRecord> findRecentByUserId(UUID userId, int limit);
 }

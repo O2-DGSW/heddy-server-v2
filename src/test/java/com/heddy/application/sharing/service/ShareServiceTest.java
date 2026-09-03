@@ -361,7 +361,8 @@ class ShareServiceTest {
 
     private SavedStyle savedStyle(UUID savedStyleId) {
         return new SavedStyle(savedStyleId, USER_ID, "레이어드 커트",
-                "https://images.example.com/layered.jpg", "추천 이유", Instant.now());
+                "https://images.example.com/layered.jpg", "추천 이유",
+                null, null, null, null, Instant.now());
     }
 
     private Share share(ShareStatus status) {

@@ -42,6 +42,13 @@ class ShareEntity extends BaseEntity {
     @Column(name = "token_hash", nullable = false, unique = true, updatable = false, length = 64)
     private String tokenHash;
 
+    /**
+     * 대상 구성의 SHA-256. 두 조인 테이블에 흩어진 대상을 shares 한 테이블에서 비교하려고
+     * 비정규화한 인덱스 키다(V31). 대상은 발급 후 바뀌지 않으므로 갱신하지 않는다.
+     */
+    @Column(name = "target_hash", nullable = false, updatable = false, length = 64)
+    private String targetHash;
+
     @Column(name = "status", nullable = false)
     private String status;
 
@@ -69,7 +76,8 @@ class ShareEntity extends BaseEntity {
     protected ShareEntity() {
     }
 
-    ShareEntity(Share share) {
+    ShareEntity(Share share, String targetHash) {
+        this.targetHash = targetHash;
         shareId = share.shareId();
         userId = share.userId();
         tokenHash = share.tokenHash();

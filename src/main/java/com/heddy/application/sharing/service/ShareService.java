@@ -72,6 +72,10 @@ public class ShareService implements CreateShareUseCase, ListSharesUseCase,
                 command.savedStyleIds(), command.fields(), command.expiresInDays(), Instant.now());
         requireOwnedRecords(command.userId(), command.recordIds());
         requireOwnedSavedStyles(command.userId(), command.savedStyleIds());
+        // 같은 대상을 다시 공유하는 것은 "이전 링크는 그만 쓰겠다" 는 뜻으로 본다. 토큰 원문을
+        // 저장하지 않아 기존 링크의 URL 을 다시 내려줄 수 없으므로, 재사용이 아니라 교체다.
+        shareRepositoryPort.revokeActiveWithSameTarget(
+                command.userId(), share.targetKey(), Instant.now());
         Share saved = shareRepositoryPort.insert(share);
         return new CreateShareUseCase.Result(saved, publicBaseUrl + "/" + rawToken);
     }

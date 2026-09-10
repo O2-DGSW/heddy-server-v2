@@ -42,12 +42,12 @@ class AnalysisJobEntity extends BaseEntity {
     private short progress;
 
     @Column(name = "attempt_count", nullable = false, updatable = false)
-    private short attemptCount;
+    private int attemptCount;
 
     @Column(name = "failure_code", length = 50)
     private String failureCode;
 
-    @Column(name = "failure_message", length = 500)
+    @Column(name = "failure_message", columnDefinition = "text")
     private String failureMessage;
 
     @Column(name = "started_at")
@@ -64,7 +64,7 @@ class AnalysisJobEntity extends BaseEntity {
         userId = job.userId();
         recordId = job.recordId();
         photoId = job.photoId();
-        attemptCount = (short) job.attemptCount();
+        attemptCount = job.attemptCount();
         apply(job);
     }
 

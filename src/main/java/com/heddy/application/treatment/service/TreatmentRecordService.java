@@ -126,7 +126,8 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                 command.performedAt(), command.satisfaction(), command.priceAmount(),
                 command.priceCurrency(), command.appointmentId(), command.memo(),
                 command.nextVisitCautions(), command.durationMinutes(),
-                command.treatmentContent());
+                command.treatmentContent(), command.timezone(), command.cutLength(),
+                command.cutShape(), command.permType(), command.colorName(), command.products());
         for (CreateTreatmentRecordUseCase.Command.Photo photo : command.photos()) {
             requireOwnedReadyFile(command.userId(), photo.fileId());
             record = record.attachPhoto(
@@ -202,7 +203,13 @@ public class TreatmentRecordService implements CreateTreatmentRecordUseCase,
                 command.memo().orElse(current.memo()),
                 command.nextVisitCautions().orElse(current.nextVisitCautions()),
                 command.durationMinutes().orElse(current.durationMinutes()),
-                command.treatmentContent().orElse(current.treatmentContent()));
+                command.treatmentContent().orElse(current.treatmentContent()),
+                command.timezone().orElse(current.timezone()),
+                command.cutLength().orElse(current.cutLength()),
+                command.cutShape().orElse(current.cutShape()),
+                command.permType().orElse(current.permType()),
+                command.colorName().orElse(current.colorName()),
+                command.products().orElse(current.products()));
         return recordRepositoryPort.update(updated)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
     }

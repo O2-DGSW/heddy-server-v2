@@ -33,11 +33,11 @@ class TreatmentPhotoEntity extends BaseEntity {
     private UUID fileId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "image_type", nullable = false, length = 20)
+    @Column(name = "image_type", nullable = false, length = 10)
     private ImageType imageType;
 
     @Column(name = "sort_order", nullable = false)
-    private int sortOrder;
+    private short sortOrder;
 
     protected TreatmentPhotoEntity() {
     }
@@ -47,7 +47,7 @@ class TreatmentPhotoEntity extends BaseEntity {
         recordId = photo.recordId();
         fileId = photo.fileId();
         imageType = photo.imageType();
-        sortOrder = photo.sortOrder();
+        sortOrder = (short) photo.sortOrder();
     }
 
     /** 페이지 조립이 사진을 기록별로 모을 때 쓴다(#66). */
@@ -63,6 +63,6 @@ class TreatmentPhotoEntity extends BaseEntity {
     void update(TreatmentPhoto photo) {
         fileId = photo.fileId();
         imageType = photo.imageType();
-        sortOrder = photo.sortOrder();
+        sortOrder = (short) photo.sortOrder();
     }
 }

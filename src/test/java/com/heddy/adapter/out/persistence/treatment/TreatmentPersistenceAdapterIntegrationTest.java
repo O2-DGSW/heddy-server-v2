@@ -317,6 +317,13 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
         assertColumn("treatment_records", "salon_name", "character varying", 50, true);
         assertColumn("treatment_records", "designer_name", "character varying", 30, true);
         assertColumn("treatment_records", "performed_at", "timestamp with time zone", null, false);
+        assertColumn("treatment_records", "timezone", "character varying", 50, false);
+        assertColumn("treatment_records", "cut_length", "character varying", 20, true);
+        assertColumn("treatment_records", "cut_shape", "character varying", 20, true);
+        assertColumn("treatment_records", "perm_type", "character varying", 20, true);
+        assertColumn("treatment_records", "color_name", "character varying", 30, true);
+        assertColumn("treatment_records", "products", "jsonb", null, true);
+        assertColumn("treatment_records", "duration_minutes", "integer", null, true);
         assertColumn("treatment_records", "satisfaction", "smallint", null, true);
         assertColumn("treatment_records", "price_amount", "bigint", null, true);
         assertColumn("treatment_records", "price_currency", "character varying", 3, true);
@@ -332,8 +339,8 @@ class TreatmentPersistenceAdapterIntegrationTest extends PostgresIntegrationTest
         assertColumn("treatment_record_photos", "photo_id", "uuid", null, false);
         assertColumn("treatment_record_photos", "record_id", "uuid", null, false);
         assertColumn("treatment_record_photos", "file_id", "uuid", null, false);
-        assertColumn("treatment_record_photos", "image_type", "character varying", 20, false);
-        assertColumn("treatment_record_photos", "sort_order", "integer", null, false);
+        assertColumn("treatment_record_photos", "image_type", "character varying", 10, false);
+        assertColumn("treatment_record_photos", "sort_order", "smallint", null, false);
         assertColumn("treatment_record_photos", "created_at", "timestamp with time zone", null, false);
         assertColumn("treatment_record_photos", "updated_at", "timestamp with time zone", null, false);
     }

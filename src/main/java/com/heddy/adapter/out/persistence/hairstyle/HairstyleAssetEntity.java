@@ -15,10 +15,10 @@ class HairstyleAssetEntity extends BaseEntity {
     @Column(name = "hairstyle_id", nullable = false, updatable = false)
     private UUID hairstyleId;
 
-    @Column(name = "style_name", nullable = false, length = 100)
+    @Column(name = "style_name", nullable = false, length = 30)
     private String styleName;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 20)
     private String category;
 
     @Column(name = "thumbnail_file_id")
@@ -30,7 +30,7 @@ class HairstyleAssetEntity extends BaseEntity {
     @Column(nullable = false)
     private boolean active;
 
-    @Column(name = "asset_version", nullable = false, length = 30)
+    @Column(name = "asset_version", nullable = false, length = 20)
     private String assetVersion;
 
     protected HairstyleAssetEntity() { }

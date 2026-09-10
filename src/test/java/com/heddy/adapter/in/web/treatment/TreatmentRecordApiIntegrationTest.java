@@ -393,6 +393,44 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
+    void storesAndReturnsApiV2TreatmentDetails() throws Exception {
+        String created = mockMvc.perform(post("/treatment-records")
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "service_types": ["CUT", "PERM", "COLOR"],
+                                  "performed_at": "2026-08-20T10:00:00Z",
+                                  "timezone": "Asia/Seoul",
+                                  "cut_length": "MEDIUM",
+                                  "cut_shape": "LAYERED",
+                                  "perm_type": "SETTING",
+                                  "color_name": "애쉬 브라운",
+                                  "products": ["클리닉 A", "염모제 B"]
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.timezone").value("Asia/Seoul"))
+                .andExpect(jsonPath("$.data.cut_length").value("MEDIUM"))
+                .andExpect(jsonPath("$.data.cut_shape").value("LAYERED"))
+                .andExpect(jsonPath("$.data.perm_type").value("SETTING"))
+                .andExpect(jsonPath("$.data.color_name").value("애쉬 브라운"))
+                .andExpect(jsonPath("$.data.products", containsInAnyOrder("클리닉 A", "염모제 B")))
+                .andReturn().getResponse().getContentAsString();
+        String recordId = new ObjectMapper().readTree(created).path("data").path("record_id").asText();
+
+        mockMvc.perform(get("/treatment-records/{recordId}", recordId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.timezone").value("Asia/Seoul"))
+                .andExpect(jsonPath("$.data.cut_length").value("MEDIUM"))
+                .andExpect(jsonPath("$.data.cut_shape").value("LAYERED"))
+                .andExpect(jsonPath("$.data.perm_type").value("SETTING"))
+                .andExpect(jsonPath("$.data.color_name").value("애쉬 브라운"))
+                .andExpect(jsonPath("$.data.products", hasSize(2)));
+    }
+
+    @Test
     void rejectsNegativeDurationMinutes() throws Exception {
         mockMvc.perform(post("/treatment-records")
                         .with(authentication(userAuthentication(USER_ID)))
@@ -511,6 +549,43 @@ class TreatmentRecordApiIntegrationTest extends PostgresIntegrationTest {
         assertThat((Number) stored.get("satisfaction")).hasToString("5");
         assertThat(stored.get("memo")).isEqualTo("새 메모");
         assertThat(stored.get("next_visit_cautions")).isNull();
+    }
+
+    @Test
+    void patchesApiV2TreatmentDetails() throws Exception {
+        String recordId = createRecord(USER_ID);
+
+        mockMvc.perform(patch("/treatment-records/" + recordId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "timezone": "Asia/Tokyo",
+                                  "cut_length": "SHORT",
+                                  "cut_shape": "BOB",
+                                  "perm_type": "DIGITAL",
+                                  "color_name": "다크 브라운",
+                                  "products": ["제품 A"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.timezone").value("Asia/Tokyo"))
+                .andExpect(jsonPath("$.data.cut_length").value("SHORT"))
+                .andExpect(jsonPath("$.data.cut_shape").value("BOB"))
+                .andExpect(jsonPath("$.data.perm_type").value("DIGITAL"))
+                .andExpect(jsonPath("$.data.color_name").value("다크 브라운"))
+                .andExpect(jsonPath("$.data.products[0]").value("제품 A"));
+
+        var stored = jdbcTemplate.queryForMap("""
+                SELECT timezone, cut_length, cut_shape, perm_type, color_name, products
+                FROM treatment_records WHERE record_id = ?
+                """, UUID.fromString(recordId));
+        assertThat(stored.get("timezone")).isEqualTo("Asia/Tokyo");
+        assertThat(stored.get("cut_length")).isEqualTo("SHORT");
+        assertThat(stored.get("cut_shape")).isEqualTo("BOB");
+        assertThat(stored.get("perm_type")).isEqualTo("DIGITAL");
+        assertThat(stored.get("color_name")).isEqualTo("다크 브라운");
+        assertThat(stored.get("products").toString()).contains("제품 A");
     }
 
     @Test

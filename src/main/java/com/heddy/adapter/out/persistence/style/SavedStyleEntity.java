@@ -38,7 +38,7 @@ class SavedStyleEntity extends BaseEntity {
     @Column(name = "capture_id", updatable = false)
     private UUID captureId;
 
-    @Column(length = 500)
+    @Column(columnDefinition = "text")
     private String memo;
 
     protected SavedStyleEntity() {

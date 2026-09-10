@@ -79,11 +79,11 @@ class AnalysisResultEntity extends BaseEntity {
     @Column(name = "model_version", nullable = false, length = 50)
     private String modelVersion;
 
-    @Column(name = "summary", length = 500)
+    @Column(name = "summary_comment", length = 500)
     private String summary;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "evidence")
+    @Column(name = "evidence_json")
     private String evidence;
 
     @Column(name = "analyzed_at", nullable = false)

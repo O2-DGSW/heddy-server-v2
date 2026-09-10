@@ -33,6 +33,12 @@ public interface CreateTreatmentRecordUseCase {
             String nextVisitCautions,
             Integer durationMinutes,
             String treatmentContent,
+            String timezone,
+            String cutLength,
+            String cutShape,
+            String permType,
+            String colorName,
+            List<String> products,
             List<Photo> photos
     ) {
         public Command(
@@ -48,7 +54,8 @@ public interface CreateTreatmentRecordUseCase {
                 List<Photo> photos
         ) {
             this(userId, serviceTypes, salonName, designerName, performedAt, satisfaction,
-                    priceAmount, priceCurrency, appointmentId, null, null, null, null, photos);
+                    priceAmount, priceCurrency, appointmentId, null, null, null, null,
+                    null, null, null, null, null, null, photos);
         }
 
         /** 소요 시간·시술 내용 도입 전 호출부와의 호환을 위한 생성자. */
@@ -68,7 +75,7 @@ public interface CreateTreatmentRecordUseCase {
         ) {
             this(userId, serviceTypes, salonName, designerName, performedAt, satisfaction,
                     priceAmount, priceCurrency, appointmentId, memo, nextVisitCautions,
-                    null, null, photos);
+                    null, null, null, null, null, null, null, null, photos);
         }
 
         public record Photo(UUID fileId, ImageType imageType, int sortOrder) {

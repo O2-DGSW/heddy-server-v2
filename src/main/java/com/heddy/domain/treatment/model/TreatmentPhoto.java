@@ -29,6 +29,9 @@ public record TreatmentPhoto(
         if (sortOrder < 0) {
             throw new TreatmentException(TreatmentError.PHOTO_SORT_ORDER_NEGATIVE);
         }
+        if (sortOrder > Short.MAX_VALUE) {
+            throw new TreatmentException(TreatmentError.PHOTO_SORT_ORDER_TOO_LARGE);
+        }
     }
 
     /** 새 사진을 만든다. 식별자는 도메인이 발급하고 {@code createdAt} 은 저장 계층이 채운다. */

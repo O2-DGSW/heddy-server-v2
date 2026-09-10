@@ -17,6 +17,10 @@ public record AnalysisResponse(
         @Schema(description = "분석 결과 식별자")
         @JsonProperty("analysis_id") UUID analysisId,
 
+        @JsonProperty("record_id") UUID recordId,
+
+        @JsonProperty("photo_id") UUID photoId,
+
         @Schema(description = "결과를 낸 분석 작업 식별자")
         @JsonProperty("job_id") UUID jobId,
 
@@ -35,7 +39,7 @@ public record AnalysisResponse(
         @JsonProperty("model_version") String modelVersion,
 
         @Schema(description = "결과 요약 문장. 없을 수 있다")
-        String summary,
+        @JsonProperty("summary_comment") String summary,
 
         @Schema(description = "분석이 끝난 시각")
         @JsonProperty("analyzed_at") Instant analyzedAt,
@@ -77,7 +81,8 @@ public record AnalysisResponse(
     public static AnalysisResponse from(GetLatestAnalysisUseCase.Result result) {
         var analysis = result.analysis();
         return new AnalysisResponse(
-                analysis.analysisId(), analysis.jobId(), result.status().name(),
+                analysis.analysisId(), analysis.recordId(), analysis.photoId(), analysis.jobId(),
+                result.status().name(),
                 metrics(result), confidence(result), analysis.modelVersion(), analysis.summary(),
                 analysis.analyzedAt(), overlays(result.overlays()));
     }

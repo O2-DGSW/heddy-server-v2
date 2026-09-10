@@ -52,7 +52,8 @@ class AnalysisResultPersistenceAdapterIntegrationTest extends PostgresIntegratio
 
     @Test
     void savesResultAndReadsEveryMetricBack() {
-        AnalysisResult saved = adapter.insert(resultOf(succeededJob(photoId)));
+        AnalysisJob job = succeededJob(photoId);
+        AnalysisResult saved = adapter.insert(resultOf(job));
 
         AnalysisResult found = adapter.findByIdAndUserId(saved.analysisId(), USER_ID).orElseThrow();
         assertThat(found.metric(MetricType.COLOR_UNIFORMITY).score())
@@ -65,6 +66,24 @@ class AnalysisResultPersistenceAdapterIntegrationTest extends PostgresIntegratio
         assertThat(found.modelVersion()).isEqualTo("hair-v1.2.0");
         assertThat(found.summary()).isEqualTo("사진에서 거칠게 보이는 영역이 감지되었습니다");
         assertThat(found.analyzedAt()).isEqualTo(NOW);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT analysis_id FROM analysis_jobs WHERE job_id = ?", UUID.class, job.jobId()))
+                .isEqualTo(saved.analysisId());
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM analysis_results WHERE analysis_id = ?", String.class,
+                saved.analysisId())).isEqualTo("SUCCEEDED");
+    }
+
+    @Test
+    void keepsResultStatusInSyncWhenJobBecomesStale() {
+        AnalysisJob job = succeededJob(photoId);
+        AnalysisResult saved = adapter.insert(resultOf(job));
+
+        jobAdapter.update(job.markStale(NOW.plusSeconds(1)));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM analysis_results WHERE analysis_id = ?", String.class,
+                saved.analysisId())).isEqualTo("STALE");
     }
 
     /** 소수점이 깎이면 비교 분석의 Δ값이 그만큼 어긋난다. */

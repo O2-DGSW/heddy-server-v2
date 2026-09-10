@@ -30,7 +30,7 @@ class RecommendationItemEntity {
     @Column(name = "color_id", updatable = false)
     private UUID colorId;
     @Column(name = "display_rank", nullable = false, updatable = false)
-    private int displayRank;
+    private short displayRank;
     @Column(nullable = false, precision = 5, scale = 2, updatable = false)
     private BigDecimal score;
     @JdbcTypeCode(SqlTypes.JSON)
@@ -39,7 +39,7 @@ class RecommendationItemEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "reasons_json", nullable = false, columnDefinition = "jsonb", updatable = false)
     private List<Map<String, Object>> reasons = List.of();
-    @Column(name = "management_difficulty", nullable = false, length = 20, updatable = false)
+    @Column(name = "management_difficulty", nullable = false, length = 10, updatable = false)
     private String managementDifficulty;
     @Column(name = "estimated_daily_care_minutes", nullable = false, updatable = false)
     private int estimatedDailyCareMinutes;
@@ -51,7 +51,7 @@ class RecommendationItemEntity {
         recommendationRunId = runId;
         hairstyleId = item.hairstyleId();
         colorId = item.colorId();
-        displayRank = item.displayRank();
+        displayRank = (short) item.displayRank();
         score = item.score();
         scoreBreakdown = breakdownMap(item.scoreBreakdown());
         reasons = item.reasons().stream().map(reason -> Map.<String, Object>of(

@@ -18,7 +18,7 @@ class RecommendationReferenceEntity {
     private UUID recommendationItemId;
     @Id @Column(name = "record_id", nullable = false, updatable = false)
     private UUID recordId;
-    @Column(name = "reference_reason_code", nullable = false, length = 60, updatable = false)
+    @Column(name = "reference_reason", nullable = false, length = 255, updatable = false)
     private String referenceReasonCode;
 
     protected RecommendationReferenceEntity() { }

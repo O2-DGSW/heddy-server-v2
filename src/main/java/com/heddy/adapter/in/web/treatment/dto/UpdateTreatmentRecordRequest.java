@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -53,6 +54,22 @@ public class UpdateTreatmentRecordRequest {
     private boolean durationMinutesPresent;
     private String treatmentContent;
     private boolean treatmentContentPresent;
+    private String timezone;
+    private boolean timezonePresent;
+    @Size(max = 20)
+    private String cutLength;
+    private boolean cutLengthPresent;
+    @Size(max = 20)
+    private String cutShape;
+    private boolean cutShapePresent;
+    @Size(max = 20)
+    private String permType;
+    private boolean permTypePresent;
+    @Size(max = 30)
+    private String colorName;
+    private boolean colorNamePresent;
+    private List<@NotNull String> products;
+    private boolean productsPresent;
 
     private final List<String> unknownFields = new ArrayList<>();
 
@@ -149,6 +166,42 @@ public class UpdateTreatmentRecordRequest {
         treatmentContentPresent = true;
     }
 
+    @JsonSetter("timezone")
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+        timezonePresent = true;
+    }
+
+    @JsonSetter("cut_length")
+    public void setCutLength(String cutLength) {
+        this.cutLength = cutLength;
+        cutLengthPresent = true;
+    }
+
+    @JsonSetter("cut_shape")
+    public void setCutShape(String cutShape) {
+        this.cutShape = cutShape;
+        cutShapePresent = true;
+    }
+
+    @JsonSetter("perm_type")
+    public void setPermType(String permType) {
+        this.permType = permType;
+        permTypePresent = true;
+    }
+
+    @JsonSetter("color_name")
+    public void setColorName(String colorName) {
+        this.colorName = colorName;
+        colorNamePresent = true;
+    }
+
+    @JsonSetter("products")
+    public void setProducts(List<String> products) {
+        this.products = products;
+        productsPresent = true;
+    }
+
     public UpdateTreatmentRecordUseCase.Command toCommand(UUID requesterId, UUID recordId) {
         return new UpdateTreatmentRecordUseCase.Command(
                 requesterId, recordId,
@@ -163,7 +216,13 @@ public class UpdateTreatmentRecordRequest {
                 patch(memoPresent, memo),
                 patch(nextVisitCautionsPresent, nextVisitCautions),
                 patch(durationMinutesPresent, durationMinutes),
-                patch(treatmentContentPresent, treatmentContent));
+                patch(treatmentContentPresent, treatmentContent),
+                patch(timezonePresent, timezone),
+                patch(cutLengthPresent, cutLength),
+                patch(cutShapePresent, cutShape),
+                patch(permTypePresent, permType),
+                patch(colorNamePresent, colorName),
+                patch(productsPresent, products));
     }
 
     private <T> UpdateTreatmentRecordUseCase.Patch<T> patch(boolean present, T value) {

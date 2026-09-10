@@ -4,6 +4,8 @@ import com.heddy.domain.treatment.exception.TreatmentError;
 import com.heddy.domain.treatment.exception.TreatmentException;
 
 import java.time.Instant;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -42,6 +44,12 @@ public record TreatmentRecord(
         String nextVisitCautions,
         Integer durationMinutes,
         String treatmentContent,
+        String timezone,
+        String cutLength,
+        String cutShape,
+        String permType,
+        String colorName,
+        List<String> products,
         List<TreatmentPhoto> photos,
         Instant createdAt
 ) {
@@ -49,6 +57,7 @@ public record TreatmentRecord(
     private static final int SALON_NAME_MAX_LENGTH = 50;
     private static final int DESIGNER_NAME_MAX_LENGTH = 30;
     private static final int TREATMENT_CONTENT_MAX_LENGTH = 255;
+    private static final String DEFAULT_TIMEZONE = "Asia/Seoul";
 
     /**
      * 통화를 생략한 가격에 채울 기본값. 국내 전용 서비스라 통화를 고를 자리가 화면에 없다.
@@ -101,6 +110,12 @@ public record TreatmentRecord(
         }
         treatmentContent = normalizeName(treatmentContent, TREATMENT_CONTENT_MAX_LENGTH,
                 TreatmentError.TREATMENT_CONTENT_TOO_LONG);
+        timezone = normalizeTimezone(timezone);
+        cutLength = normalizeName(cutLength, 20, TreatmentError.DETAIL_TOO_LONG);
+        cutShape = normalizeName(cutShape, 20, TreatmentError.DETAIL_TOO_LONG);
+        permType = normalizeName(permType, 20, TreatmentError.DETAIL_TOO_LONG);
+        colorName = normalizeName(colorName, 30, TreatmentError.DETAIL_TOO_LONG);
+        products = products == null ? null : List.copyOf(products);
 
         photos = photos == null ? List.of() : List.copyOf(photos);
         if (photos.size() > MAX_PHOTOS) {
@@ -132,7 +147,8 @@ public record TreatmentRecord(
     ) {
         this(recordId, userId, serviceTypes, salonName, designerName, performedAt,
                 satisfaction, priceAmount, priceCurrency, appointmentId,
-                memo, nextVisitCautions, null, null, photos, createdAt);
+                memo, nextVisitCautions, null, null, DEFAULT_TIMEZONE,
+                null, null, null, null, null, photos, createdAt);
     }
 
     /** 메모 컬럼 도입 전 호출부와의 호환을 위한 생성자. */
@@ -152,7 +168,8 @@ public record TreatmentRecord(
     ) {
         this(recordId, userId, serviceTypes, salonName, designerName, performedAt,
                 satisfaction, priceAmount, priceCurrency, appointmentId,
-                null, null, null, null, photos, createdAt);
+                null, null, null, null, DEFAULT_TIMEZONE,
+                null, null, null, null, null, photos, createdAt);
     }
 
     /** 새 기록을 만든다. 식별자는 도메인이 발급하고 사진은 빈 채로 시작한다. */
@@ -208,7 +225,36 @@ public record TreatmentRecord(
         return new TreatmentRecord(
                 UUID.randomUUID(), userId, serviceTypes, salonName, designerName,
                 performedAt, satisfaction, priceAmount, priceCurrency, appointmentId,
-                memo, nextVisitCautions, durationMinutes, treatmentContent, List.of(), null);
+                memo, nextVisitCautions, durationMinutes, treatmentContent, DEFAULT_TIMEZONE,
+                null, null, null, null, null, List.of(), null);
+    }
+
+    public static TreatmentRecord create(
+            UUID userId,
+            Set<ServiceType> serviceTypes,
+            String salonName,
+            String designerName,
+            Instant performedAt,
+            Integer satisfaction,
+            Long priceAmount,
+            String priceCurrency,
+            UUID appointmentId,
+            String memo,
+            String nextVisitCautions,
+            Integer durationMinutes,
+            String treatmentContent,
+            String timezone,
+            String cutLength,
+            String cutShape,
+            String permType,
+            String colorName,
+            List<String> products
+    ) {
+        return new TreatmentRecord(
+                UUID.randomUUID(), userId, serviceTypes, salonName, designerName,
+                performedAt, satisfaction, priceAmount, priceCurrency, appointmentId,
+                memo, nextVisitCautions, durationMinutes, treatmentContent, timezone,
+                cutLength, cutShape, permType, colorName, products, List.of(), null);
     }
 
     /**
@@ -241,7 +287,8 @@ public record TreatmentRecord(
         return new TreatmentRecord(
                 recordId, userId, serviceTypes, salonName, designerName, performedAt,
                 satisfaction, priceAmount, priceCurrency, appointmentId,
-                memo, nextVisitCautions, durationMinutes, treatmentContent, attached, createdAt);
+                memo, nextVisitCautions, durationMinutes, treatmentContent, timezone,
+                cutLength, cutShape, permType, colorName, products, attached, createdAt);
     }
 
     /** 부분 수정에서 결정된 최종 값으로 기록의 새 스냅샷을 만든다. */
@@ -260,7 +307,8 @@ public record TreatmentRecord(
     ) {
         return update(serviceTypes, salonName, designerName, performedAt, satisfaction,
                 priceAmount, priceCurrency, appointmentId, memo, nextVisitCautions,
-                durationMinutes, treatmentContent);
+                durationMinutes, treatmentContent, timezone, cutLength, cutShape,
+                permType, colorName, products);
     }
 
     public TreatmentRecord update(
@@ -275,12 +323,19 @@ public record TreatmentRecord(
             String memo,
             String nextVisitCautions,
             Integer durationMinutes,
-            String treatmentContent
+            String treatmentContent,
+            String timezone,
+            String cutLength,
+            String cutShape,
+            String permType,
+            String colorName,
+            List<String> products
     ) {
         return new TreatmentRecord(
                 recordId, userId, serviceTypes, salonName, designerName, performedAt,
                 satisfaction, priceAmount, priceCurrency, appointmentId,
-                memo, nextVisitCautions, durationMinutes, treatmentContent, photos, createdAt);
+                memo, nextVisitCautions, durationMinutes, treatmentContent, timezone,
+                cutLength, cutShape, permType, colorName, products, photos, createdAt);
     }
 
     private static String normalizeName(String value, int maxLength, TreatmentError tooLong) {
@@ -300,6 +355,16 @@ public record TreatmentRecord(
             throw new TreatmentException(TreatmentError.PRICE_CURRENCY_INVALID);
         }
         return upper;
+    }
+
+    private static String normalizeTimezone(String value) {
+        String timezone = value == null || value.isBlank() ? DEFAULT_TIMEZONE : value.strip();
+        try {
+            ZoneId.of(timezone);
+            return timezone;
+        } catch (DateTimeException invalidTimezone) {
+            throw new TreatmentException(TreatmentError.TIMEZONE_INVALID);
+        }
     }
 
     private static String normalizeText(String value) {

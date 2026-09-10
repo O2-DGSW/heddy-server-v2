@@ -15,6 +15,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -70,10 +71,29 @@ class TreatmentRecordEntity extends BaseEntity {
     private String nextVisitCautions;
 
     @Column(name = "duration_minutes")
-    private Short durationMinutes;
+    private Integer durationMinutes;
 
     @Column(name = "treatment_content", length = 255)
     private String treatmentContent;
+
+    @Column(name = "timezone", nullable = false, length = 50)
+    private String timezone;
+
+    @Column(name = "cut_length", length = 20)
+    private String cutLength;
+
+    @Column(name = "cut_shape", length = 20)
+    private String cutShape;
+
+    @Column(name = "perm_type", length = 20)
+    private String permType;
+
+    @Column(name = "color_name", length = 30)
+    private String colorName;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "products")
+    private List<String> products;
 
     protected TreatmentRecordEntity() {
     }
@@ -93,9 +113,14 @@ class TreatmentRecordEntity extends BaseEntity {
         appointmentId = record.appointmentId();
         memo = record.memo();
         nextVisitCautions = record.nextVisitCautions();
-        durationMinutes = record.durationMinutes() == null
-                ? null : record.durationMinutes().shortValue();
+        durationMinutes = record.durationMinutes();
         treatmentContent = record.treatmentContent();
+        timezone = record.timezone();
+        cutLength = record.cutLength();
+        cutShape = record.cutShape();
+        permType = record.permType();
+        colorName = record.colorName();
+        products = record.products() == null ? null : new ArrayList<>(record.products());
     }
 
     TreatmentRecord toDomain(List<TreatmentPhoto> photos) {
@@ -106,7 +131,8 @@ class TreatmentRecordEntity extends BaseEntity {
                 recordId, userId, parsedServiceTypes, salonName, designerName, performedAt,
                 satisfaction == null ? null : satisfaction.intValue(),
                 priceAmount, priceCurrency, appointmentId, memo, nextVisitCautions,
-                durationMinutes == null ? null : durationMinutes.intValue(), treatmentContent,
+                durationMinutes, treatmentContent, timezone, cutLength, cutShape,
+                permType, colorName, products,
                 photos, getCreatedAt());
     }
 
@@ -127,9 +153,14 @@ class TreatmentRecordEntity extends BaseEntity {
         appointmentId = record.appointmentId();
         memo = record.memo();
         nextVisitCautions = record.nextVisitCautions();
-        durationMinutes = record.durationMinutes() == null
-                ? null : record.durationMinutes().shortValue();
+        durationMinutes = record.durationMinutes();
         treatmentContent = record.treatmentContent();
+        timezone = record.timezone();
+        cutLength = record.cutLength();
+        cutShape = record.cutShape();
+        permType = record.permType();
+        colorName = record.colorName();
+        products = record.products() == null ? null : new ArrayList<>(record.products());
     }
 
     private static ServiceType parseServiceType(String name) {

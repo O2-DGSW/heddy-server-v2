@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -56,8 +57,12 @@ class AnalysisApiIntegrationTest extends PostgresIntegrationTest {
         mockMvc.perform(get("/treatment-records/{recordId}/analyses/latest", recordId)
                         .with(authentication(userAuthentication(USER_ID))))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.record_id").value(recordId.toString()))
+                .andExpect(jsonPath("$.data.photo_id").value(photoId.toString()))
                 .andExpect(jsonPath("$.data.status").value("SUCCEEDED"))
                 .andExpect(jsonPath("$.data.model_version").value("hair-v1.2.0"))
+                .andExpect(jsonPath("$.data.summary_comment")
+                        .value("사진에서 거칠게 보이는 영역이 감지되었습니다"))
                 .andExpect(jsonPath("$.data.confidence.score").value(82.40))
                 .andExpect(jsonPath("$.data.confidence.grade").value("HIGH"))
                 .andExpect(jsonPath("$.data.metrics", hasSize(4)))
@@ -76,6 +81,10 @@ class AnalysisApiIntegrationTest extends PostgresIntegrationTest {
     void reportsStaleWithoutHidingTheResult() throws Exception {
         UUID jobId = insertJob("STALE");
         insertResult(jobId);
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM analysis_results WHERE job_id = ?", String.class, jobId))
+                .isEqualTo("STALE");
 
         mockMvc.perform(get("/treatment-records/{recordId}/analyses/latest", recordId)
                         .with(authentication(userAuthentication(USER_ID))))
@@ -135,7 +144,7 @@ class AnalysisApiIntegrationTest extends PostgresIntegrationTest {
                     volume_balance_score, volume_balance_grade,
                     roughness_score, roughness_grade,
                     confidence_score, confidence_grade,
-                    model_version, summary, analyzed_at
+                    model_version, summary_comment, analyzed_at
                 ) VALUES (?, ?, ?, ?, ?, 78.00, 'HIGH', 71.00, 'HIGH', 64.00, 'MEDIUM',
                           41.00, 'LOW', 82.40, 'HIGH', 'hair-v1.2.0', ?, ?)
                 """, UUID.randomUUID(), jobId, USER_ID, recordId, photoId,

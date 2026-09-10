@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.util.List;
@@ -27,6 +28,9 @@ public record CreateTreatmentRecordRequest(
         @Schema(description = "시술일시(ISO-8601). 미래일 수 없다")
         @JsonProperty("performed_at") Instant performedAt,
 
+        @Schema(description = "입력 기준 IANA 시간대", example = "Asia/Seoul")
+        @JsonProperty("timezone") String timezone,
+
         @Schema(description = "미용실 이름. 선택 입력, 최대 50자")
         @JsonProperty("salon_name") String salonName,
 
@@ -42,6 +46,25 @@ public record CreateTreatmentRecordRequest(
         @Schema(description = "시술 내용. 선택 입력, 최대 255자. 메모와 별개로 무엇을 했는지 "
                 + "적는다", example = "애쉬브라운 전체 염색")
         @JsonProperty("treatment_content") String treatmentContent,
+
+        @Size(max = 20)
+        @Schema(description = "커트 길이")
+        @JsonProperty("cut_length") String cutLength,
+
+        @Size(max = 20)
+        @Schema(description = "커트 형태", example = "LAYERED")
+        @JsonProperty("cut_shape") String cutShape,
+
+        @Size(max = 20)
+        @Schema(description = "펌 종류")
+        @JsonProperty("perm_type") String permType,
+
+        @Size(max = 30)
+        @Schema(description = "염색 색상명", example = "애쉬 브라운")
+        @JsonProperty("color_name") String colorName,
+
+        @Schema(description = "사용 제품 또는 약제 목록")
+        @JsonProperty("products") List<@NotNull String> products,
 
         @Schema(description = "가격 금액. 선택 입력", example = "35000")
         @JsonProperty("price_amount") Long priceAmount,
@@ -85,7 +108,8 @@ public record CreateTreatmentRecordRequest(
     public CreateTreatmentRecordUseCase.Command toCommand(UUID userId) {
         return new CreateTreatmentRecordUseCase.Command(userId, serviceTypes, salonName, designerName,
                 performedAt, satisfaction, priceAmount, priceCurrency, appointmentId,
-                memo, nextVisitCautions, durationMinutes, treatmentContent,
+                memo, nextVisitCautions, durationMinutes, treatmentContent, timezone,
+                cutLength, cutShape, permType, colorName, products,
                 photos == null ? List.of() : java.util.stream.IntStream.range(0, photos.size())
                         .mapToObj(index -> {
                             PhotoRequest photo = photos.get(index);

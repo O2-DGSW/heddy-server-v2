@@ -32,6 +32,19 @@ public record TreatmentRecordResponse(
         @Schema(description = "시술일시")
         @JsonProperty("performed_at") Instant performedAt,
 
+        @Schema(description = "입력 기준 IANA 시간대")
+        String timezone,
+
+        @JsonProperty("cut_length") String cutLength,
+
+        @JsonProperty("cut_shape") String cutShape,
+
+        @JsonProperty("perm_type") String permType,
+
+        @JsonProperty("color_name") String colorName,
+
+        List<String> products,
+
         @Schema(description = "만족도(1~5). 입력하지 않았으면 비어 있다")
         @JsonProperty("satisfaction") Integer satisfaction,
 
@@ -139,7 +152,8 @@ public record TreatmentRecordResponse(
     private static TreatmentRecordResponse of(TreatmentRecord record, List<? extends Photo> photos) {
         return new TreatmentRecordResponse(
                 record.recordId(), record.serviceTypes(), record.salonName(), record.designerName(),
-                record.performedAt(), record.satisfaction(),
+                record.performedAt(), record.timezone(), record.cutLength(), record.cutShape(),
+                record.permType(), record.colorName(), record.products(), record.satisfaction(),
                 record.priceAmount() == null ? null
                         : new Price(record.priceAmount(), record.priceCurrency()),
                 record.appointmentId(), record.memo(), record.nextVisitCautions(),

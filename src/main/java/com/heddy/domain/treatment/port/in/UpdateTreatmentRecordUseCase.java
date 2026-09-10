@@ -4,6 +4,7 @@ import com.heddy.domain.treatment.model.ServiceType;
 import com.heddy.domain.treatment.model.TreatmentRecord;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,7 +27,13 @@ public interface UpdateTreatmentRecordUseCase {
             Patch<String> memo,
             Patch<String> nextVisitCautions,
             Patch<Integer> durationMinutes,
-            Patch<String> treatmentContent
+            Patch<String> treatmentContent,
+            Patch<String> timezone,
+            Patch<String> cutLength,
+            Patch<String> cutShape,
+            Patch<String> permType,
+            Patch<String> colorName,
+            Patch<List<String>> products
     ) {
         /** 소요 시간·시술 내용 도입 전 호출부와의 호환을 위한 생성자. */
         public Command(
@@ -45,7 +52,8 @@ public interface UpdateTreatmentRecordUseCase {
         ) {
             this(requesterId, recordId, serviceTypes, salonName, designerName, performedAt,
                     satisfaction, priceAmount, priceCurrency, appointmentId, memo,
-                    nextVisitCautions, Patch.absent(), Patch.absent());
+                    nextVisitCautions, Patch.absent(), Patch.absent(), Patch.absent(),
+                    Patch.absent(), Patch.absent(), Patch.absent(), Patch.absent(), Patch.absent());
         }
     }
 

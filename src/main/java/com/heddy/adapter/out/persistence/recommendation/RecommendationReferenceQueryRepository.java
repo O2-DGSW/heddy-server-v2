@@ -22,7 +22,7 @@ class RecommendationReferenceQueryRepository {
         Map<UUID, RecommendationReference> result = new LinkedHashMap<>();
         jdbcTemplate.query("""
                 SELECT reference.recommendation_item_id, reference.record_id,
-                       reference.reference_reason_code, record.performed_at, record.satisfaction
+                       reference.reference_reason, record.performed_at, record.satisfaction
                 FROM recommendation_reference_records reference
                 JOIN treatment_records record ON record.record_id = reference.record_id
                 WHERE reference.recommendation_item_id IN (:ids)
@@ -32,7 +32,7 @@ class RecommendationReferenceQueryRepository {
                 new RecommendationReference(rows.getObject("record_id", UUID.class),
                         rows.getTimestamp("performed_at").toInstant(),
                         rows.getObject("satisfaction", Integer.class),
-                        rows.getString("reference_reason_code"))));
+                        rows.getString("reference_reason"))));
         return result;
     }
 }

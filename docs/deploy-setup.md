@@ -58,6 +58,28 @@ SHARE_PUBLIC_BASE_URL=https://heddy.site/s  # 선택: 미지정 시에도 이 �
 기능별 선택 변수(소셜 로그인 `KAKAO_APP_ID` · `GOOGLE_CLIENT_ID` · `APPLE_CLIENT_ID`,
 SMS `SOLAPI_*` 등)는 해당 기능을 켤 때 같은 파일에 추가하면 `.env` 째로 컨테이너에 전달된다.
 
+헤어 분석을 켤 때는 아래 값도 추가한다. 모델 파일은 이미지에 넣지 않고 EC2의
+`/home/ubuntu/heddy-models`에서 컨테이너로 읽기 전용 마운트한다.
+
+```dotenv
+HAIR_ANALYSIS_ENABLED=true
+HAIR_ANALYSIS_MODEL_HOST_DIR=/home/ubuntu/heddy-models
+HAIR_ANALYSIS_MODEL_PATH=/opt/heddy/models/face-parsing.onnx
+HAIR_ANALYSIS_MODEL_VERSION=<학습 데이터와 가중치를 식별하는 버전>
+HAIR_ANALYSIS_WORKER_THREADS=1
+```
+
+- ONNX 입력은 RGB `float32 [1,3,512,512]`, 출력은 19개 이상의 클래스 logits
+  `[1,C,H,W]`여야 한다. 사용하는 클래스 번호는 skin=1, nose=2, left-eye=4,
+  right-eye=5, hair=13이다.
+- 모델 파일이 없거나 열리지 않으면 앱을 분석 활성 상태로 기동하지 않는다. 기능을 끈 환경의
+  분석 요청은 더미 점수 대신 `503 ANALYSIS_ENGINE_UNAVAILABLE`을 반환한다.
+- 참고용 공개 `jonathandinu/face-parsing`/CelebAMask-HQ 가중치는 비상업 용도 제한이 있으므로
+  운영 서비스에 그대로 배포하지 않는다. 실제 운영에는 사용 권리를 확보한 가중치를 같은 ONNX
+  계약으로 내보내 배치한다.
+- 인스턴스 역할에는 기존 업로드 권한과 함께 시술 사진 객체에 대한 `s3:GetObject`가 필요하다.
+  서버가 분석 시 S3 원본을 직접 읽으며 Presigned URL을 외부 AI 서비스에 전달하지 않는다.
+
 ## 3. 첫 배포
 
 1. 위 1·2번이 끝났으면 `main` 에 푸시하거나 Actions 에서 `Deploy` 를 수동 실행한다.

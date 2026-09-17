@@ -137,6 +137,24 @@ class S3FileStorageAdapterIntegrationTest {
         assertThat(response.body()).isEqualTo(CONTENT);
     }
 
+    @Test
+    void readsReadyObjectForInternalAnalysisWithoutExposingAUrl() throws Exception {
+        StoredFile pending = pendingPhoto();
+        put(adapter.createUploadUrl(pending), pending.contentType(), CONTENT);
+        StoredFile ready = pending.markReady(new StorageObject(pending.contentType(), CONTENT.length));
+
+        assertThat(adapter.readObject(ready, 1024)).isEqualTo(CONTENT);
+    }
+
+    @Test
+    void refusesToReadInternalObjectPastTheMemoryLimit() {
+        StoredFile pending = pendingPhoto();
+        StoredFile ready = pending.markReady(new StorageObject(pending.contentType(), CONTENT.length));
+
+        assertThatThrownBy(() -> adapter.readObject(ready, CONTENT.length - 1L))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     // ------------------------------------------------------------------ 만료
 
     /**

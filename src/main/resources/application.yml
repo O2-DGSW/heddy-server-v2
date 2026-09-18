@@ -81,9 +81,16 @@ app:
     token-purge-interval-ms: ${USED_REAUTHENTICATION_TOKEN_PURGE_INTERVAL_MS:3600000}
     token-purge-initial-delay-ms: ${USED_REAUTHENTICATION_TOKEN_PURGE_INITIAL_DELAY_MS:60000}
   ai:
-    base-url: ${AI_SERVER_URL:http://localhost:8000}
-    connect-timeout-seconds: 3
-    read-timeout-seconds: 30
+    # 사용자 사진은 외부 생성형 AI API 로 전송하지 않는다. 로컬 ONNX 모델이 없으면
+    # 분석 API 는 임의 점수를 만들지 않고 503 으로 접수를 거부한다.
+    enabled: ${HAIR_ANALYSIS_ENABLED:false}
+    model-path: ${HAIR_ANALYSIS_MODEL_PATH:}
+    model-version: ${HAIR_ANALYSIS_MODEL_VERSION:segformer-face-parsing-cv-v1}
+    input-size: ${HAIR_ANALYSIS_INPUT_SIZE:512}
+    minimum-confidence-score: ${HAIR_ANALYSIS_MIN_CONFIDENCE_SCORE:50}
+    worker-threads: ${HAIR_ANALYSIS_WORKER_THREADS:1}
+    maximum-image-bytes: ${HAIR_ANALYSIS_MAX_IMAGE_BYTES:10485760}
+    max-attempts: ${HAIR_ANALYSIS_MAX_ATTEMPTS:3}
   auth:
     jwt-secret: ${JWT_SECRET}
     access-token-seconds: 3600

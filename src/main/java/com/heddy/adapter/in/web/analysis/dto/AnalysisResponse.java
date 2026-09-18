@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.heddy.domain.analysis.model.AnalysisOverlay;
 import com.heddy.domain.analysis.model.MetricType;
 import com.heddy.domain.analysis.port.in.GetLatestAnalysisUseCase;
+import com.heddy.domain.analysis.port.in.GetAnalysisUseCase;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -80,27 +81,42 @@ public record AnalysisResponse(
 
     public static AnalysisResponse from(GetLatestAnalysisUseCase.Result result) {
         var analysis = result.analysis();
-        return new AnalysisResponse(
-                analysis.analysisId(), analysis.recordId(), analysis.photoId(), analysis.jobId(),
-                result.status().name(),
-                metrics(result), confidence(result), analysis.modelVersion(), analysis.summary(),
-                analysis.analyzedAt(), overlays(result.overlays()));
+        return from(analysis, result.status().name(), result.overlays());
     }
 
-    private static List<Metric> metrics(GetLatestAnalysisUseCase.Result result) {
+    public static AnalysisResponse from(GetAnalysisUseCase.Result result) {
+        return from(result.analysis(), result.status().name(), result.overlays());
+    }
+
+    private static AnalysisResponse from(
+            com.heddy.domain.analysis.model.AnalysisResult analysis,
+            String status,
+            List<AnalysisOverlay> overlays
+    ) {
+        return new AnalysisResponse(analysis.analysisId(), analysis.recordId(), analysis.photoId(),
+                analysis.jobId(), status, metrics(analysis), confidence(analysis),
+                analysis.modelVersion(), analysis.summary(), analysis.analyzedAt(),
+                overlays(overlays));
+    }
+
+    private static List<Metric> metrics(
+            com.heddy.domain.analysis.model.AnalysisResult analysis
+    ) {
         // 지표 순서를 열거형 선언 순서로 고정한다. map 순회 순서에 맡기면 화면의 목록 순서가
         // 요청마다 달라진다.
         return java.util.Arrays.stream(MetricType.values())
                 .map(type -> {
-                    var metric = result.analysis().metric(type);
+                    var metric = analysis.metric(type);
                     return new Metric(type.name(), metric.score(), metric.grade().name(),
                             type.higherIsBetter());
                 })
                 .toList();
     }
 
-    private static Metric confidence(GetLatestAnalysisUseCase.Result result) {
-        var confidence = result.analysis().confidence();
+    private static Metric confidence(
+            com.heddy.domain.analysis.model.AnalysisResult analysis
+    ) {
+        var confidence = analysis.confidence();
         return new Metric(null, confidence.score(), confidence.grade().name(), true);
     }
 

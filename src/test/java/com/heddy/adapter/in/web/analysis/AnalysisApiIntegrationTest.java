@@ -20,6 +20,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -119,6 +120,40 @@ class AnalysisApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void refusesToCreateDummyScoresWhenTheLocalModelIsDisabled() throws Exception {
+        mockMvc.perform(post("/treatment-records/{recordId}/analyses", recordId)
+                        .with(authentication(userAuthentication(USER_ID)))
+                        .contentType("application/json")
+                        .content("{}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error.code").value("ANALYSIS_ENGINE_UNAVAILABLE"));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM analysis_jobs WHERE record_id = ?", Integer.class, recordId))
+                .isZero();
+    }
+
+    @Test
+    void readsAJobAndItsResultThroughTheNewEndpoints() throws Exception {
+        UUID jobId = insertJob("SUCCEEDED");
+        UUID analysisId = insertResult(jobId);
+
+        mockMvc.perform(get("/analysis-jobs/{jobId}", jobId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.job_id").value(jobId.toString()))
+                .andExpect(jsonPath("$.data.status").value("SUCCEEDED"))
+                .andExpect(jsonPath("$.data.analysis_id").value(analysisId.toString()))
+                .andExpect(jsonPath("$.data.failure", nullValue()));
+
+        mockMvc.perform(get("/analyses/{analysisId}", analysisId)
+                        .with(authentication(userAuthentication(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.analysis_id").value(analysisId.toString()))
+                .andExpect(jsonPath("$.data.metrics", hasSize(4)));
+    }
+
     // ------------------------------------------------------------------ 헬퍼
 
     private UsernamePasswordAuthenticationToken userAuthentication(UUID userId) {
@@ -135,7 +170,8 @@ class AnalysisApiIntegrationTest extends PostgresIntegrationTest {
         return jobId;
     }
 
-    private void insertResult(UUID jobId) {
+    private UUID insertResult(UUID jobId) {
+        UUID analysisId = UUID.randomUUID();
         jdbcTemplate.update("""
                 INSERT INTO analysis_results (
                     analysis_id, job_id, user_id, record_id, photo_id,
@@ -147,8 +183,9 @@ class AnalysisApiIntegrationTest extends PostgresIntegrationTest {
                     model_version, summary_comment, analyzed_at
                 ) VALUES (?, ?, ?, ?, ?, 78.00, 'HIGH', 71.00, 'HIGH', 64.00, 'MEDIUM',
                           41.00, 'LOW', 82.40, 'HIGH', 'hair-v1.2.0', ?, ?)
-                """, UUID.randomUUID(), jobId, USER_ID, recordId, photoId,
+                """, analysisId, jobId, USER_ID, recordId, photoId,
                 "사진에서 거칠게 보이는 영역이 감지되었습니다", Timestamp.from(NOW));
+        return analysisId;
     }
 
     private void insertUser(UUID userId, String email) {

@@ -26,6 +26,28 @@ class HairMetricCalculatorTest {
     }
 
     @Test
+    void returnsUnavailableWhenEyeCentersAreTooCloseToFormAnAxis() {
+        int size = 32;
+        int[] rgb = new int[size * size];
+        byte[] labels = new byte[size * size];
+        float[] hairProbability = new float[size * size];
+        for (int y = 0; y < 4; y++) {
+            for (int x = 0; x < size; x++) {
+                int index = y * size + x;
+                labels[index] = HairMetricCalculator.HAIR_LABEL;
+                hairProbability[index] = 0.99f;
+            }
+        }
+        labels[16 * size + 16] = HairMetricCalculator.LEFT_EYE_LABEL;
+        labels[16 * size + 17] = HairMetricCalculator.RIGHT_EYE_LABEL;
+
+        assertThat(calculator.calculate(
+                new FaceParsingOutput(size, size, rgb, labels, hairProbability)))
+                .isInstanceOfSatisfying(HairAnalysisOutcome.Unavailable.class,
+                        unavailable -> assertThat(unavailable.code()).isEqualTo("FACE_NOT_FRONTAL"));
+    }
+
+    @Test
     void computesAllFourMetricsOnlyFromAValidModelSegmentation() {
         int width = 96;
         int height = 96;

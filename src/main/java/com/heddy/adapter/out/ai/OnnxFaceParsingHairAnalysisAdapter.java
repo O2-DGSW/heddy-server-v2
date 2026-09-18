@@ -81,7 +81,7 @@ public class OnnxFaceParsingHairAnalysisAdapter implements HairAnalysisEnginePor
     }
 
     @Override
-    public synchronized HairAnalysisOutcome analyze(byte[] imageBytes) {
+    public HairAnalysisOutcome analyze(byte[] imageBytes) {
         final BufferedImage image;
         try {
             image = decode(imageBytes);

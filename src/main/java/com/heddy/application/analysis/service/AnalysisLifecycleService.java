@@ -42,9 +42,6 @@ public class AnalysisLifecycleService {
     public WorkItem start(UUID jobId, UUID userId) {
         AnalysisJob job = jobRepositoryPort.findByIdAndUserId(jobId, userId)
                 .orElseThrow(() -> new IllegalStateException("분석 작업이 없습니다: " + jobId));
-        if (job.status() != AnalysisJobStatus.PENDING) {
-            throw new IllegalStateException("PENDING 작업만 시작할 수 있습니다: " + job.status());
-        }
         if (job.photoId() == null) {
             throw new IllegalStateException("분석 작업의 사진이 없습니다");
         }
@@ -68,9 +65,6 @@ public class AnalysisLifecycleService {
         // 분석 도중 사진이 교체되면 staleness 서비스가 STALE 로 만든다. 옛 사진 결과를 저장하지 않는다.
         if (current.status() == AnalysisJobStatus.STALE) {
             return;
-        }
-        if (current.status() != AnalysisJobStatus.PROCESSING) {
-            throw new IllegalStateException("PROCESSING 작업만 완료할 수 있습니다: " + current.status());
         }
         Instant now = Instant.now();
         if (outcome instanceof HairAnalysisOutcome.Unavailable unavailable) {

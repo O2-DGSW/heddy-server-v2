@@ -161,8 +161,10 @@ public class AnalysisApplicationService implements RequestAnalysisUseCase, GetAn
     private StoredFile requireReadyInput(UUID userId, TreatmentPhoto photo) {
         StoredFile file = fileRepositoryPort.findById(photo.fileId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.RESOURCE_NOT_FOUND));
-        if (!file.isReady() || file.purpose() != FilePurpose.TREATMENT_PHOTO
-                || !userId.equals(file.userId())) {
+        if (!userId.equals(file.userId())) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+        if (!file.isReady() || file.purpose() != FilePurpose.TREATMENT_PHOTO) {
             throw new ApplicationException(ErrorCode.ANALYSIS_INPUT_NOT_READY);
         }
         return file;

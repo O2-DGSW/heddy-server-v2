@@ -56,7 +56,7 @@ final class HairMetricCalculator {
         if (hair.count < imagePixels * 0.01) {
             return unavailable("HAIR_NOT_DETECTED", "사진에서 분석할 머리 영역을 찾지 못했습니다.");
         }
-        if (leftEye.count == 0 || rightEye.count == 0) {
+        if (!hasUsableEyeAxis(leftEye, rightEye)) {
             return unavailable("FACE_NOT_FRONTAL", "두 눈이 보이도록 정면에서 촬영해 주세요.");
         }
 
@@ -487,6 +487,15 @@ final class HairMetricCalculator {
 
     private static double clamp(double value, double minimum, double maximum) {
         return Math.max(minimum, Math.min(maximum, value));
+    }
+
+    private static boolean hasUsableEyeAxis(Region leftEye, Region rightEye) {
+        if (leftEye.count == 0 || rightEye.count == 0) {
+            return false;
+        }
+        return Math.hypot(
+                rightEye.centerX() - leftEye.centerX(),
+                rightEye.centerY() - leftEye.centerY()) >= 2;
     }
 
     private record Point(double x, double y) {

@@ -9,6 +9,11 @@ public class AccountException extends RuntimeException {
         this.error = error;
     }
 
+    public AccountException(AccountError error, Throwable cause) {
+        super(error.message(), cause);
+        this.error = error;
+    }
+
     public AccountError error() {
         return error;
     }

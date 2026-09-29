@@ -6,6 +6,8 @@ import com.heddy.domain.account.exception.AccountException;
 import net.nurigo.sdk.NurigoApp;
 import net.nurigo.sdk.message.model.Message;
 import net.nurigo.sdk.message.service.DefaultMessageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "app.auth.sms.solapi", name = "enabled", havingValue = "true")
 public class SolapiSmsSenderAdapter implements SmsSenderPort {
 
+    private static final Logger log = LoggerFactory.getLogger(SolapiSmsSenderAdapter.class);
     private static final String API_URL = "https://api.solapi.com";
 
     private final DefaultMessageService messageService;
@@ -37,7 +40,8 @@ public class SolapiSmsSenderAdapter implements SmsSenderPort {
         try {
             messageService.send(message);
         } catch (Exception exception) {
-            throw new AccountException(AccountError.SMS_SEND_FAILED);
+            log.error("Solapi SMS 발송 실패", exception);
+            throw new AccountException(AccountError.SMS_SEND_FAILED, exception);
         }
     }
 }

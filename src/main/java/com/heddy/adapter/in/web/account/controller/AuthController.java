@@ -28,6 +28,9 @@ import com.heddy.global.filter.RequestIdFilter;
 import com.heddy.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,6 +40,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -121,6 +125,27 @@ public class AuthController {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "201", description = "회원가입 성공")
     public ResponseEntity<ApiResponse<AuthResponse>> emailSignup(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = EmailSignupRequest.class),
+                            examples = @ExampleObject(
+                                    name = "이메일 회원가입 요청",
+                                    value = """
+                                            {
+                                              "email": "exampleeamil1234@example.com",
+                                              "password": "Password123!",
+                                              "nickname": "gangmin",
+                                              "agreements": {
+                                                "terms_of_service": true,
+                                                "privacy_policy": true,
+                                                "ai_training": false,
+                                                "service_analytics": true,
+                                                "marketing_notification": false
+                                              }
+                                            }
+                                            """)))
             @Valid @RequestBody EmailSignupRequest request,
             HttpServletRequest servletRequest
     ) {
@@ -138,6 +163,27 @@ public class AuthController {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "201", description = "회원가입 성공")
     public ResponseEntity<ApiResponse<AuthResponse>> socialSignup(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = SocialSignupRequest.class),
+                            examples = @ExampleObject(
+                                    name = "소셜 회원가입 요청",
+                                    value = """
+                                            {
+                                              "provider": "GOOGLE",
+                                              "provider_token": "provider-issued-id-token",
+                                              "nickname": "gangmin",
+                                              "agreements": {
+                                                "terms_of_service": true,
+                                                "privacy_policy": true,
+                                                "ai_training": false,
+                                                "service_analytics": true,
+                                                "marketing_notification": false
+                                              }
+                                            }
+                                            """)))
             @Valid @RequestBody SocialSignupRequest request,
             HttpServletRequest servletRequest
     ) {

@@ -143,6 +143,13 @@ public class AuthController {
                                                 "ai_training": false,
                                                 "service_analytics": true,
                                                 "marketing_notification": false
+                                              },
+                                              "hair_profile": {
+                                                "hair_type": "STRAIGHT",
+                                                "hair_condition": "HEALTHY",
+                                                "hair_length": "SHORT",
+                                                "hair_thickness": "THIN",
+                                                "available_care_time_minutes": 15
                                               }
                                             }
                                             """)))
@@ -181,6 +188,13 @@ public class AuthController {
                                                 "ai_training": false,
                                                 "service_analytics": true,
                                                 "marketing_notification": false
+                                              },
+                                              "hair_profile": {
+                                                "hair_type": "STRAIGHT",
+                                                "hair_condition": "HEALTHY",
+                                                "hair_length": "SHORT",
+                                                "hair_thickness": "THIN",
+                                                "available_care_time_minutes": 15
                                               }
                                             }
                                             """)))

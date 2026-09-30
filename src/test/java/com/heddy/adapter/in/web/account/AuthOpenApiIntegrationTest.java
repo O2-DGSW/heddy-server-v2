@@ -52,6 +52,14 @@ class AuthOpenApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$['paths']['/auth/signup/email']['post']"
                         + "['requestBody']['content']['application/json']['examples']"
                         + "['이메일 회원가입 요청']['value']['phone_number']").doesNotExist())
+                .andExpect(jsonPath("$['paths']['/auth/signup/email']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['이메일 회원가입 요청']['value']['hair_profile']['hair_type']")
+                        .value("STRAIGHT"))
+                .andExpect(jsonPath("$['paths']['/auth/signup/email']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['이메일 회원가입 요청']['value']['hair_profile']['hair_length']")
+                        .value("SHORT"))
                 .andExpect(jsonPath("$['paths']['/auth/signup/social']['post']"
                         + "['requestBody']['content']['application/json']['examples']"
                         + "['소셜 회원가입 요청']['value']['provider']")
@@ -66,6 +74,22 @@ class AuthOpenApiIntegrationTest extends PostgresIntegrationTest {
                         .value(true))
                 .andExpect(jsonPath("$['paths']['/auth/signup/social']['post']"
                         + "['requestBody']['content']['application/json']['examples']"
-                        + "['소셜 회원가입 요청']['value']['phone_number']").doesNotExist());
+                        + "['소셜 회원가입 요청']['value']['phone_number']").doesNotExist())
+                .andExpect(jsonPath("$['paths']['/auth/signup/social']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['소셜 회원가입 요청']['value']['hair_profile']['hair_condition']")
+                        .value("HEALTHY"))
+                .andExpect(jsonPath("$.components.schemas.EmailSignupRequest.properties"
+                        + ".hair_profile['$ref']").value("#/components/schemas/HairProfileRequest"))
+                .andExpect(jsonPath("$.components.schemas.SocialSignupRequest.properties"
+                        + ".hair_profile['$ref']").value("#/components/schemas/HairProfileRequest"))
+                .andExpect(jsonPath("$.components.schemas.HairProfileRequest.required",
+                        hasItem("hair_type")))
+                .andExpect(jsonPath("$.components.schemas.HairProfileRequest.required",
+                        hasItem("hair_condition")))
+                .andExpect(jsonPath("$.components.schemas.HairProfileRequest.required",
+                        hasItem("hair_length")))
+                .andExpect(jsonPath("$.components.schemas.HairProfileRequest.required",
+                        hasItem("hair_thickness")));
     }
 }

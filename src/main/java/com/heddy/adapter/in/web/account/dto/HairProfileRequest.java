@@ -6,6 +6,7 @@ import com.heddy.domain.account.model.HairProfile.HairLength;
 import com.heddy.domain.account.model.HairProfile.HairThickness;
 import com.heddy.domain.account.model.HairProfile.HairType;
 import com.heddy.domain.account.port.in.SaveHairProfileCommand;
+import com.heddy.domain.account.port.in.SignupHairProfileCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -39,6 +40,11 @@ public record HairProfileRequest(
 ) {
     public SaveHairProfileCommand toCommand(UUID userId) {
         return new SaveHairProfileCommand(userId, hairType, hairCondition, hairLength,
+                hairThickness, availableCareTimeMinutes);
+    }
+
+    public SignupHairProfileCommand toSignupCommand() {
+        return new SignupHairProfileCommand(hairType, hairCondition, hairLength,
                 hairThickness, availableCareTimeMinutes);
     }
 }

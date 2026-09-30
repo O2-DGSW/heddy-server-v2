@@ -35,11 +35,17 @@ public record SocialSignupRequest(
         @NotNull @Valid
         @Schema(description = "약관 동의. 5개 항목을 모두 보내야 한다",
                 requiredMode = Schema.RequiredMode.REQUIRED)
-        AgreementsRequest agreements
+        AgreementsRequest agreements,
+
+        @Valid
+        @Schema(description = "회원가입 온보딩 모발 프로필. 건너뛰는 경우 생략할 수 있으며, "
+                + "전달할 때는 모발 유형·상태·길이·굵기를 모두 보내야 한다")
+        @JsonProperty("hair_profile") HairProfileRequest hairProfile
 ) {
     public SocialSignupCommand toCommand(String policyVersion) {
         return new SocialSignupCommand(
                 provider, providerToken, nickname, phoneNumber,
-                agreements.toDecisions(policyVersion));
+                agreements.toDecisions(policyVersion),
+                hairProfile == null ? null : hairProfile.toSignupCommand());
     }
 }

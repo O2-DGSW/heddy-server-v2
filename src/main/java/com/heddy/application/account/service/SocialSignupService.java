@@ -4,12 +4,14 @@ import com.heddy.domain.account.exception.AccountError;
 import com.heddy.domain.account.exception.AccountException;
 import com.heddy.domain.account.model.Account;
 import com.heddy.domain.account.model.ConsentSource;
+import com.heddy.domain.account.model.HairProfile;
 import com.heddy.domain.account.model.UserProfile;
 import com.heddy.domain.account.port.in.AuthResult;
 import com.heddy.domain.account.port.in.SocialSignupCommand;
 import com.heddy.domain.account.port.in.SocialSignupUseCase;
 import com.heddy.domain.account.port.out.AccountRepositoryPort;
 import com.heddy.domain.account.port.out.ConsentHistoryRepositoryPort;
+import com.heddy.domain.account.port.out.HairProfileRepositoryPort;
 import com.heddy.domain.account.port.out.SocialTokenVerifierPort;
 import com.heddy.domain.account.port.out.UserProfileRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class SocialSignupService implements SocialSignupUseCase {
     private final SocialTokenVerifierPort socialTokenVerifierPort;
     private final AccountRepositoryPort accountRepositoryPort;
     private final UserProfileRepositoryPort userProfileRepositoryPort;
+    private final HairProfileRepositoryPort hairProfileRepositoryPort;
     private final ConsentHistoryRepositoryPort consentHistoryRepositoryPort;
     private final SessionTokenService sessionTokenService;
     private final SignupPhoneVerificationService signupPhoneVerificationService;
@@ -47,6 +50,12 @@ public class SocialSignupService implements SocialSignupUseCase {
                 Account.social(userId, command.provider(), identity.subject()));
         UserProfile profile = userProfileRepositoryPort.save(
                 UserProfile.signup(userId, command.nickname(), command.phone()));
+        if (command.hairProfile() != null) {
+            var hairProfile = command.hairProfile();
+            hairProfileRepositoryPort.save(HairProfile.create(userId, hairProfile.hairType(),
+                    hairProfile.hairCondition(), hairProfile.hairLength(),
+                    hairProfile.hairThickness(), hairProfile.availableCareTimeMinutes()));
+        }
         consentHistoryRepositoryPort.append(
                 userId, command.agreements(), ConsentSource.SIGNUP, Instant.now());
         AuthResult result = sessionTokenService.issue(account, profile);

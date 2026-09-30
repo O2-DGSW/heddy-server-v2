@@ -22,6 +22,12 @@ public interface FileStoragePort {
     /** 조회용 GET URL. 저장하지 않고 볼 때마다 발급한다. */
     URI createDownloadUrl(StoredFile file);
 
+    /**
+     * 서버 내부 처리용 객체 읽기. 사용자 응답에는 바이트나 object key 를 노출하지 않는다.
+     * 분석기는 검증이 끝난 READY 파일만 넘기며, 구현은 메모리 고갈을 막기 위해 상한을 다시 본다.
+     */
+    byte[] readObject(StoredFile file, long maximumBytes);
+
     /** 객체의 실제 상태. 올라온 적이 없으면 비어 있다. */
     Optional<StorageObject> findObject(String objectKey);
 

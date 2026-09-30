@@ -32,4 +32,40 @@ class AuthOpenApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.components.schemas.SocialLoginRequest.required",
                         not(hasItem("device"))));
     }
+
+    @Test
+    void signupRequestExamplesMatchTheApiSpecification() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['paths']['/auth/signup/email']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['이메일 회원가입 요청']['value']['email']")
+                        .value("exampleeamil1234@example.com"))
+                .andExpect(jsonPath("$['paths']['/auth/signup/email']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['이메일 회원가입 요청']['value']['password']")
+                        .value("Password123!"))
+                .andExpect(jsonPath("$['paths']['/auth/signup/email']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['이메일 회원가입 요청']['value']['agreements']['terms_of_service']")
+                        .value(true))
+                .andExpect(jsonPath("$['paths']['/auth/signup/email']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['이메일 회원가입 요청']['value']['phone_number']").doesNotExist())
+                .andExpect(jsonPath("$['paths']['/auth/signup/social']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['소셜 회원가입 요청']['value']['provider']")
+                        .value("GOOGLE"))
+                .andExpect(jsonPath("$['paths']['/auth/signup/social']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['소셜 회원가입 요청']['value']['provider_token']")
+                        .value("provider-issued-id-token"))
+                .andExpect(jsonPath("$['paths']['/auth/signup/social']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['소셜 회원가입 요청']['value']['agreements']['privacy_policy']")
+                        .value(true))
+                .andExpect(jsonPath("$['paths']['/auth/signup/social']['post']"
+                        + "['requestBody']['content']['application/json']['examples']"
+                        + "['소셜 회원가입 요청']['value']['phone_number']").doesNotExist());
+    }
 }

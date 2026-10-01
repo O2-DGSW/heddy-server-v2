@@ -216,6 +216,11 @@ class UploadCancellationRaceIntegrationTest extends PostgresIntegrationTest {
         }
 
         @Override
+        public byte[] readObject(StoredFile file, long maximumBytes) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public Optional<StorageObject> findObject(String objectKey) {
             return Optional.of(UPLOADED);
         }

@@ -12,11 +12,15 @@ RUN chmod +x ./gradlew && ./gradlew --no-daemon dependencies > /dev/null 2>&1 ||
 COPY src ./src
 RUN ./gradlew --no-daemon bootJar
 
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:21-jre AS runtime
 
 WORKDIR /app
 
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system spring \
+    && useradd --system --gid spring spring
 
 COPY --from=build /app/build/libs/*.jar app.jar
 

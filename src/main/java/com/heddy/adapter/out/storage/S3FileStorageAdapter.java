@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.net.URI;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -98,6 +99,38 @@ public class S3FileStorageAdapter implements FileStoragePort {
                 .signatureDuration(downloadUrlTtl)
                 .getObjectRequest(getRequest)
                 .build()).url());
+    }
+
+    @Override
+    public byte[] readObject(StoredFile file, long maximumBytes) {
+        if (maximumBytes <= 0 || maximumBytes >= Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("maximumBytes 는 1~2147483646 이어야 합니다");
+        }
+        if (!file.isReady()) {
+            throw new IllegalStateException("READY 파일만 내부에서 읽을 수 있습니다");
+        }
+        if (file.fileSize() > maximumBytes) {
+            throw new IllegalArgumentException("분석 입력 파일이 허용 크기를 초과했습니다");
+        }
+        try (var input = s3Client.getObject(GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(file.objectKey())
+                .build())) {
+            Long contentLength = input.response().contentLength();
+            if (contentLength != null && (contentLength == 0 || contentLength > maximumBytes)) {
+                throw new IllegalArgumentException(
+                        "스토리지 객체 크기가 분석 허용 범위를 벗어났습니다");
+            }
+            // 메타데이터가 틀리거나 없는 S3 호환 스토리지도 메모리를 무제한 사용하지 못하게 한다.
+            byte[] bytes = input.readNBytes(Math.toIntExact(maximumBytes + 1));
+            if (bytes.length == 0 || bytes.length > maximumBytes) {
+                throw new IllegalArgumentException(
+                        "스토리지 객체 크기가 분석 허용 범위를 벗어났습니다");
+            }
+            return bytes;
+        } catch (IOException exception) {
+            throw new IllegalStateException("스토리지 객체를 읽을 수 없습니다", exception);
+        }
     }
 
     @Override

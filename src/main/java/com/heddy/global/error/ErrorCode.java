@@ -18,7 +18,13 @@ public enum ErrorCode {
     FILE_OBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE_OBJECT_NOT_FOUND", "업로드된 객체를 찾을 수 없습니다."),
     FILE_UPLOAD_EXPIRED(HttpStatus.UNPROCESSABLE_ENTITY, "FILE_UPLOAD_EXPIRED", "만료된 업로드 세션입니다."),
     FILE_INVALID_STATE(HttpStatus.CONFLICT, "FILE_INVALID_STATE", "현재 상태에서는 요청한 처리를 할 수 없습니다."),
-    FILE_CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "FILE_CONCURRENT_MODIFICATION", "다른 요청이 파일 상태를 먼저 변경했습니다.");
+    FILE_CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "FILE_CONCURRENT_MODIFICATION", "다른 요청이 파일 상태를 먼저 변경했습니다."),
+    ANALYSIS_ENGINE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "ANALYSIS_ENGINE_UNAVAILABLE", "헤어 분석 모델을 사용할 수 없습니다."),
+    ANALYSIS_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "ANALYSIS_ALREADY_IN_PROGRESS", "같은 사진의 분석이 이미 진행 중입니다."),
+    ANALYSIS_PHOTO_REQUIRED(HttpStatus.UNPROCESSABLE_ENTITY, "ANALYSIS_PHOTO_REQUIRED", "분석할 시술 후 사진이 필요합니다."),
+    ANALYSIS_INPUT_NOT_READY(HttpStatus.UNPROCESSABLE_ENTITY, "ANALYSIS_INPUT_NOT_READY", "분석할 사진의 업로드가 완료되지 않았습니다."),
+    ANALYSIS_RETRY_NOT_ALLOWED(HttpStatus.CONFLICT, "ANALYSIS_RETRY_NOT_ALLOWED", "실패한 분석만 재시도할 수 있습니다."),
+    ANALYSIS_RETRY_LIMIT_EXCEEDED(HttpStatus.UNPROCESSABLE_ENTITY, "ANALYSIS_RETRY_LIMIT_EXCEEDED", "분석 재시도 횟수를 초과했습니다.");
 
     private final HttpStatus status;
     private final String code;

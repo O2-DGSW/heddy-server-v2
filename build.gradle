@@ -32,6 +32,8 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3'
     implementation platform('software.amazon.awssdk:bom:2.28.16')
     implementation 'software.amazon.awssdk:s3'
+    // 로컬 얼굴 파싱 모델을 JVM 안에서 실행한다. 외부 AI API 로 사진을 보내지 않는다.
+    implementation 'com.microsoft.onnxruntime:onnxruntime:1.29.0'
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 
     runtimeOnly 'org.flywaydb:flyway-database-postgresql'

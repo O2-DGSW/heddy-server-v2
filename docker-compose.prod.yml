@@ -34,10 +34,17 @@ services:
       # 사진 조회 Presigned GET URL 의 만료(초). 짧을수록 URL 유출 창이 좁지만,
       # 화면 체류 시간보다 짧으면 이미지가 403 으로 깨진다.
       DOWNLOAD_URL_TTL_SECONDS: ${DOWNLOAD_URL_TTL_SECONDS:-300}
+      # 로컬 ONNX 얼굴 파싱 모델. 호스트의 읽기 전용 파일을 컨테이너에 마운트한다.
+      HAIR_ANALYSIS_ENABLED: ${HAIR_ANALYSIS_ENABLED:-false}
+      HAIR_ANALYSIS_MODEL_PATH: ${HAIR_ANALYSIS_MODEL_PATH:-/opt/heddy/models/face-parsing.onnx}
+      HAIR_ANALYSIS_MODEL_VERSION: ${HAIR_ANALYSIS_MODEL_VERSION:-segformer-face-parsing-cv-v1}
+      HAIR_ANALYSIS_WORKER_THREADS: ${HAIR_ANALYSIS_WORKER_THREADS:-1}
     ports:
       - "8080:8080"
+    volumes:
+      - ${HAIR_ANALYSIS_MODEL_HOST_DIR:-/home/ubuntu/heddy-models}:/opt/heddy/models:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
       interval: 15s
       timeout: 5s
       retries: 10

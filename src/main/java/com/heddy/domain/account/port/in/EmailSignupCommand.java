@@ -9,6 +9,7 @@ public record EmailSignupCommand(
         String password,
         String nickname,
         String phone,
-        List<ConsentDecision> agreements
+        List<ConsentDecision> agreements,
+        SignupHairProfileCommand hairProfile
 ) {
 }

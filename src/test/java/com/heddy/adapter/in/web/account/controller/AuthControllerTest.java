@@ -99,6 +99,13 @@ class AuthControllerTest {
                                     "ai_training":false,
                                     "service_analytics":true,
                                     "marketing_notification":false
+                                  },
+                                  "hair_profile":{
+                                    "hair_type":"STRAIGHT",
+                                    "hair_condition":"HEALTHY",
+                                    "hair_length":"SHORT",
+                                    "hair_thickness":"THIN",
+                                    "available_care_time_minutes":15
                                   }
                                 }
                                 """))
@@ -109,6 +116,74 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.data.tokens.token_type").value("Bearer"))
                 .andExpect(jsonPath("$.data.tokens.expires_in").value(900))
                 .andExpect(jsonPath("$.request_id").value("request-2"));
+
+        verify(emailSignupUseCase).signup(org.mockito.ArgumentMatchers.argThat(command ->
+                command.hairProfile() != null
+                        && command.hairProfile().hairType().name().equals("STRAIGHT")
+                        && command.hairProfile().hairCondition().name().equals("HEALTHY")
+                        && command.hairProfile().hairLength().name().equals("SHORT")
+                        && command.hairProfile().hairThickness().name().equals("THIN")
+                        && command.hairProfile().availableCareTimeMinutes() == 15));
+    }
+
+    @Test
+    void socialSignupMapsHairProfile() throws Exception {
+        given(socialSignupUseCase.signup(any())).willReturn(authResult());
+
+        mockMvc.perform(post("/auth/signup/social")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "provider":"GOOGLE",
+                                  "provider_token":"provider-token",
+                                  "nickname":"헤디",
+                                  "agreements":{
+                                    "terms_of_service":true,
+                                    "privacy_policy":true,
+                                    "ai_training":false,
+                                    "service_analytics":true,
+                                    "marketing_notification":false
+                                  },
+                                  "hair_profile":{
+                                    "hair_type":"WAVY",
+                                    "hair_condition":"NORMAL",
+                                    "hair_length":"BELOW_SHOULDER",
+                                    "hair_thickness":"NORMAL",
+                                    "available_care_time_minutes":20
+                                  }
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        verify(socialSignupUseCase).signup(org.mockito.ArgumentMatchers.argThat(command ->
+                command.hairProfile() != null
+                        && command.hairProfile().hairType().name().equals("WAVY")
+                        && command.hairProfile().availableCareTimeMinutes() == 20));
+    }
+
+    @Test
+    void rejectsIncompleteSignupHairProfile() throws Exception {
+        mockMvc.perform(post("/auth/signup/email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email":"user@example.com",
+                                  "password":"Password123",
+                                  "nickname":"헤디",
+                                  "agreements":{
+                                    "terms_of_service":true,
+                                    "privacy_policy":true,
+                                    "ai_training":false,
+                                    "service_analytics":true,
+                                    "marketing_notification":false
+                                  },
+                                  "hair_profile":{
+                                    "hair_type":"STRAIGHT"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"));
     }
 
     @Test

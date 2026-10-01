@@ -10,6 +10,7 @@ public record SocialSignupCommand(
         String providerToken,
         String nickname,
         String phone,
-        List<ConsentDecision> agreements
+        List<ConsentDecision> agreements,
+        SignupHairProfileCommand hairProfile
 ) {
 }

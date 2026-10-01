@@ -5,10 +5,13 @@ import com.heddy.domain.account.exception.AccountException;
 import com.heddy.domain.account.model.Account;
 import com.heddy.domain.account.model.ConsentDecision;
 import com.heddy.domain.account.model.ConsentType;
+import com.heddy.domain.account.model.HairProfile;
 import com.heddy.domain.account.model.UserProfile;
 import com.heddy.domain.account.port.in.EmailSignupCommand;
+import com.heddy.domain.account.port.in.SignupHairProfileCommand;
 import com.heddy.domain.account.port.out.AccountRepositoryPort;
 import com.heddy.domain.account.port.out.ConsentHistoryRepositoryPort;
+import com.heddy.domain.account.port.out.HairProfileRepositoryPort;
 import com.heddy.domain.account.port.out.PasswordEncoderPort;
 import com.heddy.domain.account.port.out.UserProfileRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +35,7 @@ class EmailSignupServiceTest {
 
     @Mock AccountRepositoryPort accountRepositoryPort;
     @Mock UserProfileRepositoryPort userProfileRepositoryPort;
+    @Mock HairProfileRepositoryPort hairProfileRepositoryPort;
     @Mock ConsentHistoryRepositoryPort consentHistoryRepositoryPort;
     @Mock PasswordEncoderPort passwordEncoderPort;
     @Mock SessionTokenService sessionTokenService;
@@ -42,8 +46,8 @@ class EmailSignupServiceTest {
     @BeforeEach
     void setUp() {
         service = new EmailSignupService(accountRepositoryPort, userProfileRepositoryPort,
-                consentHistoryRepositoryPort, passwordEncoderPort, sessionTokenService,
-                signupPhoneVerificationService);
+                hairProfileRepositoryPort, consentHistoryRepositoryPort, passwordEncoderPort,
+                sessionTokenService, signupPhoneVerificationService);
     }
 
     @Test
@@ -67,6 +71,31 @@ class EmailSignupServiceTest {
                 org.mockito.ArgumentMatchers.eq(account.getValue().userId()),
                 org.mockito.ArgumentMatchers.eq(command.agreements()),
                 any(), any());
+        verify(hairProfileRepositoryPort, never()).save(any());
+    }
+
+    @Test
+    void savesHairProfileWhenProvided() {
+        SignupHairProfileCommand hairProfile = new SignupHairProfileCommand(
+                HairProfile.HairType.STRAIGHT, HairProfile.HairCondition.HEALTHY,
+                HairProfile.HairLength.SHORT, HairProfile.HairThickness.THIN, 15);
+        EmailSignupCommand command = new EmailSignupCommand(
+                "user@example.com", "Password123", "헤디", null,
+                consents(true, true), hairProfile);
+        given(passwordEncoderPort.encode("Password123")).willReturn("encoded");
+        given(accountRepositoryPort.save(any())).willAnswer(invocation -> invocation.getArgument(0));
+        given(userProfileRepositoryPort.save(any())).willAnswer(invocation -> invocation.getArgument(0));
+        given(hairProfileRepositoryPort.save(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+        service.signup(command);
+
+        ArgumentCaptor<HairProfile> saved = ArgumentCaptor.forClass(HairProfile.class);
+        verify(hairProfileRepositoryPort).save(saved.capture());
+        assertThat(saved.getValue().hairType()).isEqualTo(HairProfile.HairType.STRAIGHT);
+        assertThat(saved.getValue().hairCondition()).isEqualTo(HairProfile.HairCondition.HEALTHY);
+        assertThat(saved.getValue().hairLength()).isEqualTo(HairProfile.HairLength.SHORT);
+        assertThat(saved.getValue().hairThickness()).isEqualTo(HairProfile.HairThickness.THIN);
+        assertThat(saved.getValue().availableCareTimeMinutes()).isEqualTo(15);
     }
 
     @Test
@@ -86,13 +115,15 @@ class EmailSignupServiceTest {
     @Test
     void rejectsPasswordWithoutNumber() {
         EmailSignupCommand command = new EmailSignupCommand(
-                "user@example.com", "onlyletters", "헤디", null, consents(true, true));
+                "user@example.com", "onlyletters", "헤디", null,
+                consents(true, true), null);
         assertError(() -> service.signup(command), AccountError.WEAK_PASSWORD);
     }
 
     private EmailSignupCommand command(boolean terms, boolean privacy) {
         return new EmailSignupCommand(
-                "user@example.com", "Password123", "헤디", null, consents(terms, privacy));
+                "user@example.com", "Password123", "헤디", null,
+                consents(terms, privacy), null);
     }
 
     private List<ConsentDecision> consents(boolean terms, boolean privacy) {

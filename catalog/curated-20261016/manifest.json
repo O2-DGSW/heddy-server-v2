@@ -1519,22 +1519,22 @@
     },
     {
       "replaces_number": 30,
-      "hairstyle_id": "3719ea70-8240-5652-8a16-02f8f5685b5f",
-      "file_id": "f35d850d-e1e9-5889-8536-170c1b4dd860",
-      "upload_id": "c9c7c93e-5a05-5c2b-a8ce-f108c0fe20b4",
+      "hairstyle_id": "1dcae9e1-1198-5f5d-bec7-8f1cf184cd77",
+      "file_id": "670b0a2a-5de5-5471-97b5-332af6df4027",
+      "upload_id": "3b641806-b7f8-51d5-a146-746e3bfefee6",
       "style_name": "내추럴 아프로",
       "category": "SHORT",
       "style_presentation": "MASCULINE",
-      "image_file": "images/35249124.jpg",
-      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/f35d850d-e1e9-5889-8536-170c1b4dd860.jpg",
-      "sha256": "762bfc399c1f086e30036a40fc1c89b1b273485b328c0e0a8b81ce38ab3075e8",
-      "file_size": 119849,
+      "image_file": "images/15790180.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/670b0a2a-5de5-5471-97b5-332af6df4027.jpg",
+      "sha256": "00fd28a53ecea79d91124ab687e5e1db581f17695f567f57b5f22e8ef305b834",
+      "file_size": 224927,
       "width": 1200,
-      "height": 1500,
-      "source_photo_id": "35249124",
-      "source_url": "https://www.pexels.com/photo/portrait-of-a-young-black-man-with-earrings-35249124/",
-      "download_url": "https://images.pexels.com/photos/35249124/pexels-photo-35249124/free-photo-of-portrait-of-a-young-black-man-with-earrings.jpeg?auto=compress&w=1200",
-      "photographer": "Okiki Onipede",
+      "height": 1800,
+      "source_photo_id": "15790180",
+      "source_url": "https://www.pexels.com/photo/portrait-of-man-15790180/",
+      "download_url": "https://images.pexels.com/photos/15790180/pexels-photo-15790180/free-photo-of-portrait-of-man.jpeg?auto=compress&w=1200",
+      "photographer": "Ingrid Gomes",
       "license": "Pexels License",
       "license_url": "https://www.pexels.com/license/",
       "terms_url": "https://www.pexels.com/terms-of-service/",
@@ -1880,22 +1880,22 @@
     },
     {
       "replaces_number": 38,
-      "hairstyle_id": "7d3fb671-6ae0-5bcb-a9f7-54d7c5f534f9",
-      "file_id": "6fb84335-f266-5528-8c37-6981a17aa42c",
-      "upload_id": "15e79121-5f0d-5114-a099-acbb6552ad82",
-      "style_name": "미디엄 언더컷 웨이브",
+      "hairstyle_id": "12a552fe-4ad8-5ee3-8a85-0795f3b27fb4",
+      "file_id": "c269cd83-125a-500e-bbe4-d44dfca09429",
+      "upload_id": "ce7b3303-dd4e-51a8-b77c-55c68dc52db1",
+      "style_name": "이어턱 미디엄컷",
       "category": "MEDIUM",
       "style_presentation": "MASCULINE",
-      "image_file": "images/20742493.jpg",
-      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/6fb84335-f266-5528-8c37-6981a17aa42c.jpg",
-      "sha256": "d74b29d9a7e1a27ffd58aac942d3222b459d9a6fa93c4510d2003b8e0a565c4c",
-      "file_size": 243852,
+      "image_file": "images/31589335.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/c269cd83-125a-500e-bbe4-d44dfca09429.jpg",
+      "sha256": "f8733ea98f929bf3385e9ea205d3793e640808340e68f33374ed1fca6d1dabfd",
+      "file_size": 140293,
       "width": 1200,
-      "height": 1800,
-      "source_photo_id": "20742493",
-      "source_url": "https://www.pexels.com/photo/a-man-wearing-sunglasses-20742493/",
-      "download_url": "https://images.pexels.com/photos/20742493/pexels-photo-20742493/free-photo-of-a-man-wearing-sunglasses.jpeg?auto=compress&w=1200",
-      "photographer": "Abhishek Shekhawat",
+      "height": 1798,
+      "source_photo_id": "31589335",
+      "source_url": "https://www.pexels.com/photo/portrait-of-male-model-with-striped-sweater-31589335/",
+      "download_url": "https://images.pexels.com/photos/31589335/pexels-photo-31589335/free-photo-of-portrait-of-male-model-with-striped-sweater.jpeg?auto=compress&w=1200",
+      "photographer": "Tim Diercks",
       "license": "Pexels License",
       "license_url": "https://www.pexels.com/license/",
       "terms_url": "https://www.pexels.com/terms-of-service/",
@@ -1914,8 +1914,8 @@
       ],
       "minimum_hair_length": "BELOW_CHIN",
       "compatible_hair_types": [
-        "WAVY",
-        "CURLY"
+        "STRAIGHT",
+        "WAVY"
       ],
       "compatible_hair_thicknesses": [
         "THIN",
@@ -1929,13 +1929,13 @@
         "SEVERELY_DAMAGED"
       ],
       "contraindicated_hair_conditions": [],
-      "estimated_daily_care_minutes": 10,
-      "management_difficulty": "MEDIUM",
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
       "chemical_stress_level": "LOW",
       "editorial_priority": 50,
       "tags": [
-        "언더컷",
-        "웨이브"
+        "리프컷",
+        "센터파트"
       ]
     },
     {
@@ -3959,5 +3959,5 @@
       ]
     }
   ],
-  "sql_sha256": "ed9fdf6f121d844147279ff931f19e2963aa1a797e55c6da7ba7681ae62c0111"
+  "sql_sha256": "c261ad1dfae2886c93257211083020320fc62726b6cb3613e1d3886f6c30481d"
 }

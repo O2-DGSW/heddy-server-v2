@@ -335,6 +335,30 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
         assertThat(latestRun()).isNotEqualTo(updated);
     }
 
+    @Test
+    void newestUploadOnLatestSameDayRecordBecomesTheAnalysisInput() throws Exception {
+        UUID olderFile = attachAfterPhoto();
+        UUID newerFile = attachAfterPhoto();
+        jdbcTemplate.update("UPDATE files SET created_at = now() - interval '1 hour' WHERE file_id = ?", olderFile);
+        // The newest record deliberately has the smallest UUID; UUID ordering must not select old photos.
+        UUID latestRecord = UUID.fromString("00000000-0000-4000-8000-000000000001");
+        jdbcTemplate.update("UPDATE treatment_records SET created_at = now() - interval '1 hour' WHERE record_id = ?", treatmentRecordId);
+        jdbcTemplate.update("""
+                INSERT INTO treatment_records (record_id, user_id, service_types, performed_at, satisfaction)
+                SELECT ?, user_id, service_types, performed_at, satisfaction FROM treatment_records WHERE record_id = ?
+                """, latestRecord, treatmentRecordId);
+        jdbcTemplate.update("UPDATE treatment_record_photos SET record_id = ? WHERE record_id = ?", latestRecord, treatmentRecordId);
+        org.mockito.Mockito.when(photoAnalyzer.analyze(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(i -> new com.heddy.domain.recommendation.model.PhotoHairEvidence(
+                        ((com.heddy.domain.file.model.StoredFile) i.getArgument(0)).fileId(), "test-model", "UNCERTAIN", null, false));
+        entityManager.clear();
+        mockMvc.perform(post("/recommendations/generate").with(authentication(auth(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_basis.photo_analysis.file_id").value(newerFile.toString()));
+        org.mockito.Mockito.verify(photoAnalyzer).analyze(org.mockito.ArgumentMatchers.argThat(f -> f.fileId().equals(newerFile)));
+    }
+
     private UUID attachAfterPhoto() {
         UUID id = UUID.randomUUID();
         jdbcTemplate.update("UPDATE hair_profiles SET updated_at = now() - interval '2 days' WHERE user_id = ?", USER_ID);

@@ -27,17 +27,22 @@ public class RecommendationPhotoResolver {
         if (recent.isEmpty()) return new Resolved(profile, PhotoHairEvidence.absent("NO_RECENT_PHOTO"));
         // Never use an older treatment merely because the newest record has no AFTER image.
         TreatmentRecord latest = recent.stream().max(Comparator.comparing(TreatmentRecord::performedAt)
+                .thenComparing(TreatmentRecord::createdAt, Comparator.nullsFirst(Comparator.naturalOrder()))
                 .thenComparing(TreatmentRecord::recordId)).orElseThrow();
         var record = records.findByIdAndUserId(latest.recordId(), userId).orElse(null);
         if (record == null) return new Resolved(profile, PhotoHairEvidence.absent("NO_RECENT_PHOTO"));
-        var photo = record.photos().stream().filter(p -> p.imageType() == ImageType.AFTER)
-                .min(Comparator.comparingInt(com.heddy.domain.treatment.model.TreatmentPhoto::sortOrder)
-                        .thenComparing(com.heddy.domain.treatment.model.TreatmentPhoto::photoId)).orElse(null);
-        if (photo == null) return new Resolved(profile, PhotoHairEvidence.absent("NO_RECENT_PHOTO"));
-        var file = files.findById(photo.fileId()).orElse(null);
-        if (file == null || !file.isReady() || file.purpose() != com.heddy.domain.file.model.FilePurpose.TREATMENT_PHOTO
-                || file.ownerType() != FileOwnerType.USER
-                || !userId.equals(file.userId())) return new Resolved(profile, PhotoHairEvidence.absent("UNAVAILABLE"));
+        var afterIds = record.photos().stream().filter(p -> p.imageType() == ImageType.AFTER)
+                .map(com.heddy.domain.treatment.model.TreatmentPhoto::fileId).distinct().toList();
+        if (afterIds.isEmpty()) return new Resolved(profile, PhotoHairEvidence.absent("NO_RECENT_PHOTO"));
+        // Uploading a new AFTER image must replace the former input, even if the old photo remains attached.
+        var file = files.findAllById(afterIds).stream()
+                .filter(f -> afterIds.contains(f.fileId()) && f.isReady() && f.ownerType() == FileOwnerType.USER
+                        && f.purpose() == com.heddy.domain.file.model.FilePurpose.TREATMENT_PHOTO
+                        && userId.equals(f.userId()))
+                .max(Comparator.comparing(com.heddy.domain.file.model.StoredFile::createdAt,
+                                Comparator.nullsFirst(Comparator.naturalOrder()))
+                        .thenComparing(com.heddy.domain.file.model.StoredFile::fileId)).orElse(null);
+        if (file == null) return new Resolved(profile, PhotoHairEvidence.absent("UNAVAILABLE"));
         if (profile != null && profile.hairLength() != null && profile.updatedAt() != null
                 && file.createdAt() != null && !profile.updatedAt().isBefore(file.createdAt())) {
             return new Resolved(profile, new PhotoHairEvidence(file.fileId(), null, "NEWER_PROFILE", null, false));

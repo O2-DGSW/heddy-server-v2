@@ -50,11 +50,11 @@ public final class RecommendationReadOnlyAudit {
     }
     static List<TreatmentRecord> history(Connection c, UUID user) throws Exception {
         List<TreatmentRecord> out = new ArrayList<>();
-        try(PreparedStatement p=c.prepareStatement("SELECT record_id,service_types::text,performed_at,satisfaction FROM treatment_records WHERE user_id=? ORDER BY performed_at DESC,record_id DESC LIMIT 10")) {
+        try(PreparedStatement p=c.prepareStatement("SELECT record_id,service_types::text,performed_at,satisfaction,created_at FROM treatment_records WHERE user_id=? ORDER BY performed_at DESC,created_at DESC,record_id DESC LIMIT 10")) {
             p.setObject(1,user);
             try(ResultSet r=p.executeQuery()) { while(r.next()) {
                 int score=r.getInt(4); Integer satisfaction=r.wasNull()?null:score;
-                out.add(new TreatmentRecord(r.getObject(1,UUID.class), user,enums(ServiceType.class,r.getString(2)),null,null,r.getTimestamp(3).toInstant(),satisfaction,null,null,null,null,null,photos(c,r.getObject(1,UUID.class)),null));
+                out.add(new TreatmentRecord(r.getObject(1,UUID.class), user,enums(ServiceType.class,r.getString(2)),null,null,r.getTimestamp(3).toInstant(),satisfaction,null,null,null,null,null,photos(c,r.getObject(1,UUID.class)),r.getTimestamp(5).toInstant()));
             }}
         }
         return out;
@@ -121,8 +121,10 @@ public final class RecommendationReadOnlyAudit {
                 }
             });
             FileRepositoryPort files = readOnlyPort(FileRepositoryPort.class, (proxy, method, values) -> {
-                if (!method.getName().equals("findById")) throw new UnsupportedOperationException("Audit only reads files");
-                return file(c, (UUID) values[0]);
+                if (!method.getName().equals("findAllById")) throw new UnsupportedOperationException("Audit only reads files");
+                List<StoredFile> found = new ArrayList<>();
+                for (Object id : (Collection<?>) values[0]) file(c, (UUID) id).ifPresent(found::add);
+                return found;
             });
             var analyzer = new OnnxPhotoHairLengthAdapter(storage,
                     System.getenv().getOrDefault("HAIR_PHOTO_LENGTH_MODEL_PATH", "/opt/heddy/photo-models/selfie.onnx"));

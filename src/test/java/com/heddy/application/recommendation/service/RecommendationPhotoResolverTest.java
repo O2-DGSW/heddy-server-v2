@@ -75,7 +75,7 @@ class RecommendationPhotoResolverTest {
         var file = new StoredFile(fileId, UUID.randomUUID(), owner, FilePurpose.TREATMENT_PHOTO,
                 FileStatus.READY, "test", "image/jpeg", "test.jpg", 1024, null, null, null, now, performed, null);
         when(records.findByIdAndUserId(id, user)).thenReturn(Optional.of(record));
-        when(files.findById(fileId)).thenReturn(Optional.of(file));
+        when(files.findAllById(List.of(fileId))).thenReturn(List.of(file));
         lenient().when(analyzer.analyze(file)).thenReturn(new PhotoHairEvidence(fileId, "test", "ASSESSED", HairLength.SHORT, false));
         return record;
     }

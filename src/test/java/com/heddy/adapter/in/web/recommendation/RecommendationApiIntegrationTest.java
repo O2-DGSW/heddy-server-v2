@@ -277,10 +277,13 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
         insertStyle("94000000-0000-4000-8000-000000000004", "클래식 보브", "BOB", "NONE", 1, false);
         insertStyle("94000000-0000-4000-8000-000000000005", "컬리 스타일 08", "CURLY", "NONE", 1, false);
         insertStyle("94000000-0000-4000-8000-000000000006", "숏 스타일 05", "SHORT", "NONE", 1, false);
+        insertStyle("94000000-0000-4000-8000-000000000007", "미디엄 스타일 32", "MEDIUM", "NONE", 1, false);
         jdbcTemplate.update("UPDATE hairstyle_recommendation_profiles SET compatible_hair_lengths = '[\"SHORT\",\"BELOW_CHIN\",\"BELOW_SHOULDER\"]'::jsonb");
         jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<Void>) connection -> {
             org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(connection,
                     new org.springframework.core.io.ClassPathResource("db/migration/V33__correct_audited_short_catalog.sql"));
+            org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(connection,
+                    new org.springframework.core.io.ClassPathResource("db/migration/V34__exclude_mislabeled_braided_reference.sql"));
             return null;
         });
         assertThat(jdbcTemplate.queryForObject("SELECT minimum_hair_length FROM hairstyle_recommendation_profiles WHERE hairstyle_id = '94000000-0000-4000-8000-000000000004'", String.class))
@@ -290,6 +293,7 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
         assertThat(jdbcTemplate.queryForObject("SELECT minimum_hair_length FROM hairstyle_recommendation_profiles WHERE hairstyle_id = '94000000-0000-4000-8000-000000000005'", String.class))
                 .isEqualTo("BELOW_SHOULDER");
         assertThat(jdbcTemplate.queryForObject("SELECT active FROM hairstyle_assets WHERE hairstyle_id = '94000000-0000-4000-8000-000000000006'", Boolean.class)).isFalse();
+        assertThat(jdbcTemplate.queryForObject("SELECT active FROM hairstyle_assets WHERE hairstyle_id = '94000000-0000-4000-8000-000000000007'", Boolean.class)).isFalse();
     }
 
     @Test

@@ -1,0 +1,3963 @@
+{
+  "release": "curated-20261016",
+  "notes": [
+    "Source pages show Free under the Pexels License; website/app use reviewed. Independent model releases are not available or verified.",
+    "Style presentation describes catalogue curation, not the identity of the depicted person, and is not used to infer user gender.",
+    "Names and length are visual editorial classifications. Care time, difficulty and compatibility are provisional editorial estimates, not hairdresser-verified.",
+    "CUT/STYLING describe this non-chemical recommendation path; actual perm/dye procedures cannot be established from a photograph.",
+    "Only active catalogue entries are retired. Historical recommendations, saved styles and old S3 objects remain intact."
+  ],
+  "replacement_numbers": [
+    2,
+    5,
+    6,
+    7,
+    8,
+    9,
+    23,
+    27,
+    28,
+    30,
+    31,
+    32,
+    35,
+    36,
+    37,
+    38,
+    39,
+    56,
+    59,
+    61,
+    62,
+    64,
+    67,
+    68,
+    69,
+    70,
+    72,
+    73,
+    76,
+    77,
+    78,
+    80,
+    81,
+    82,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100
+  ],
+  "duplicate_numbers": [
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    48
+  ],
+  "representative_number": 47,
+  "original": [
+    {
+      "number": 1,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000045",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000045",
+      "style_name": "숏 스타일 01",
+      "category": "SHORT",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000045.jpg"
+    },
+    {
+      "number": 2,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000068",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000068",
+      "style_name": "숏 스타일 02",
+      "category": "SHORT",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000068.jpg"
+    },
+    {
+      "number": 3,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000069",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000069",
+      "style_name": "숏 스타일 03",
+      "category": "SHORT",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000069.jpg"
+    },
+    {
+      "number": 4,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000074",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000074",
+      "style_name": "숏 스타일 04",
+      "category": "SHORT",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000074.jpg"
+    },
+    {
+      "number": 5,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000075",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000075",
+      "style_name": "숏 스타일 05",
+      "category": "SHORT",
+      "active": false,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000075.jpg"
+    },
+    {
+      "number": 6,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000076",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000076",
+      "style_name": "숏 스타일 06",
+      "category": "SHORT",
+      "active": false,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000076.jpg"
+    },
+    {
+      "number": 7,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000077",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000077",
+      "style_name": "숏 스타일 07",
+      "category": "SHORT",
+      "active": false,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000077.jpg"
+    },
+    {
+      "number": 8,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000078",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000078",
+      "style_name": "숏 스타일 08",
+      "category": "SHORT",
+      "active": false,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000078.jpg"
+    },
+    {
+      "number": 9,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000001",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000001",
+      "style_name": "클린 픽시컷",
+      "category": "SHORT",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000001.jpg"
+    },
+    {
+      "number": 10,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000002",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000002",
+      "style_name": "클래식 보브",
+      "category": "BOB",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000002.jpg"
+    },
+    {
+      "number": 11,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000003",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000003",
+      "style_name": "미디엄 레이어드 웨이브",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000003.jpg"
+    },
+    {
+      "number": 12,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000007",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000007",
+      "style_name": "미디엄 스타일 01",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000007.jpg"
+    },
+    {
+      "number": 13,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000008",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000008",
+      "style_name": "미디엄 스타일 02",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000008.jpg"
+    },
+    {
+      "number": 14,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000009",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000009",
+      "style_name": "미디엄 스타일 03",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000009.jpg"
+    },
+    {
+      "number": 15,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000010",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000010",
+      "style_name": "미디엄 스타일 04",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000010.jpg"
+    },
+    {
+      "number": 16,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000011",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000011",
+      "style_name": "미디엄 스타일 05",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000011.jpg"
+    },
+    {
+      "number": 17,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000014",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000014",
+      "style_name": "미디엄 스타일 06",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000014.jpg"
+    },
+    {
+      "number": 18,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000015",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000015",
+      "style_name": "미디엄 스타일 07",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000015.jpg"
+    },
+    {
+      "number": 19,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000016",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000016",
+      "style_name": "미디엄 스타일 08",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000016.jpg"
+    },
+    {
+      "number": 20,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000017",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000017",
+      "style_name": "미디엄 스타일 09",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000017.jpg"
+    },
+    {
+      "number": 21,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000021",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000021",
+      "style_name": "미디엄 스타일 10",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000021.jpg"
+    },
+    {
+      "number": 22,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000022",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000022",
+      "style_name": "미디엄 스타일 11",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000022.jpg"
+    },
+    {
+      "number": 23,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000023",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000023",
+      "style_name": "미디엄 스타일 12",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000023.jpg"
+    },
+    {
+      "number": 24,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000024",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000024",
+      "style_name": "미디엄 스타일 13",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000024.jpg"
+    },
+    {
+      "number": 25,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000025",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000025",
+      "style_name": "미디엄 스타일 14",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000025.jpg"
+    },
+    {
+      "number": 26,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000026",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000026",
+      "style_name": "미디엄 스타일 15",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000026.jpg"
+    },
+    {
+      "number": 27,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000027",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000027",
+      "style_name": "미디엄 스타일 16",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000027.jpg"
+    },
+    {
+      "number": 28,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000028",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000028",
+      "style_name": "미디엄 스타일 17",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000028.jpg"
+    },
+    {
+      "number": 29,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000029",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000029",
+      "style_name": "미디엄 스타일 18",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000029.jpg"
+    },
+    {
+      "number": 30,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000030",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000030",
+      "style_name": "미디엄 스타일 19",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000030.jpg"
+    },
+    {
+      "number": 31,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000050",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000050",
+      "style_name": "미디엄 스타일 20",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000050.jpg"
+    },
+    {
+      "number": 32,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000051",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000051",
+      "style_name": "미디엄 스타일 21",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000051.jpg"
+    },
+    {
+      "number": 33,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000052",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000052",
+      "style_name": "미디엄 스타일 22",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000052.jpg"
+    },
+    {
+      "number": 34,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000053",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000053",
+      "style_name": "미디엄 스타일 23",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000053.jpg"
+    },
+    {
+      "number": 35,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000054",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000054",
+      "style_name": "미디엄 스타일 24",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000054.jpg"
+    },
+    {
+      "number": 36,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000055",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000055",
+      "style_name": "미디엄 스타일 25",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000055.jpg"
+    },
+    {
+      "number": 37,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000056",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000056",
+      "style_name": "미디엄 스타일 26",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000056.jpg"
+    },
+    {
+      "number": 38,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000057",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000057",
+      "style_name": "미디엄 스타일 27",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000057.jpg"
+    },
+    {
+      "number": 39,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000058",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000058",
+      "style_name": "미디엄 스타일 28",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000058.jpg"
+    },
+    {
+      "number": 40,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000059",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000059",
+      "style_name": "미디엄 스타일 29",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000059.jpg"
+    },
+    {
+      "number": 41,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000060",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000060",
+      "style_name": "미디엄 스타일 30",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000060.jpg"
+    },
+    {
+      "number": 42,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000061",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000061",
+      "style_name": "미디엄 스타일 31",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000061.jpg"
+    },
+    {
+      "number": 43,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000062",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000062",
+      "style_name": "미디엄 스타일 32",
+      "category": "MEDIUM",
+      "active": false,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000062.jpg"
+    },
+    {
+      "number": 44,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000063",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000063",
+      "style_name": "미디엄 스타일 33",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000063.jpg"
+    },
+    {
+      "number": 45,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000064",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000064",
+      "style_name": "미디엄 스타일 34",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000064.jpg"
+    },
+    {
+      "number": 46,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000065",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000065",
+      "style_name": "미디엄 스타일 35",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000065.jpg"
+    },
+    {
+      "number": 47,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000066",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000066",
+      "style_name": "미디엄 스타일 36",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000066.jpg"
+    },
+    {
+      "number": 48,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000067",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000067",
+      "style_name": "미디엄 스타일 37",
+      "category": "MEDIUM",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000067.jpg"
+    },
+    {
+      "number": 49,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000012",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000012",
+      "style_name": "롱 스타일 01",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000012.jpg"
+    },
+    {
+      "number": 50,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000013",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000013",
+      "style_name": "롱 스타일 02",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000013.jpg"
+    },
+    {
+      "number": 51,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000018",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000018",
+      "style_name": "롱 스타일 03",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000018.jpg"
+    },
+    {
+      "number": 52,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000019",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000019",
+      "style_name": "롱 스타일 04",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000019.jpg"
+    },
+    {
+      "number": 53,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000020",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000020",
+      "style_name": "롱 스타일 05",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000020.jpg"
+    },
+    {
+      "number": 54,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000031",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000031",
+      "style_name": "롱 스타일 06",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000031.jpg"
+    },
+    {
+      "number": 55,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000032",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000032",
+      "style_name": "롱 스타일 07",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000032.jpg"
+    },
+    {
+      "number": 56,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000033",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000033",
+      "style_name": "롱 스타일 08",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000033.jpg"
+    },
+    {
+      "number": 57,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000037",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000037",
+      "style_name": "롱 스타일 09",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000037.jpg"
+    },
+    {
+      "number": 58,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000038",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000038",
+      "style_name": "롱 스타일 10",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000038.jpg"
+    },
+    {
+      "number": 59,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000039",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000039",
+      "style_name": "롱 스타일 11",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000039.jpg"
+    },
+    {
+      "number": 60,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000040",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000040",
+      "style_name": "롱 스타일 12",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000040.jpg"
+    },
+    {
+      "number": 61,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000042",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000042",
+      "style_name": "롱 스타일 13",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000042.jpg"
+    },
+    {
+      "number": 62,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000043",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000043",
+      "style_name": "롱 스타일 14",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000043.jpg"
+    },
+    {
+      "number": 63,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000044",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000044",
+      "style_name": "롱 스타일 15",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000044.jpg"
+    },
+    {
+      "number": 64,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000046",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000046",
+      "style_name": "롱 스타일 16",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000046.jpg"
+    },
+    {
+      "number": 65,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000048",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000048",
+      "style_name": "롱 스타일 17",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000048.jpg"
+    },
+    {
+      "number": 66,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000071",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000071",
+      "style_name": "롱 스타일 18",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000071.jpg"
+    },
+    {
+      "number": 67,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000073",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000073",
+      "style_name": "롱 스타일 19",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000073.jpg"
+    },
+    {
+      "number": 68,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000080",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000080",
+      "style_name": "롱 스타일 20",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000080.jpg"
+    },
+    {
+      "number": 69,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000081",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000081",
+      "style_name": "롱 스타일 21",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000081.jpg"
+    },
+    {
+      "number": 70,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000082",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000082",
+      "style_name": "롱 스타일 22",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000082.jpg"
+    },
+    {
+      "number": 71,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000083",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000083",
+      "style_name": "롱 스타일 23",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000083.jpg"
+    },
+    {
+      "number": 72,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000084",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000084",
+      "style_name": "롱 스타일 24",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000084.jpg"
+    },
+    {
+      "number": 73,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000085",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000085",
+      "style_name": "롱 스타일 25",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000085.jpg"
+    },
+    {
+      "number": 74,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000086",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000086",
+      "style_name": "롱 스타일 26",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000086.jpg"
+    },
+    {
+      "number": 75,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000087",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000087",
+      "style_name": "롱 스타일 27",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000087.jpg"
+    },
+    {
+      "number": 76,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000088",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000088",
+      "style_name": "롱 스타일 28",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000088.jpg"
+    },
+    {
+      "number": 77,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000089",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000089",
+      "style_name": "롱 스타일 29",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000089.jpg"
+    },
+    {
+      "number": 78,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000090",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000090",
+      "style_name": "롱 스타일 30",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000090.jpg"
+    },
+    {
+      "number": 79,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000092",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000092",
+      "style_name": "롱 스타일 31",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000092.jpg"
+    },
+    {
+      "number": 80,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000093",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000093",
+      "style_name": "롱 스타일 32",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000093.jpg"
+    },
+    {
+      "number": 81,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000094",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000094",
+      "style_name": "롱 스타일 33",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000094.jpg"
+    },
+    {
+      "number": 82,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000095",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000095",
+      "style_name": "롱 스타일 34",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000095.jpg"
+    },
+    {
+      "number": 83,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000096",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000096",
+      "style_name": "롱 스타일 35",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000096.jpg"
+    },
+    {
+      "number": 84,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000097",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000097",
+      "style_name": "롱 스타일 36",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000097.jpg"
+    },
+    {
+      "number": 85,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000100",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000100",
+      "style_name": "롱 스타일 37",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000100.jpg"
+    },
+    {
+      "number": 86,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000004",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000004",
+      "style_name": "롱 스트레이트",
+      "category": "LONG",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000004.jpg"
+    },
+    {
+      "number": 87,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000006",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000006",
+      "style_name": "컬리 볼륨",
+      "category": "CURLY",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000006.jpg"
+    },
+    {
+      "number": 88,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000035",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000035",
+      "style_name": "컬리 스타일 01",
+      "category": "CURLY",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000035.jpg"
+    },
+    {
+      "number": 89,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000036",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000036",
+      "style_name": "컬리 스타일 02",
+      "category": "CURLY",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000036.jpg"
+    },
+    {
+      "number": 90,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000047",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000047",
+      "style_name": "컬리 스타일 03",
+      "category": "CURLY",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000047.jpg"
+    },
+    {
+      "number": 91,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000049",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000049",
+      "style_name": "컬리 스타일 04",
+      "category": "CURLY",
+      "active": false,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000049.jpg"
+    },
+    {
+      "number": 92,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000070",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000070",
+      "style_name": "컬리 스타일 05",
+      "category": "CURLY",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000070.jpg"
+    },
+    {
+      "number": 93,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000072",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000072",
+      "style_name": "컬리 스타일 06",
+      "category": "CURLY",
+      "active": false,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000072.jpg"
+    },
+    {
+      "number": 94,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000079",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000079",
+      "style_name": "컬리 스타일 07",
+      "category": "CURLY",
+      "active": false,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000079.jpg"
+    },
+    {
+      "number": 95,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000091",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000091",
+      "style_name": "컬리 스타일 08",
+      "category": "CURLY",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000091.jpg"
+    },
+    {
+      "number": 96,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000098",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000098",
+      "style_name": "컬리 스타일 09",
+      "category": "CURLY",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000098.jpg"
+    },
+    {
+      "number": 97,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000099",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000099",
+      "style_name": "컬리 스타일 10",
+      "category": "CURLY",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000099.jpg"
+    },
+    {
+      "number": 98,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000005",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000005",
+      "style_name": "롱 내추럴 웨이브",
+      "category": "LONG_WAVE",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000005.jpg"
+    },
+    {
+      "number": 99,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000034",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000034",
+      "style_name": "웨이브 스타일 01",
+      "category": "WAVE",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000034.jpg"
+    },
+    {
+      "number": 100,
+      "hairstyle_id": "71000000-0000-4000-8000-000000000041",
+      "thumbnail_file_id": "72000000-0000-4000-8000-000000000041",
+      "style_name": "웨이브 스타일 02",
+      "category": "WAVE",
+      "active": true,
+      "object_key": "HAIRSTYLE_THUMBNAIL/00000000-0000-0000-0000-000000000000/72000000-0000-4000-8000-000000000041.jpg"
+    }
+  ],
+  "entries": [
+    {
+      "replaces_number": 2,
+      "hairstyle_id": "0d198408-5bf7-514c-b3af-52d56d990361",
+      "file_id": "daa307bc-d79f-56f6-9ec4-76d55ab60d84",
+      "upload_id": "eafbe55d-7dab-5cc3-b523-1f616851a0c2",
+      "style_name": "하드파트 포마드컷",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/12706272.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/daa307bc-d79f-56f6-9ec4-76d55ab60d84.jpg",
+      "sha256": "7cd22bb04afe2a027620e55ba246e9bcff19e5e39e930f1c3f8fd5c844a84f5b",
+      "file_size": 72941,
+      "width": 1200,
+      "height": 800,
+      "source_photo_id": "12706272",
+      "source_url": "https://www.pexels.com/photo/man-at-barber-shop-12706272/",
+      "download_url": "https://images.pexels.com/photos/12706272/pexels-photo-12706272.jpeg?auto=compress&w=1200",
+      "photographer": "iam luisao",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "포마드컷",
+        "사이드파트"
+      ]
+    },
+    {
+      "replaces_number": 5,
+      "hairstyle_id": "81871f24-b393-593a-b0b8-f31d7296118a",
+      "file_id": "0d9c8d3c-6b58-57fa-9764-f8967cb516d0",
+      "upload_id": "1dc5de0a-e214-58a9-85e4-e1c96cf4e934",
+      "style_name": "라인 언더컷 퀴프",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/16098668.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/0d9c8d3c-6b58-57fa-9764-f8967cb516d0.jpg",
+      "sha256": "718b928a8a0238fe6af5352ff303cffd0bec05c807f6ec0aefe02502fd9532db",
+      "file_size": 204609,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "16098668",
+      "source_url": "https://www.pexels.com/photo/man-dressed-in-a-shirt-at-the-barbershop-16098668/",
+      "download_url": "https://images.pexels.com/photos/16098668/pexels-photo-16098668/free-photo-of-man-dressed-in-a-shirt-at-the-barbershop.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "언더컷",
+        "리젠트컷"
+      ]
+    },
+    {
+      "replaces_number": 6,
+      "hairstyle_id": "7ffbc247-3416-5316-905e-6fe769a4153f",
+      "file_id": "b38860ec-2947-5bab-b2f5-f603b60f4296",
+      "upload_id": "d33891da-54c0-5dbc-a91b-5fef07b7a52f",
+      "style_name": "텍스처 크롭 페이드",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/27467943.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/b38860ec-2947-5bab-b2f5-f603b60f4296.jpg",
+      "sha256": "95aaf9d6b7b885d8187db8cf199f172ef41ad3871db29640a9311b5e56a4aa9a",
+      "file_size": 291875,
+      "width": 1200,
+      "height": 2133,
+      "source_photo_id": "27467943",
+      "source_url": "https://www.pexels.com/photo/barber-shop-27467943/",
+      "download_url": "https://images.pexels.com/photos/27467943/pexels-photo-27467943/free-photo-of-barber-shop.jpeg?auto=compress&w=1200",
+      "photographer": "Clark Enzzo",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "WAVY",
+        "CURLY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "크롭컷",
+        "페이드컷"
+      ]
+    },
+    {
+      "replaces_number": 7,
+      "hairstyle_id": "12d8e1fd-b70d-50e0-a0d5-a4d769759969",
+      "file_id": "b08e5ad3-825b-59b0-80ea-c16864f87666",
+      "upload_id": "35fea6d2-b11b-5755-8c7a-9f2f9d2e1236",
+      "style_name": "클래식 폼파두르",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/5337945.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/b08e5ad3-825b-59b0-80ea-c16864f87666.jpg",
+      "sha256": "cac53507b351588dab19b86bb1337649ac781e17e49f459be060d17c5796fc3c",
+      "file_size": 66203,
+      "width": 1200,
+      "height": 800,
+      "source_photo_id": "5337945",
+      "source_url": "https://www.pexels.com/photo/a-man-wearing-a-black-crew-neck-shirt-5337945/",
+      "download_url": "https://images.pexels.com/photos/5337945/pexels-photo-5337945.jpeg?auto=compress&w=1200",
+      "photographer": "alexandre saraiva carniato",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "HIGH",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "포마드컷",
+        "리젠트컷"
+      ]
+    },
+    {
+      "replaces_number": 8,
+      "hairstyle_id": "becfa223-4c43-5ca1-80b0-1e3cd17bf008",
+      "file_id": "3a4285bc-72f7-5c24-a42b-5f6e8de43de0",
+      "upload_id": "60cd55cf-6f1a-57c1-a317-f15253bf74d8",
+      "style_name": "하이 퀴프 페이드",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/7460149.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/3a4285bc-72f7-5c24-a42b-5f6e8de43de0.jpg",
+      "sha256": "4ae41d430b48f4c3ba0cd012c55662e65b7e1a586d78dd10487f828135595314",
+      "file_size": 255717,
+      "width": 1200,
+      "height": 1832,
+      "source_photo_id": "7460149",
+      "source_url": "https://www.pexels.com/photo/photo-of-man-with-facial-hair-and-trendy-hairstyle-7460149/",
+      "download_url": "https://images.pexels.com/photos/7460149/pexels-photo-7460149.jpeg?auto=compress&w=1200",
+      "photographer": "Damian Barczak",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "리젠트컷",
+        "페이드컷"
+      ]
+    },
+    {
+      "replaces_number": 9,
+      "hairstyle_id": "2f367c11-435d-5c1f-b005-45af3c693de2",
+      "file_id": "9e42ce49-eaed-5b2d-8cea-9e25541ccfcc",
+      "upload_id": "b34630f0-9ebe-5a7b-adc3-b9621bee9bec",
+      "style_name": "센터파트 볼륨 가르마",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/16569324.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/9e42ce49-eaed-5b2d-8cea-9e25541ccfcc.jpg",
+      "sha256": "ad553a0d085329b90b157a80f135bd31074d44b5610474831c3a03d95a6c94d1",
+      "file_size": 158675,
+      "width": 1200,
+      "height": 1600,
+      "source_photo_id": "16569324",
+      "source_url": "https://www.pexels.com/photo/close-up-of-young-man-in-black-clothes-16569324/",
+      "download_url": "https://images.pexels.com/photos/16569324/pexels-photo-16569324/free-photo-of-close-up-of-young-man-in-black-clothes.jpeg?auto=compress&w=1200",
+      "photographer": "rao qingwei",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "가르마컷",
+        "사이드뱅"
+      ]
+    },
+    {
+      "replaces_number": 23,
+      "hairstyle_id": "a04671ae-c01b-5568-8897-cea144960c1d",
+      "file_id": "a4de0c0c-d7db-5176-8b22-5c8a5069f52c",
+      "upload_id": "7adc82e6-acb0-5d0d-9d88-3132604861c0",
+      "style_name": "숄더 렝스 웨트 웨이브",
+      "category": "MEDIUM",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/19523960.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/a4de0c0c-d7db-5176-8b22-5c8a5069f52c.jpg",
+      "sha256": "c4a8614f3ef12d4ef1c3f9fad4cb136456263aed7f01a742345e6839a3d48b5a",
+      "file_size": 155578,
+      "width": 1200,
+      "height": 1600,
+      "source_photo_id": "19523960",
+      "source_url": "https://www.pexels.com/photo/black-and-white-portrait-of-a-man-19523960/",
+      "download_url": "https://images.pexels.com/photos/19523960/pexels-photo-19523960/free-photo-of-black-and-white-portrait-of-a-man.jpeg?auto=compress&w=1200",
+      "photographer": "Alexandru Cojanu",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "WAVY",
+        "CURLY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "미디엄 레이어드",
+        "웨이브"
+      ]
+    },
+    {
+      "replaces_number": 27,
+      "hairstyle_id": "3ae493ce-1c5c-566c-95a2-ca69ace18f5f",
+      "file_id": "14365489-043d-5b3d-9480-85cfdf1ab9e1",
+      "upload_id": "9ada00ac-de14-515e-99f0-5c90c9c82bca",
+      "style_name": "사이드 스윕 숏컷",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/16098552.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/14365489-043d-5b3d-9480-85cfdf1ab9e1.jpg",
+      "sha256": "14a1d4fa561c0ad657a004b0836a2d16b875e0eb44630d06d9fda2099dc91038",
+      "file_size": 274261,
+      "width": 1200,
+      "height": 2138,
+      "source_photo_id": "16098552",
+      "source_url": "https://www.pexels.com/photo/young-redhead-in-a-blue-shirt-and-a-jacket-thrown-over-his-shoulder-16098552/",
+      "download_url": "https://images.pexels.com/photos/16098552/pexels-photo-16098552/free-photo-of-young-redhead-in-a-blue-shirt-and-a-jacket-thrown-over-his-shoulder.jpeg?auto=compress&w=1200",
+      "photographer": "Владимир  Высоцкий",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "사이드파트"
+      ]
+    },
+    {
+      "replaces_number": 28,
+      "hairstyle_id": "0c29ffac-9ee8-56b8-a7bf-13d46a0830a5",
+      "file_id": "e0e0a3a7-31ba-5cd9-8a6b-5ba3a334df4f",
+      "upload_id": "785ef37b-cb07-5ddc-93f8-4ea39f6037ec",
+      "style_name": "컬리 하이톱",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/39241292.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/e0e0a3a7-31ba-5cd9-8a6b-5ba3a334df4f.jpg",
+      "sha256": "639db8c8913cfe961c1890b1cc6844a6441238ab3989a71689696b58e4a428fd",
+      "file_size": 173960,
+      "width": 1200,
+      "height": 1707,
+      "source_photo_id": "39241292",
+      "source_url": "https://www.pexels.com/photo/studio-portrait-of-a-confident-young-man-39241292/",
+      "download_url": "https://images.pexels.com/photos/39241292/pexels-photo-39241292/free-photo-of-studio-portrait-of-a-confident-young-man.jpeg?auto=compress&w=1200",
+      "photographer": "Maury Pires",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "CURLY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "컬리컷"
+      ]
+    },
+    {
+      "replaces_number": 30,
+      "hairstyle_id": "3719ea70-8240-5652-8a16-02f8f5685b5f",
+      "file_id": "f35d850d-e1e9-5889-8536-170c1b4dd860",
+      "upload_id": "c9c7c93e-5a05-5c2b-a8ce-f108c0fe20b4",
+      "style_name": "내추럴 아프로",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/35249124.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/f35d850d-e1e9-5889-8536-170c1b4dd860.jpg",
+      "sha256": "762bfc399c1f086e30036a40fc1c89b1b273485b328c0e0a8b81ce38ab3075e8",
+      "file_size": 119849,
+      "width": 1200,
+      "height": 1500,
+      "source_photo_id": "35249124",
+      "source_url": "https://www.pexels.com/photo/portrait-of-a-young-black-man-with-earrings-35249124/",
+      "download_url": "https://images.pexels.com/photos/35249124/pexels-photo-35249124/free-photo-of-portrait-of-a-young-black-man-with-earrings.jpeg?auto=compress&w=1200",
+      "photographer": "Okiki Onipede",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "CURLY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "아프로"
+      ]
+    },
+    {
+      "replaces_number": 31,
+      "hairstyle_id": "55a650e5-5a99-5ed7-bd78-2ede7a818ed6",
+      "file_id": "251f0cfd-e52c-5d25-b760-afcb97ef0211",
+      "upload_id": "9f567933-7385-59e0-b97f-caf3ba3deacc",
+      "style_name": "컬리 프린지 테이퍼",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/10617536.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/251f0cfd-e52c-5d25-b760-afcb97ef0211.jpg",
+      "sha256": "9b43790775b604fc4f67c6a2e27533b373c09420cb82879e69abf9b83f0f300d",
+      "file_size": 137001,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "10617536",
+      "source_url": "https://www.pexels.com/photo/a-man-in-white-shirt-and-white-suit-jacket-10617536/",
+      "download_url": "https://images.pexels.com/photos/10617536/pexels-photo-10617536.jpeg?auto=compress&w=1200",
+      "photographer": "cottonbro studio",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "WAVY",
+        "CURLY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "컬리컷",
+        "테이퍼컷"
+      ]
+    },
+    {
+      "replaces_number": 32,
+      "hairstyle_id": "f44a00c9-3c3f-5927-98f7-32966c2b137e",
+      "file_id": "9bd9a927-911f-5afb-8777-6c32d6ee9aa5",
+      "upload_id": "54c0e743-8f32-5c08-82f2-1cda777a6f2a",
+      "style_name": "웨이브 퀴프 언더컷",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/17928570.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/9bd9a927-911f-5afb-8777-6c32d6ee9aa5.jpg",
+      "sha256": "21b6e777221880b6df28df3ee160fd88ffc74ef85a9b2408b6685123ccd54832",
+      "file_size": 259470,
+      "width": 1200,
+      "height": 1509,
+      "source_photo_id": "17928570",
+      "source_url": "https://www.pexels.com/photo/man-with-dyed-hair-in-black-and-white-17928570/",
+      "download_url": "https://images.pexels.com/photos/17928570/pexels-photo-17928570/free-photo-of-man-with-dyed-hair-in-black-and-white.jpeg?auto=compress&w=1200",
+      "photographer": "Pexels User",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "WAVY",
+        "CURLY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "언더컷",
+        "웨이브"
+      ]
+    },
+    {
+      "replaces_number": 35,
+      "hairstyle_id": "090392ec-2fcb-56e3-ba4c-0063af2471d3",
+      "file_id": "8bf0e3b5-0402-5137-a403-03548286b0b6",
+      "upload_id": "f0904534-2e9e-556d-a986-5bf6ff5b1fe7",
+      "style_name": "로우 페이드 사이드파트",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/7781852.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/8bf0e3b5-0402-5137-a403-03548286b0b6.jpg",
+      "sha256": "2650054181fa1ed677aaceecccaaf941a73ef2cd8e6da215fc35a26074416472",
+      "file_size": 280909,
+      "width": 1200,
+      "height": 1783,
+      "source_photo_id": "7781852",
+      "source_url": "https://www.pexels.com/photo/man-in-black-barber-cape-7781852/",
+      "download_url": "https://images.pexels.com/photos/7781852/pexels-photo-7781852.jpeg?auto=compress&w=1200",
+      "photographer": "Leonardo Hidalgo",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "페이드컷",
+        "사이드파트"
+      ]
+    },
+    {
+      "replaces_number": 36,
+      "hairstyle_id": "30482fbb-adf7-5843-a988-f340b85fa429",
+      "file_id": "790da07c-fb25-54ae-ad32-463ce2dbde3d",
+      "upload_id": "7ec1675f-2cdf-5fdb-8dd0-1ed72c348b14",
+      "style_name": "텍스처 멀릿컷",
+      "category": "MEDIUM",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/11395986.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/790da07c-fb25-54ae-ad32-463ce2dbde3d.jpg",
+      "sha256": "7c8b840b273b0cddc88eef441feec04e51b7db1d5ef8a4ee74aa2f18fea09122",
+      "file_size": 191746,
+      "width": 1200,
+      "height": 1766,
+      "source_photo_id": "11395986",
+      "source_url": "https://www.pexels.com/photo/man-in-black-suit-jacket-11395986/",
+      "download_url": "https://images.pexels.com/photos/11395986/pexels-photo-11395986.jpeg?auto=compress&w=1200",
+      "photographer": "annmteu",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "멀릿컷",
+        "처피뱅"
+      ]
+    },
+    {
+      "replaces_number": 37,
+      "hairstyle_id": "cb9713ac-a1b0-5e95-a303-e24bc4a425ac",
+      "file_id": "039a728d-7d09-53b4-840f-96e1411c62cf",
+      "upload_id": "505d88ac-a231-56fc-9346-41c2929675b8",
+      "style_name": "브러시백 멀릿컷",
+      "category": "MEDIUM",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/30782416.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/039a728d-7d09-53b4-840f-96e1411c62cf.jpg",
+      "sha256": "b167b17eda6f2a2e329c0df9b23301feba7cfba80d474038f3c1079c977b8e94",
+      "file_size": 185320,
+      "width": 1200,
+      "height": 1799,
+      "source_photo_id": "30782416",
+      "source_url": "https://www.pexels.com/photo/portrait-of-bearded-man-with-stylish-haircut-30782416/",
+      "download_url": "https://images.pexels.com/photos/30782416/pexels-photo-30782416/free-photo-of-portrait-of-bearded-man-with-stylish-haircut.jpeg?auto=compress&w=1200",
+      "photographer": "dp singh Bhullar",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "멀릿컷"
+      ]
+    },
+    {
+      "replaces_number": 38,
+      "hairstyle_id": "7d3fb671-6ae0-5bcb-a9f7-54d7c5f534f9",
+      "file_id": "6fb84335-f266-5528-8c37-6981a17aa42c",
+      "upload_id": "15e79121-5f0d-5114-a099-acbb6552ad82",
+      "style_name": "미디엄 언더컷 웨이브",
+      "category": "MEDIUM",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/20742493.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/6fb84335-f266-5528-8c37-6981a17aa42c.jpg",
+      "sha256": "d74b29d9a7e1a27ffd58aac942d3222b459d9a6fa93c4510d2003b8e0a565c4c",
+      "file_size": 243852,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "20742493",
+      "source_url": "https://www.pexels.com/photo/a-man-wearing-sunglasses-20742493/",
+      "download_url": "https://images.pexels.com/photos/20742493/pexels-photo-20742493/free-photo-of-a-man-wearing-sunglasses.jpeg?auto=compress&w=1200",
+      "photographer": "Abhishek Shekhawat",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "WAVY",
+        "CURLY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "언더컷",
+        "웨이브"
+      ]
+    },
+    {
+      "replaces_number": 39,
+      "hairstyle_id": "b98199c9-df22-5914-8d6c-ff1c9818aa2e",
+      "file_id": "e0c83e60-8516-5dc7-b268-8180176c8196",
+      "upload_id": "42f61913-29d9-5d7f-95ad-cc7bceab6d0c",
+      "style_name": "버즈컷",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/12211686.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/e0c83e60-8516-5dc7-b268-8180176c8196.jpg",
+      "sha256": "f8e07a2f52fda943a20f947540fa6069f49713bf46af627d0a4c0a29a881dbad",
+      "file_size": 201305,
+      "width": 1200,
+      "height": 2133,
+      "source_photo_id": "12211686",
+      "source_url": "https://www.pexels.com/photo/portrait-of-handsome-man-with-stubble-12211686/",
+      "download_url": "https://images.pexels.com/photos/12211686/pexels-photo-12211686.jpeg?auto=compress&w=1200",
+      "photographer": "Reza Kargar",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY",
+        "CURLY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 0,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "버즈컷"
+      ]
+    },
+    {
+      "replaces_number": 56,
+      "hairstyle_id": "7f17a8fe-2b82-558e-969f-79a3563ce8fb",
+      "file_id": "cbc58c96-9253-5e84-a062-8c824986b638",
+      "upload_id": "79b782ca-78e9-5f5b-9743-01ecf7c8842e",
+      "style_name": "크루컷",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/16098697.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/cbc58c96-9253-5e84-a062-8c824986b638.jpg",
+      "sha256": "b79506f4a531bbcf9d144b4324b1149c354c34a3652c42abd4184f95e205eb94",
+      "file_size": 170500,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "16098697",
+      "source_url": "https://www.pexels.com/photo/smiling-man-in-gray-t-shirt-16098697/",
+      "download_url": "https://images.pexels.com/photos/16098697/pexels-photo-16098697/free-photo-of-smiling-man-in-gray-t-shirt.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "크루컷"
+      ]
+    },
+    {
+      "replaces_number": 59,
+      "hairstyle_id": "87408dfc-91cf-53df-bfab-369e62e93e38",
+      "file_id": "805dcd76-e71c-5aa6-bbed-6dd100f64ec2",
+      "upload_id": "3139fd32-2fac-5c2e-9d11-a8e5d2c05c7e",
+      "style_name": "스킨 페이드 버즈컷",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/39559324.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/805dcd76-e71c-5aa6-bbed-6dd100f64ec2.jpg",
+      "sha256": "a61758d67be3a0238c10dd6e62eab0e4ee0cc80f6c2c959eff8a41998d490f20",
+      "file_size": 151545,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "39559324",
+      "source_url": "https://www.pexels.com/photo/modern-fade-haircut-with-sharp-beard-style-39559324/",
+      "download_url": "https://images.pexels.com/photos/39559324/pexels-photo-39559324/free-photo-of-modern-fade-haircut-with-sharp-beard-style.jpeg?auto=compress&w=1200",
+      "photographer": "Brian Silva",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY",
+        "CURLY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 0,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "버즈컷",
+        "페이드컷"
+      ]
+    },
+    {
+      "replaces_number": 61,
+      "hairstyle_id": "b4b3e4fc-cd3e-5df2-ae97-4947e1076293",
+      "file_id": "ccdd16a6-c616-548c-8c54-2e0fe6c6f167",
+      "upload_id": "1421bae9-6b73-5762-90da-f6d7e9062268",
+      "style_name": "투블록 보울컷",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/944013.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/ccdd16a6-c616-548c-8c54-2e0fe6c6f167.jpg",
+      "sha256": "c47f24bcbb5d89291a4af08c67fd5c154cce7440a8096caa361f06514ebce693",
+      "file_size": 102651,
+      "width": 1200,
+      "height": 794,
+      "source_photo_id": "944013",
+      "source_url": "https://www.pexels.com/photo/man-in-black-collared-shirt-with-black-frame-eyeglasses-944013/",
+      "download_url": "https://images.pexels.com/photos/944013/pexels-photo-944013.jpeg?auto=compress&w=1200",
+      "photographer": "Min An",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "투블록",
+        "보울컷"
+      ]
+    },
+    {
+      "replaces_number": 62,
+      "hairstyle_id": "b252732a-2d91-5c01-afd5-6d36f1bd3a92",
+      "file_id": "ad79a8cf-d74f-504e-ae76-b31e24155234",
+      "upload_id": "1e7208fe-9db6-50f4-86ff-6fc46edac019",
+      "style_name": "클래식 사이드파트",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/9168799.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/ad79a8cf-d74f-504e-ae76-b31e24155234.jpg",
+      "sha256": "1ea8a2d8ef6657569f9320cd395c1213f779bbfa60dda2e59727c5a1733b89e0",
+      "file_size": 98689,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "9168799",
+      "source_url": "https://www.pexels.com/photo/side-view-of-man-in-white-shirt-9168799/",
+      "download_url": "https://images.pexels.com/photos/9168799/pexels-photo-9168799.jpeg?auto=compress&w=1200",
+      "photographer": "Ron Lach",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "사이드파트"
+      ]
+    },
+    {
+      "replaces_number": 64,
+      "hairstyle_id": "86c65822-8ea7-58c4-b115-d9924435ea68",
+      "file_id": "fe0565fa-297c-513b-80a1-111dde14aa81",
+      "upload_id": "8402b338-e9c2-544b-a054-1aa85685c10e",
+      "style_name": "스파이키 언더컷",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/11904768.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/fe0565fa-297c-513b-80a1-111dde14aa81.jpg",
+      "sha256": "bd62355f481bbd647443739acf1e32ac84774039d088e4f449c1ab288c635f09",
+      "file_size": 150811,
+      "width": 1200,
+      "height": 1680,
+      "source_photo_id": "11904768",
+      "source_url": "https://www.pexels.com/photo/a-man-in-black-denim-jacket-11904768/",
+      "download_url": "https://images.pexels.com/photos/11904768/pexels-photo-11904768.jpeg?auto=compress&w=1200",
+      "photographer": "MENG MEDIA",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "언더컷",
+        "스파이키컷"
+      ]
+    },
+    {
+      "replaces_number": 67,
+      "hairstyle_id": "8a9d43c6-cf38-5cc3-b038-94fe0f689de7",
+      "file_id": "4807dce0-83fe-53f6-87f2-3679c38cfd1b",
+      "upload_id": "b84fe71b-42dd-540f-98d4-e2cd61b7b630",
+      "style_name": "슬릭백 스타일",
+      "category": "SHORT",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/8799957.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/4807dce0-83fe-53f6-87f2-3679c38cfd1b.jpg",
+      "sha256": "c3188ef87dc380f15d6ae680e51ab251f313b53a64400c84b657321cd65b984c",
+      "file_size": 137009,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "8799957",
+      "source_url": "https://www.pexels.com/photo/man-in-crew-neck-shirt-8799957/",
+      "download_url": "https://images.pexels.com/photos/8799957/pexels-photo-8799957.jpeg?auto=compress&w=1200",
+      "photographer": "Minh Tri",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "슬릭백"
+      ]
+    },
+    {
+      "replaces_number": 68,
+      "hairstyle_id": "c17d60af-6144-5d44-9658-eda2e5ad638d",
+      "file_id": "8bfcc7ca-ef75-5eb4-b7cc-b417968c7ac4",
+      "upload_id": "b7784df8-a82e-5c32-8eda-8d6de7315471",
+      "style_name": "센터파트 내추럴 플로우",
+      "category": "MEDIUM",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/4736680.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/8bfcc7ca-ef75-5eb4-b7cc-b417968c7ac4.jpg",
+      "sha256": "c9860ced9e54ed4d8e0da5d4e98b315fa9e8a1cb8a0319da98b5f3f32e4af79e",
+      "file_size": 232465,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "4736680",
+      "source_url": "https://www.pexels.com/photo/man-in-white-dress-shirt-4736680/",
+      "download_url": "https://images.pexels.com/photos/4736680/pexels-photo-4736680.jpeg?auto=compress&w=1200",
+      "photographer": "cottonbro studio",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "가르마컷",
+        "리프컷"
+      ]
+    },
+    {
+      "replaces_number": 69,
+      "hairstyle_id": "06cc4930-e540-5d6f-b284-1e08b1818a1c",
+      "file_id": "6b6cd640-a67d-5c8b-b638-bd7ed7d2d15c",
+      "upload_id": "246e7322-0fa8-5d64-a199-7d95950ad88c",
+      "style_name": "커튼뱅 리프컷",
+      "category": "MEDIUM",
+      "style_presentation": "MASCULINE",
+      "image_file": "images/9775640.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/6b6cd640-a67d-5c8b-b638-bd7ed7d2d15c.jpg",
+      "sha256": "ad8d88b85e804ce6885f142592c4d910bcaf4877760e8670356297e82556f28f",
+      "file_size": 45784,
+      "width": 1200,
+      "height": 800,
+      "source_photo_id": "9775640",
+      "source_url": "https://www.pexels.com/photo/close-up-shot-of-a-man-in-a-green-hoodie-9775640/",
+      "download_url": "https://images.pexels.com/photos/9775640/pexels-photo-9775640.jpeg?auto=compress&w=1200",
+      "photographer": "SHVETS production",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "리프컷",
+        "사이드뱅"
+      ]
+    },
+    {
+      "replaces_number": 70,
+      "hairstyle_id": "76145924-61ee-52ca-8fb6-faf5392da1d5",
+      "file_id": "8da7f475-29f4-5218-9572-f1bc81b89985",
+      "upload_id": "d39c2916-e45c-5ac8-97a2-847a0731519b",
+      "style_name": "옴브레 롱 글램 웨이브",
+      "category": "LONG",
+      "style_presentation": "FEMININE",
+      "image_file": "images/20046790.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/8da7f475-29f4-5218-9572-f1bc81b89985.jpg",
+      "sha256": "a60c0ebd24d1ef0726b65b5e50ef212b4b3fbe1b4f03beae2cb355b41de1bf30",
+      "file_size": 204630,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "20046790",
+      "source_url": "https://www.pexels.com/photo/portrait-of-brunette-woman-20046790/",
+      "download_url": "https://images.pexels.com/photos/20046790/pexels-photo-20046790/free-photo-of-portrait-of-brunette-woman.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "롱 레이어드",
+        "글램펌"
+      ]
+    },
+    {
+      "replaces_number": 72,
+      "hairstyle_id": "447ef348-7a08-5565-b345-de7ba9aa77fd",
+      "file_id": "830fef5a-219b-5a3a-894a-9c501d7f2ee4",
+      "upload_id": "43444ef5-7aad-5467-9f51-5e8b5a2203ee",
+      "style_name": "사이드뱅 롱 레이어드",
+      "category": "LONG",
+      "style_presentation": "FEMININE",
+      "image_file": "images/19465049.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/830fef5a-219b-5a3a-894a-9c501d7f2ee4.jpg",
+      "sha256": "78b483d2523615d352db726eb7d70ac35142265d934256695c2f48076be56fcf",
+      "file_size": 159658,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "19465049",
+      "source_url": "https://www.pexels.com/photo/woman-sitting-in-black-clothes-19465049/",
+      "download_url": "https://images.pexels.com/photos/19465049/pexels-photo-19465049/free-photo-of-woman-sitting-in-black-clothes.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "롱 레이어드",
+        "사이드뱅"
+      ]
+    },
+    {
+      "replaces_number": 73,
+      "hairstyle_id": "cbf47ccd-6a33-5cc1-963d-6dcd61fd0189",
+      "file_id": "ed1707b3-54c0-59a0-b921-f80d7d84beca",
+      "upload_id": "19711382-8e2e-585e-94cb-4a692c94b97d",
+      "style_name": "발레아쥬 중단발 웨이브",
+      "category": "MEDIUM",
+      "style_presentation": "FEMININE",
+      "image_file": "images/17328861.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/ed1707b3-54c0-59a0-b921-f80d7d84beca.jpg",
+      "sha256": "8660c7d1dbadccb968483b72fe6e1b37ba016c39621d00ef3994c37d9d6fcf62",
+      "file_size": 251228,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "17328861",
+      "source_url": "https://www.pexels.com/photo/portrait-of-a-brunette-woman-17328861/",
+      "download_url": "https://images.pexels.com/photos/17328861/pexels-photo-17328861/free-photo-of-portrait-of-a-brunette-woman.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "미디엄 레이어드",
+        "웨이브"
+      ]
+    },
+    {
+      "replaces_number": 76,
+      "hairstyle_id": "02310a32-527e-599b-aafd-a64c63398d68",
+      "file_id": "0aa49435-f662-5367-9c31-f2d70c4cbf18",
+      "upload_id": "d49ffc6f-8f9d-5181-a1c4-983910a11f9d",
+      "style_name": "페이스프레이밍 레이어드",
+      "category": "LONG",
+      "style_presentation": "FEMININE",
+      "image_file": "images/15868761.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/0aa49435-f662-5367-9c31-f2d70c4cbf18.jpg",
+      "sha256": "6cb04d4009bccb8ba729f368320ab46a9e34186b7ec577efdbe3a4feb18b5931",
+      "file_size": 338540,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "15868761",
+      "source_url": "https://www.pexels.com/photo/woman-with-hairdo-in-saloon-15868761/",
+      "download_url": "https://images.pexels.com/photos/15868761/pexels-photo-15868761/free-photo-of-woman-with-hairdo-in-saloon.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "롱 레이어드",
+        "사이드뱅"
+      ]
+    },
+    {
+      "replaces_number": 77,
+      "hairstyle_id": "4972ab0a-e635-58d1-85e3-9889c6cce4a7",
+      "file_id": "12eea25f-cad4-59ce-9f21-18a8f268adc2",
+      "upload_id": "edb50534-704a-530e-9cdf-190477b5c48b",
+      "style_name": "커튼뱅 롱 스트레이트",
+      "category": "LONG",
+      "style_presentation": "FEMININE",
+      "image_file": "images/30661047.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/12eea25f-cad4-59ce-9f21-18a8f268adc2.jpg",
+      "sha256": "fc5e36eb6318655c3f440677e040d8390258759ddb73031960ad2c7624d4661b",
+      "file_size": 195920,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "30661047",
+      "source_url": "https://www.pexels.com/photo/young-woman-with-long-straight-hair-in-salon-30661047/",
+      "download_url": "https://images.pexels.com/photos/30661047/pexels-photo-30661047/free-photo-of-young-woman-with-long-straight-hair-in-salon.jpeg?auto=compress&w=1200",
+      "photographer": "Ông Ngọc Dư",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHEST",
+      "compatible_hair_types": [
+        "STRAIGHT"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "긴 생머리",
+        "사이드뱅"
+      ]
+    },
+    {
+      "replaces_number": 78,
+      "hairstyle_id": "42d2fb31-6285-5aa4-864f-8fbe10e75a5c",
+      "file_id": "cc7d31a0-a676-5d7c-a8d6-ee960a834587",
+      "upload_id": "82fd3751-228a-522e-a492-276ef3dec3f3",
+      "style_name": "블런트 프린지 픽시",
+      "category": "SHORT",
+      "style_presentation": "FEMININE",
+      "image_file": "images/28969181.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/cc7d31a0-a676-5d7c-a8d6-ee960a834587.jpg",
+      "sha256": "bce3e0bbc5aa0acef47f2707a162a40b41074f2c64e8025f57612cb7f78f3c39",
+      "file_size": 167927,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "28969181",
+      "source_url": "https://www.pexels.com/photo/chic-portrait-of-person-with-blonde-pixie-haircut-28969181/",
+      "download_url": "https://images.pexels.com/photos/28969181/pexels-photo-28969181/free-photo-of-chic-portrait-of-person-with-blonde-pixie-haircut.jpeg?auto=compress&w=1200",
+      "photographer": "pedro furtado",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "픽시컷",
+        "처피뱅"
+      ]
+    },
+    {
+      "replaces_number": 80,
+      "hairstyle_id": "f055858a-07fe-5a79-a257-b7ccc3dab7f8",
+      "file_id": "d37fc871-3166-573f-bd37-579e9fd9d993",
+      "upload_id": "f4191642-47a1-5369-8e2c-541ed28ad0ff",
+      "style_name": "볼륨 텍스처 픽시",
+      "category": "SHORT",
+      "style_presentation": "FEMININE",
+      "image_file": "images/3636489.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/d37fc871-3166-573f-bd37-579e9fd9d993.jpg",
+      "sha256": "7beae5de025bf361346eef67d276513ef303d49882432601a5c4e79e974aa8bf",
+      "file_size": 219156,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "3636489",
+      "source_url": "https://www.pexels.com/photo/close-up-photo-of-a-woman-with-short-hair-3636489/",
+      "download_url": "https://images.pexels.com/photos/3636489/pexels-photo-3636489.jpeg?auto=compress&w=1200",
+      "photographer": "Marielle Capinianes",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "픽시컷"
+      ]
+    },
+    {
+      "replaces_number": 81,
+      "hairstyle_id": "8167d07c-eb7e-5632-878a-0df3e0ac5ee7",
+      "file_id": "c1d14fa0-b538-5746-84bd-0ccaf03a54f0",
+      "upload_id": "0404e286-42d3-5a11-8a27-4ebb523c9daf",
+      "style_name": "사이드 프린지 픽시",
+      "category": "SHORT",
+      "style_presentation": "FEMININE",
+      "image_file": "images/6589540.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/c1d14fa0-b538-5746-84bd-0ccaf03a54f0.jpg",
+      "sha256": "12695486bf01e632a74f2a83aa2ff16c261e6bf766209cde39a2213d43486cf8",
+      "file_size": 126254,
+      "width": 1200,
+      "height": 1600,
+      "source_photo_id": "6589540",
+      "source_url": "https://www.pexels.com/photo/young-trendy-woman-with-piercing-and-short-red-hair-6589540/",
+      "download_url": "https://images.pexels.com/photos/6589540/pexels-photo-6589540.jpeg?auto=compress&w=1200",
+      "photographer": "Daylane Oliveira",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "픽시컷",
+        "사이드뱅"
+      ]
+    },
+    {
+      "replaces_number": 82,
+      "hairstyle_id": "6abf9427-67ac-5754-a2f3-a29c50a8f4b6",
+      "file_id": "1f8d371f-ba06-5d7d-9425-d5afe5a0c36a",
+      "upload_id": "098cfb06-257a-5740-b3c9-8d0af011a90d",
+      "style_name": "마이크로 프린지 숏컷",
+      "category": "SHORT",
+      "style_presentation": "FEMININE",
+      "image_file": "images/11532757.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/1f8d371f-ba06-5d7d-9425-d5afe5a0c36a.jpg",
+      "sha256": "728482538e48a69a5ae57f398314f8fb41c58401c2489ee3c7178cbab0cd0c38",
+      "file_size": 180375,
+      "width": 1200,
+      "height": 1600,
+      "source_photo_id": "11532757",
+      "source_url": "https://www.pexels.com/photo/woman-in-white-shirt-wearing-silver-earring-11532757/",
+      "download_url": "https://images.pexels.com/photos/11532757/pexels-photo-11532757.jpeg?auto=compress&w=1200",
+      "photographer": "Sidicley Santana dos santos",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "픽시컷",
+        "처피뱅"
+      ]
+    },
+    {
+      "replaces_number": 84,
+      "hairstyle_id": "b1fdcdba-f935-5f0d-8fba-e9b56f3003fc",
+      "file_id": "6d90b2d5-8a82-5966-b7af-60c76f6a8525",
+      "upload_id": "5013a16d-a2d8-5292-975c-17bd8373dfa3",
+      "style_name": "비대칭 언더컷 픽시",
+      "category": "SHORT",
+      "style_presentation": "FEMININE",
+      "image_file": "images/9197236.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/6d90b2d5-8a82-5966-b7af-60c76f6a8525.jpg",
+      "sha256": "ae0e8b2ba3ce49268254c6758b04428c9a9ce06ca75ff2ad2efeb8ec763985a1",
+      "file_size": 224126,
+      "width": 1200,
+      "height": 1799,
+      "source_photo_id": "9197236",
+      "source_url": "https://www.pexels.com/photo/woman-with-pixie-cut-hair-9197236/",
+      "download_url": "https://images.pexels.com/photos/9197236/pexels-photo-9197236.jpeg?auto=compress&w=1200",
+      "photographer": "Юлиана Маринина",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_types": [
+        "STRAIGHT"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "픽시컷",
+        "언더컷"
+      ]
+    },
+    {
+      "replaces_number": 85,
+      "hairstyle_id": "e0ef9b77-ea49-5d67-80da-673fc665e394",
+      "file_id": "6c2c27c3-210a-5ca4-b322-09aad446f639",
+      "upload_id": "3c4f624b-a12f-5b4b-846e-e059ee90b8f3",
+      "style_name": "블런트 보브",
+      "category": "BOB",
+      "style_presentation": "FEMININE",
+      "image_file": "images/6822023.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/6c2c27c3-210a-5ca4-b322-09aad446f639.jpg",
+      "sha256": "a3fb86a403dcd5115dca583bd3e9858035b68955e445588a91c7fe9c7fe864af",
+      "file_size": 209288,
+      "width": 1200,
+      "height": 1520,
+      "source_photo_id": "6822023",
+      "source_url": "https://www.pexels.com/photo/back-view-shot-of-a-person-with-short-hair-wearing-black-shirt-6822023/",
+      "download_url": "https://images.pexels.com/photos/6822023/pexels-photo-6822023.jpeg?auto=compress&w=1200",
+      "photographer": "Elīna Arāja",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "STRAIGHT"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "클래식 보브",
+        "태슬컷"
+      ]
+    },
+    {
+      "replaces_number": 86,
+      "hairstyle_id": "ffe39c84-1b70-58f0-979c-b7474c76888a",
+      "file_id": "b9712588-5c6d-5aeb-b826-3db036524a04",
+      "upload_id": "94b77999-44b8-58dd-ba91-8c5b81a16b11",
+      "style_name": "시스루뱅 보브",
+      "category": "BOB",
+      "style_presentation": "FEMININE",
+      "image_file": "images/20304296.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/b9712588-5c6d-5aeb-b826-3db036524a04.jpg",
+      "sha256": "4754adc620a9adb8319e6abd26f1a1bd803ecfae9bb13da2f3b329b9c7fea792",
+      "file_size": 174509,
+      "width": 1200,
+      "height": 1961,
+      "source_photo_id": "20304296",
+      "source_url": "https://www.pexels.com/photo/portrait-of-woman-with-hand-on-cheek-20304296/",
+      "download_url": "https://images.pexels.com/photos/20304296/pexels-photo-20304296/free-photo-of-portrait-of-woman-with-hand-on-cheek.jpeg?auto=compress&w=1200",
+      "photographer": "xomidov Photo",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "STRAIGHT"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "클래식 보브",
+        "시스루뱅"
+      ]
+    },
+    {
+      "replaces_number": 87,
+      "hairstyle_id": "16c7597c-2c40-51e1-a754-ef4fe35aa2b3",
+      "file_id": "4333aaa0-02ed-531d-b768-300535e05b0d",
+      "upload_id": "8c9e83bb-3dc1-5e1e-9d5d-870c7f4eff78",
+      "style_name": "사이드뱅 클래식 보브",
+      "category": "BOB",
+      "style_presentation": "FEMININE",
+      "image_file": "images/17135759.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/4333aaa0-02ed-531d-b768-300535e05b0d.jpg",
+      "sha256": "79caeede28822f77a66d1756b7efba5b8e0a9ff26f148c4cce89c3f2cf981c0a",
+      "file_size": 121672,
+      "width": 1200,
+      "height": 1500,
+      "source_photo_id": "17135759",
+      "source_url": "https://www.pexels.com/photo/portrait-of-an-elegant-brunette-17135759/",
+      "download_url": "https://images.pexels.com/photos/17135759/pexels-photo-17135759/free-photo-of-portrait-of-an-elegant-brunette.jpeg?auto=compress&w=1200",
+      "photographer": "Bardia Golzar",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "STRAIGHT"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "클래식 보브",
+        "사이드뱅"
+      ]
+    },
+    {
+      "replaces_number": 88,
+      "hairstyle_id": "c9442c21-485b-5d64-87c3-a97b491e3702",
+      "file_id": "79ab601a-0ef7-5fc1-ae0d-f01f12d69fd9",
+      "upload_id": "9cf167c2-79cd-5bd6-8e6f-f9b12596e478",
+      "style_name": "사이드파트 원랭스 보브",
+      "category": "BOB",
+      "style_presentation": "FEMININE",
+      "image_file": "images/5301009.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/79ab601a-0ef7-5fc1-ae0d-f01f12d69fd9.jpg",
+      "sha256": "22ee56b41a12d65b621d0ee0a00bdc18a5ab039c1594abffcb643aec1d0179dc",
+      "file_size": 249953,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "5301009",
+      "source_url": "https://www.pexels.com/photo/young-woman-wearing-a-white-turtleneck-5301009/",
+      "download_url": "https://images.pexels.com/photos/5301009/pexels-photo-5301009.jpeg?auto=compress&w=1200",
+      "photographer": "Guan Yoanda",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "STRAIGHT"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "클래식 보브"
+      ]
+    },
+    {
+      "replaces_number": 89,
+      "hairstyle_id": "e01d6760-17b8-5cd4-97de-c604322e304d",
+      "file_id": "61f943fd-f574-5894-8ea6-916149971fae",
+      "upload_id": "6c3a844d-1561-523a-8fc5-4594a020b2c8",
+      "style_name": "센터파트 슬릭 보브",
+      "category": "BOB",
+      "style_presentation": "FEMININE",
+      "image_file": "images/8182243.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/61f943fd-f574-5894-8ea6-916149971fae.jpg",
+      "sha256": "c1e880d9eef714180b0313210e75bf39841b2716c1dc658ffefaf1a198d2c080",
+      "file_size": 133130,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "8182243",
+      "source_url": "https://www.pexels.com/photo/close-up-photo-of-woman-wearing-off-shoulder-top-8182243/",
+      "download_url": "https://images.pexels.com/photos/8182243/pexels-photo-8182243.jpeg?auto=compress&w=1200",
+      "photographer": "RDNE Stock project",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "STRAIGHT"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "클래식 보브",
+        "태슬컷"
+      ]
+    },
+    {
+      "replaces_number": 91,
+      "hairstyle_id": "abcb8ccb-9044-5c1b-954e-2c222fc5a701",
+      "file_id": "917bcbd1-29cb-514c-95ab-1f6240f36631",
+      "upload_id": "3a5550dd-50a0-5f36-a02f-f69c8aa75b3f",
+      "style_name": "커튼 레이어드 블로아웃",
+      "category": "LONG",
+      "style_presentation": "FEMININE",
+      "image_file": "images/18367694.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/917bcbd1-29cb-514c-95ab-1f6240f36631.jpg",
+      "sha256": "372cac673947612bda42e1ccba01e005437c09532b188abffb1869e0d27067c2",
+      "file_size": 196822,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "18367694",
+      "source_url": "https://www.pexels.com/photo/young-woman-with-a-layered-haircut-sitting-in-a-hair-salon-18367694/",
+      "download_url": "https://images.pexels.com/photos/18367694/pexels-photo-18367694/free-photo-of-young-woman-with-a-layered-haircut-sitting-in-a-hair-salon.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "롱 레이어드",
+        "사이드뱅"
+      ]
+    },
+    {
+      "replaces_number": 92,
+      "hairstyle_id": "fb32cea4-c14f-5c7e-a0d0-2225caf4361c",
+      "file_id": "6c25c799-986b-5296-a5fb-2414409f7353",
+      "upload_id": "3e6d548d-9ea9-5c71-9184-6c2db305744c",
+      "style_name": "하이라이트 롱 S컬",
+      "category": "LONG",
+      "style_presentation": "FEMININE",
+      "image_file": "images/18189268.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/6c25c799-986b-5296-a5fb-2414409f7353.jpg",
+      "sha256": "05e8acc2e2a72b61379abcd9304f2eb06a4cfe2260ba2ad801a2a663f6822c49",
+      "file_size": 277049,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "18189268",
+      "source_url": "https://www.pexels.com/photo/portrait-of-woman-18189268/",
+      "download_url": "https://images.pexels.com/photos/18189268/pexels-photo-18189268/free-photo-of-portrait-of-woman.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "롱 레이어드",
+        "웨이브"
+      ]
+    },
+    {
+      "replaces_number": 93,
+      "hairstyle_id": "5b2448da-3946-5de8-9e22-a1584575acda",
+      "file_id": "144afb9a-a898-5f3d-adc1-33b43c08b879",
+      "upload_id": "7448211d-037e-5794-9f4b-5b70c2d81f8e",
+      "style_name": "롱 레이어드 C컬",
+      "category": "LONG",
+      "style_presentation": "FEMININE",
+      "image_file": "images/17163786.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/144afb9a-a898-5f3d-adc1-33b43c08b879.jpg",
+      "sha256": "1811475fed1dffb1f1e8dbf3fdd9938de9e548c9facb36e1f6d39a8aa7b697a9",
+      "file_size": 192811,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "17163786",
+      "source_url": "https://www.pexels.com/photo/portrait-of-brunette-woman-17163786/",
+      "download_url": "https://images.pexels.com/photos/17163786/pexels-photo-17163786/free-photo-of-portrait-of-brunette-woman.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "롱 레이어드"
+      ]
+    },
+    {
+      "replaces_number": 94,
+      "hairstyle_id": "c0dcc01b-d923-56b0-ba41-3e7f060dac05",
+      "file_id": "621b4131-8d40-57a6-8c47-2a6d665b476d",
+      "upload_id": "803d8165-0bb4-5d47-97cf-233b62cbe55a",
+      "style_name": "롱 페더드 레이어드",
+      "category": "LONG",
+      "style_presentation": "FEMININE",
+      "image_file": "images/18189265.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/621b4131-8d40-57a6-8c47-2a6d665b476d.jpg",
+      "sha256": "ec0c264b5230985b024326a8ecfc1cfc3fe002a01ac022c4d83abc9c7a260e55",
+      "file_size": 189980,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "18189265",
+      "source_url": "https://www.pexels.com/photo/portrait-of-woman-with-black-hair-18189265/",
+      "download_url": "https://images.pexels.com/photos/18189265/pexels-photo-18189265/free-photo-of-portrait-of-woman-with-black-hair.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "롱 레이어드"
+      ]
+    },
+    {
+      "replaces_number": 95,
+      "hairstyle_id": "cc25d0ff-ec17-5eab-9dc3-95b0fcc14ad0",
+      "file_id": "e51b4c2e-ce5e-5817-baff-1280bd64ccf5",
+      "upload_id": "06255242-2663-52ee-8248-ed33424e818f",
+      "style_name": "볼륨 레이어드 블로아웃",
+      "category": "MEDIUM",
+      "style_presentation": "FEMININE",
+      "image_file": "images/17164030.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/e51b4c2e-ce5e-5817-baff-1280bd64ccf5.jpg",
+      "sha256": "1ada903281efa4a7723b76708b25db14e60e4e80de4fe9984c2017a55a404d3a",
+      "file_size": 228745,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "17164030",
+      "source_url": "https://www.pexels.com/photo/brunette-woman-posing-with-arms-crossed-17164030/",
+      "download_url": "https://images.pexels.com/photos/17164030/pexels-photo-17164030/free-photo-of-brunette-woman-posing-with-arms-crossed.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "미디엄 레이어드"
+      ]
+    },
+    {
+      "replaces_number": 96,
+      "hairstyle_id": "31717139-b772-5190-95ad-bdad71d6aaed",
+      "file_id": "670329bd-c450-504d-9598-9fea62599e72",
+      "upload_id": "ecc49cc9-b20f-52d5-934f-111ff12e24b2",
+      "style_name": "사이드뱅 미디엄 C컬",
+      "category": "MEDIUM",
+      "style_presentation": "FEMININE",
+      "image_file": "images/15908498.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/670329bd-c450-504d-9598-9fea62599e72.jpg",
+      "sha256": "4f9e457294dafd0582ef81708770f93c3974a6cacdaaf5faa164c8df9e53dead",
+      "file_size": 215473,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "15908498",
+      "source_url": "https://www.pexels.com/photo/smiling-woman-in-new-balance-sweatshirt-15908498/",
+      "download_url": "https://images.pexels.com/photos/15908498/pexels-photo-15908498/free-photo-of-smiling-woman-in-new-balance-sweatshirt.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "미디엄 레이어드",
+        "사이드뱅"
+      ]
+    },
+    {
+      "replaces_number": 97,
+      "hairstyle_id": "9dde44be-0010-5f35-880b-35075b1c9ca4",
+      "file_id": "56bba053-3ad3-562c-b81f-c46044e26049",
+      "upload_id": "bc7e5dca-dc8a-5992-bad0-24f87ad7ee32",
+      "style_name": "롱 캐스케이드 웨이브",
+      "category": "LONG",
+      "style_presentation": "FEMININE",
+      "image_file": "images/4584409.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/56bba053-3ad3-562c-b81f-c46044e26049.jpg",
+      "sha256": "0ae6ff3c97af5b38607afdb24e3f59688f7c0bb81edbbf8d982b67656249bfd2",
+      "file_size": 210998,
+      "width": 1200,
+      "height": 1804,
+      "source_photo_id": "4584409",
+      "source_url": "https://www.pexels.com/photo/woman-in-black-sleeveless-top-holding-hair-4584409/",
+      "download_url": "https://images.pexels.com/photos/4584409/pexels-photo-4584409.jpeg?auto=compress&w=1200",
+      "photographer": "Ketut Subiyanto",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "롱 레이어드",
+        "웨이브"
+      ]
+    },
+    {
+      "replaces_number": 98,
+      "hairstyle_id": "5aa1cd83-3951-5ae7-999f-ddd765f75108",
+      "file_id": "5657847a-f497-5fd1-8ca5-7bcb0353e152",
+      "upload_id": "695307d0-7ace-5d07-a337-6f68f09ed9bd",
+      "style_name": "사이드뱅 페더드컷",
+      "category": "LONG",
+      "style_presentation": "FEMININE",
+      "image_file": "images/17163935.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/5657847a-f497-5fd1-8ca5-7bcb0353e152.jpg",
+      "sha256": "44f24d6b508713f08c7f9c52f34da78d807467dc44422d47cdbbe768c2e25ee7",
+      "file_size": 295705,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "17163935",
+      "source_url": "https://www.pexels.com/photo/smiling-brunette-woman-17163935/",
+      "download_url": "https://images.pexels.com/photos/17163935/pexels-photo-17163935/free-photo-of-smiling-brunette-woman.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "롱 레이어드",
+        "사이드뱅"
+      ]
+    },
+    {
+      "replaces_number": 99,
+      "hairstyle_id": "e4eff9f7-6ee8-5023-95c1-fdbad8a771e7",
+      "file_id": "3763f094-afc0-5b98-9160-4ef220ddae94",
+      "upload_id": "474249ec-b38e-5af8-b4d8-6f3d50fe4db1",
+      "style_name": "미디엄 페더드 C컬",
+      "category": "MEDIUM",
+      "style_presentation": "FEMININE",
+      "image_file": "images/20046783.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/3763f094-afc0-5b98-9160-4ef220ddae94.jpg",
+      "sha256": "f1cc1f414b115d6e9ee4d18724a8fc4d5af265f094887b0a207f368ce07a0107",
+      "file_size": 242682,
+      "width": 1200,
+      "height": 1800,
+      "source_photo_id": "20046783",
+      "source_url": "https://www.pexels.com/photo/portrait-of-brunette-woman-20046783/",
+      "download_url": "https://images.pexels.com/photos/20046783/pexels-photo-20046783/free-photo-of-portrait-of-brunette-woman.jpeg?auto=compress&w=1200",
+      "photographer": "TONI&GUY PONDICHERRY",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "미디엄 레이어드"
+      ]
+    },
+    {
+      "replaces_number": 100,
+      "hairstyle_id": "2a7afeef-18a9-5e09-9516-a248e68b4090",
+      "file_id": "4f08b7f6-72c1-50be-aa2d-a9f31ef73973",
+      "upload_id": "204febd9-3b29-5b90-b6c2-2e3dc2fcff46",
+      "style_name": "숏 샤기 멀릿컷",
+      "category": "MEDIUM",
+      "style_presentation": "FEMININE",
+      "image_file": "images/34332682.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/4f08b7f6-72c1-50be-aa2d-a9f31ef73973.jpg",
+      "sha256": "2bca2225c39b9b46ff61db5584a9cbbd4ba86ca815443eedb65ce01de7d9fc51",
+      "file_size": 56767,
+      "width": 1200,
+      "height": 675,
+      "source_photo_id": "34332682",
+      "source_url": "https://www.pexels.com/photo/bright-portrait-of-woman-with-modern-hairstyle-34332682/",
+      "download_url": "https://images.pexels.com/photos/34332682/pexels-photo-34332682/free-photo-of-bright-portrait-of-woman-with-modern-hairstyle.jpeg?auto=compress&w=1200",
+      "photographer": "Ailín Policano",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "terms_url": "https://www.pexels.com/terms-of-service/",
+      "license_checked_on": "2026-10-16",
+      "page_license_label": "Free",
+      "visual_review": "PASS",
+      "professional_review": false,
+      "service_types": [
+        "CUT",
+        "STYLING"
+      ],
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_types": [
+        "STRAIGHT",
+        "WAVY"
+      ],
+      "compatible_hair_thicknesses": [
+        "THIN",
+        "NORMAL",
+        "THICK"
+      ],
+      "compatible_hair_conditions": [
+        "HEALTHY",
+        "NORMAL",
+        "DAMAGED",
+        "SEVERELY_DAMAGED"
+      ],
+      "contraindicated_hair_conditions": [],
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "editorial_priority": 50,
+      "tags": [
+        "샤기컷",
+        "멀릿컷"
+      ]
+    }
+  ],
+  "sql_sha256": "ed9fdf6f121d844147279ff931f19e2963aa1a797e55c6da7ba7681ae62c0111"
+}

@@ -162,9 +162,133 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
                         .with(authentication(auth(USER_ID))))
                 .andExpect(status().isNoContent());
 
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM recommendation_runs WHERE user_id = ?", String.class, USER_ID))
+                .isEqualTo("STALE");
         mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status").value("STALE"));
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.data.recommendation_basis.treatment_history.count").value(0));
+    }
+
+    @Test
+    void latestRegeneratesOldAlgorithmAndThenReusesTheCorrectedRun() throws Exception {
+        String oldId = generateRun();
+        jdbcTemplate.update("UPDATE recommendation_runs SET input_hash = ? WHERE recommendation_run_id = ?",
+                "0".repeat(64), UUID.fromString(oldId));
+        entityManager.clear();
+
+        String currentId = latestRun();
+        assertThat(currentId).isNotEqualTo(oldId);
+        assertThat(latestRun()).isEqualTo(currentId);
+        assertThat(runCount()).isEqualTo(2);
+    }
+
+    @Test
+    void latestReplacesLongStylesAfterProfileChangesToShort() throws Exception {
+        String oldId = generateRun();
+        insertShortStyle();
+        jdbcTemplate.update("UPDATE hair_profiles SET hair_length = 'SHORT' WHERE user_id = ?", USER_ID);
+        entityManager.clear();
+
+        String response = mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_basis.current_hair.hair_length").value("SHORT"))
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].hairstyle.style_name").value("클린 픽시컷"))
+                .andReturn().getResponse().getContentAsString();
+        String currentId = runId(response);
+        assertThat(currentId).isNotEqualTo(oldId);
+        assertThat(latestRun()).isEqualTo(currentId);
+        assertThat(runCount()).isEqualTo(2);
+        mockMvc.perform(get("/recommendations/{id}", oldId).with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].hairstyle.style_name").value("레이어드 C컬"));
+    }
+
+    @Test
+    void latestReevaluatesCatalogLengthsEvenWithoutMetadataVersionChange() throws Exception {
+        String oldId = generateRun();
+        jdbcTemplate.update("""
+                UPDATE hairstyle_recommendation_profiles
+                SET compatible_hair_lengths = '["BELOW_CHEST"]'::jsonb
+                WHERE hairstyle_id = ?
+                """, UUID.fromString("94000000-0000-4000-8000-000000000001"));
+        entityManager.clear();
+
+        String response = mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(2))
+                .andExpect(jsonPath("$.data.items[*].hairstyle.style_name")
+                        .value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("레이어드 C컬"))))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(runId(response)).isNotEqualTo(oldId);
+    }
+
+    @Test
+    void latestDoesNotReturnIncompatibleOldResultWhenNoCandidatesRemain() throws Exception {
+        generateRun();
+        jdbcTemplate.update("UPDATE hair_profiles SET hair_length = 'SHORT' WHERE user_id = ?", USER_ID);
+        entityManager.clear();
+
+        mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().is(422));
+        assertThat(runCount()).isEqualTo(1);
+    }
+
+    @Test
+    void latestWithoutAnyPreviousRunStillReturnsNotFound() throws Exception {
+        mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isNotFound());
+        assertThat(runCount()).isZero();
+    }
+
+    @Test
+    void forcedRefreshStillCreatesANewRunAndFiltersLongStyles() throws Exception {
+        insertShortStyle();
+        jdbcTemplate.update("UPDATE hair_profiles SET hair_length = 'SHORT' WHERE user_id = ?", USER_ID);
+        String oldId = generateRun();
+        String response = mockMvc.perform(post("/recommendations/generate")
+                        .with(authentication(auth(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"force_refresh\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].hairstyle.style_name").value("클린 픽시컷"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(runId(response)).isNotEqualTo(oldId);
+        assertThat(runCount()).isEqualTo(2);
+    }
+
+    private void insertShortStyle() {
+        String id = "94000000-0000-4000-8000-000000000004";
+        insertStyle(id, "클린 픽시컷", "SHORT", "NONE", 60, false);
+        jdbcTemplate.update("""
+                UPDATE hairstyle_recommendation_profiles
+                SET compatible_hair_lengths = '["SHORT", "BELOW_CHIN"]'::jsonb
+                WHERE hairstyle_id = ?
+                """, UUID.fromString(id));
+    }
+
+    private String generateRun() throws Exception {
+        return runId(mockMvc.perform(post("/recommendations/generate")
+                        .with(authentication(auth(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    }
+
+    private String latestRun() throws Exception {
+        return runId(mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    }
+
+    private String runId(String response) throws Exception {
+        return new com.fasterxml.jackson.databind.ObjectMapper().readTree(response)
+                .path("data").path("recommendation_run_id").asText();
+    }
+
+    private int runCount() {
+        return jdbcTemplate.queryForObject("SELECT count(*) FROM recommendation_runs WHERE user_id = ?",
+                Integer.class, USER_ID);
     }
 
     @Test

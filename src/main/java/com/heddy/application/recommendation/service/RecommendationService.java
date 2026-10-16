@@ -121,8 +121,16 @@ public class RecommendationService implements GenerateRecommendationUseCase,
     @Override
     @Transactional
     public RecommendationResult generate(UUID userId, boolean forceRefresh) {
+        lockActiveAccount(userId);
+        return generateForLockedAccount(userId, forceRefresh);
+    }
+
+    private void lockActiveAccount(UUID userId) {
         validateActiveAccount(accountRepositoryPort.findByIdForUpdate(userId)
                 .orElseThrow(() -> new AccountException(AccountError.ACCOUNT_NOT_FOUND)));
+    }
+
+    private RecommendationResult generateForLockedAccount(UUID userId, boolean forceRefresh) {
         Instant generatedAt = clock.instant();
         HairProfile profile = hairProfileRepositoryPort.findByUserId(userId).orElse(null);
         List<UserStylePreference> preferences = preferenceRepositoryPort.findAllByUserId(userId);
@@ -163,9 +171,13 @@ public class RecommendationService implements GenerateRecommendationUseCase,
     }
 
     @Override
+    @Transactional
     public RecommendationResult getLatest(UUID userId) {
-        return render(recommendationRepositoryPort.findLatestByUserId(userId)
-                .orElseThrow(() -> new RecommendationException(RecommendationError.NOT_FOUND)));
+        lockActiveAccount(userId);
+        recommendationRepositoryPort.findLatestByUserId(userId)
+                .orElseThrow(() -> new RecommendationException(RecommendationError.NOT_FOUND));
+        // 화면 재방문 시에도 현재 입력/알고리즘으로 검증한다. 변경이 없으면 기존 실행을 재사용한다.
+        return generateForLockedAccount(userId, false);
     }
 
     @Override
@@ -245,7 +257,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             List<HairstyleCandidate> candidates,
             TreatmentHistorySummary treatmentHistory
     ) {
-        StringBuilder value = new StringBuilder("RULE_BASED_V1|");
+        StringBuilder value = new StringBuilder("RULE_BASED_V1:MIN_LENGTH_V2|");
         HairProfile profile = context.hairProfile();
         if (profile != null) {
             value.append(profile.hairLength()).append('|').append(profile.hairType()).append('|')
@@ -264,7 +276,22 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         candidates.stream().sorted(Comparator.comparing(HairstyleCandidate::hairstyleId))
                 .forEach(candidate -> value.append('|').append(candidate.hairstyleId()).append(':')
                         .append(candidate.assetVersion()).append(':').append(candidate.metadataVersion())
-                        .append(':').append(candidate.arMode()));
+                        .append(':').append(candidate.arMode())
+                        .append(':').append(candidate.category())
+                        .append(':').append(candidate.thumbnailFileId())
+                        .append(':').append(candidate.active())
+                        .append(':').append(candidate.minimumHairLength())
+                        .append(':').append(candidate.estimatedDailyCareMinutes())
+                        .append(':').append(candidate.managementDifficulty())
+                        .append(':').append(candidate.chemicalStressLevel())
+                        .append(':').append(candidate.editorialPriority())
+                        .append(':').append(candidate.serviceTypes().stream().sorted().toList())
+                        .append(':').append(candidate.compatibleHairLengths().stream().sorted().toList())
+                        .append(':').append(candidate.compatibleHairTypes().stream().sorted().toList())
+                        .append(':').append(candidate.compatibleHairThicknesses().stream().sorted().toList())
+                        .append(':').append(candidate.compatibleHairConditions().stream().sorted().toList())
+                        .append(':').append(candidate.contraindicatedHairConditions().stream().sorted().toList())
+                        .append(':').append(candidate.tags().keySet().stream().sorted().toList()));
         return value.toString();
     }
 

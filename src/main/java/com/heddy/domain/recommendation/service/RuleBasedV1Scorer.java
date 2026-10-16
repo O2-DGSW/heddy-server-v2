@@ -87,9 +87,18 @@ public final class RuleBasedV1Scorer {
         if (profile == null) {
             return true;
         }
-        if (candidate.minimumHairLength() != null && profile.hairLength() != null
-                && profile.hairLength().ordinal() < candidate.minimumHairLength().ordinal()) {
-            return false;
+        if (profile.hairLength() != null) {
+            HairProfile.HairLength compatibleMinimum = candidate.compatibleHairLengths().stream()
+                    .min(Comparator.naturalOrder()).orElse(null);
+            HairProfile.HairLength minimumLength = candidate.minimumHairLength();
+            // 명시된 최소 길이가 누락되거나 호환 길이보다 짧아도 긴 스타일을 통과시키지 않는다.
+            if (minimumLength == null || (compatibleMinimum != null
+                    && compatibleMinimum.compareTo(minimumLength) > 0)) {
+                minimumLength = compatibleMinimum;
+            }
+            if (minimumLength == null || profile.hairLength().compareTo(minimumLength) < 0) {
+                return false;
+            }
         }
         return profile.hairCondition() == null
                 || !candidate.contraindicatedHairConditions().contains(profile.hairCondition());

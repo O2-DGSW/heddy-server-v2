@@ -100,6 +100,16 @@ class RecommendationRunEntity {
             value.put("current_hair", currentHair);
         }
         value.put("available_care_time_minutes", basis.availableCareTimeMinutes());
+        if (basis.photoAnalysis() != null) {
+            var evidence = basis.photoAnalysis();
+            Map<String, Object> photo = new LinkedHashMap<>();
+            photo.put("file_id", evidence.fileId() == null ? null : evidence.fileId().toString());
+            photo.put("model_version", evidence.modelVersion());
+            photo.put("status", evidence.status());
+            putEnum(photo, "observed_length", evidence.observedLength());
+            photo.put("applied", evidence.applied());
+            value.put("photo_analysis", photo);
+        }
         return value;
     }
 
@@ -126,7 +136,15 @@ class RecommendationRunEntity {
                         integer(stylePreferences, "preferred_count", 0),
                         integer(stylePreferences, "excluded_count", 0)),
                 hair,
-                integer(basis, "available_care_time_minutes"));
+                integer(basis, "available_care_time_minutes"), photoEvidence(map(basis.get("photo_analysis"))));
+    }
+
+    private static com.heddy.domain.recommendation.model.PhotoHairEvidence photoEvidence(Map<?, ?> value) {
+        if (value.isEmpty()) return null;
+        return new com.heddy.domain.recommendation.model.PhotoHairEvidence(
+                value.get("file_id") == null ? null : UUID.fromString(value.get("file_id").toString()),
+                (String) value.get("model_version"), (String) value.get("status"),
+                enumValue(value, "observed_length", HairLength.class), Boolean.TRUE.equals(value.get("applied")));
     }
 
     private static void putEnum(Map<String, Object> target, String key, Enum<?> value) {

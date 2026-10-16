@@ -80,6 +80,9 @@ app:
     used-token-retention-days: ${USED_REAUTHENTICATION_TOKEN_RETENTION_DAYS:30}
     token-purge-interval-ms: ${USED_REAUTHENTICATION_TOKEN_PURGE_INTERVAL_MS:3600000}
     token-purge-initial-delay-ms: ${USED_REAUTHENTICATION_TOKEN_PURGE_INITIAL_DELAY_MS:60000}
+  photo-length:
+    enabled: ${HAIR_PHOTO_LENGTH_ENABLED:false}
+    model-path: ${HAIR_PHOTO_LENGTH_MODEL_PATH:/opt/heddy/photo-models/selfie.onnx}
   ai:
     # 사용자 사진은 외부 생성형 AI API 로 전송하지 않는다. 로컬 ONNX 모델이 없으면
     # 분석 API 는 임의 점수를 만들지 않고 503 으로 접수를 거부한다.

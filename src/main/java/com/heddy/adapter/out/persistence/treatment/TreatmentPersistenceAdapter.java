@@ -121,7 +121,7 @@ public class TreatmentPersistenceAdapter implements TreatmentRecordRepositoryPor
         }
         // V1 상한은 10건이다. 사진은 점수에 쓰지 않으므로 추가 조회하지 않는다.
         return recordRepository
-                .findTop10ByUserIdOrderByPerformedAtDescRecordIdDesc(userId)
+                .findTop10ByUserIdOrderByPerformedAtDescCreatedAtDescRecordIdDesc(userId)
                 .stream().limit(Math.min(limit, 10))
                 .map(entity -> entity.toDomain(List.of()))
                 .toList();

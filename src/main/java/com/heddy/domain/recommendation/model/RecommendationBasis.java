@@ -11,8 +11,14 @@ public record RecommendationBasis(
         int arCandidateStyleCount,
         StylePreferences stylePreferences,
         CurrentHair currentHair,
-        Integer availableCareTimeMinutes
+        Integer availableCareTimeMinutes,
+        PhotoHairEvidence photoAnalysis
 ) {
+    public RecommendationBasis(TreatmentHistory history, int arCount, StylePreferences preferences,
+            CurrentHair hair, Integer careMinutes) {
+        this(history, arCount, preferences, hair, careMinutes, null);
+    }
+
     public record TreatmentHistory(long count, Integer highestSatisfaction) { }
 
     public record StylePreferences(int preferredCount, int excludedCount) { }

@@ -21,7 +21,7 @@ interface TreatmentRecordJpaRepository extends JpaRepository<TreatmentRecordEnti
     long deleteByRecordId(UUID recordId);
     long deleteAllByUserId(UUID userId);
 
-    List<TreatmentRecordEntity> findTop10ByUserIdOrderByPerformedAtDescRecordIdDesc(UUID userId);
+    List<TreatmentRecordEntity> findTop10ByUserIdOrderByPerformedAtDescCreatedAtDescRecordIdDesc(UUID userId);
 
     long countByUserId(UUID userId);
 

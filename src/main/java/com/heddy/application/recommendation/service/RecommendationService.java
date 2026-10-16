@@ -71,6 +71,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
     private final RuleBasedV1Scorer scorer;
     private final RecommendationDiversifier diversifier;
     private final Clock clock;
+    private final RecommendationPhotoResolver photoResolver;
 
     @Autowired
     public RecommendationService(
@@ -82,12 +83,13 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             HairstyleCatalogRepositoryPort catalogRepositoryPort,
             RecommendationRepositoryPort recommendationRepositoryPort,
             FileRepositoryPort fileRepositoryPort,
-            FileStoragePort fileStoragePort
+            FileStoragePort fileStoragePort,
+            RecommendationPhotoResolver photoResolver
     ) {
         this(accountRepositoryPort, hairProfileRepositoryPort, preferenceRepositoryPort,
                 savedStyleRepositoryPort, treatmentRepositoryPort, catalogRepositoryPort,
                 recommendationRepositoryPort, fileRepositoryPort, fileStoragePort,
-                new RuleBasedV1Scorer(), new RecommendationDiversifier(), Clock.systemUTC());
+                new RuleBasedV1Scorer(), new RecommendationDiversifier(), Clock.systemUTC(), photoResolver);
     }
 
     RecommendationService(
@@ -102,7 +104,8 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             FileStoragePort fileStoragePort,
             RuleBasedV1Scorer scorer,
             RecommendationDiversifier diversifier,
-            Clock clock
+            Clock clock,
+            RecommendationPhotoResolver photoResolver
     ) {
         this.accountRepositoryPort = accountRepositoryPort;
         this.hairProfileRepositoryPort = hairProfileRepositoryPort;
@@ -116,6 +119,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         this.scorer = scorer;
         this.diversifier = diversifier;
         this.clock = clock;
+        this.photoResolver = photoResolver;
     }
 
     @Override
@@ -138,12 +142,17 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         Set<UUID> excluded = preferenceIds(preferences, UserStylePreference.PreferenceType.EXCLUDED);
         Set<UUID> saved = Set.copyOf(savedStyleRepositoryPort.findHairstyleIdsByUserId(userId));
         List<TreatmentRecord> treatments = treatmentRepositoryPort.findRecentByUserId(userId, 10);
+        var photo = photoResolver.resolve(userId, profile, treatments);
+        profile = photo.profile();
+        if (profile == null || profile.hairLength() == null) {
+            throw new RecommendationException(RecommendationError.HAIR_LENGTH_REQUIRED);
+        }
         TreatmentHistorySummary treatmentHistory = treatmentRepositoryPort.summarizeByUserId(userId);
         List<HairstyleCandidate> candidates = catalogRepositoryPort.findEligibleCandidates();
         RecommendationContext context = new RecommendationContext(
                 profile, preferred, excluded, saved, treatments, generatedAt);
 
-        String canonical = canonicalSnapshot(context, candidates, treatmentHistory);
+        String canonical = canonicalSnapshot(context, candidates, treatmentHistory) + "|photo:" + photo.evidence();
         String inputHash = sha256(canonical);
         if (!forceRefresh) {
             RecommendationRun reusable = recommendationRepositoryPort.findActiveByInputHash(
@@ -163,7 +172,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         UUID runId = UUID.randomUUID();
         List<RecommendationItem> items = java.util.stream.IntStream.range(0, selected.size())
                 .mapToObj(index -> toItem(selected.get(index), index + 1, records)).toList();
-        RecommendationBasis basis = recommendationBasis(context, treatmentHistory, selected);
+        RecommendationBasis basis = recommendationBasis(context, treatmentHistory, selected, photo.evidence());
         RecommendationRun run = new RecommendationRun(runId, userId,
                 RecommendationRun.Strategy.RULE_BASED_V1, RecommendationRun.Status.ACTIVE,
                 inputHash, context.coldStart(), basis, generatedAt, items);
@@ -212,7 +221,8 @@ public class RecommendationService implements GenerateRecommendationUseCase,
     private RecommendationBasis recommendationBasis(
             RecommendationContext context,
             TreatmentHistorySummary treatmentHistory,
-            List<ScoredRecommendation> selected
+            List<ScoredRecommendation> selected,
+            com.heddy.domain.recommendation.model.PhotoHairEvidence photoEvidence
     ) {
         HairProfile profile = context.hairProfile();
         RecommendationBasis.CurrentHair currentHair = profile == null ? null
@@ -226,7 +236,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
                 new RecommendationBasis.StylePreferences(
                         context.preferredTagIds().size(), context.excludedTagIds().size()),
                 currentHair,
-                profile == null ? null : profile.availableCareTimeMinutes());
+                profile == null ? null : profile.availableCareTimeMinutes(), photoEvidence);
     }
 
     private RecommendationItem toItem(
@@ -257,7 +267,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             List<HairstyleCandidate> candidates,
             TreatmentHistorySummary treatmentHistory
     ) {
-        StringBuilder value = new StringBuilder("RULE_BASED_V1:MIN_LENGTH_V2|");
+        StringBuilder value = new StringBuilder("RULE_BASED_V1:PHOTO_LENGTH_V3|");
         HairProfile profile = context.hairProfile();
         if (profile != null) {
             value.append(profile.hairLength()).append('|').append(profile.hairType()).append('|')

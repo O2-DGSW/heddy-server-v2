@@ -1,0 +1,9 @@
+MediaPipe Selfie Multiclass (256 x 256), Google, Apache License 2.0.
+Upstream: https://developers.google.com/edge/mediapipe/solutions/vision/image_segmenter
+Source model: https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/1/selfie_multiclass_256x256.tflite
+ONNX conversion by senty-au (Apache-2.0 model card):
+https://huggingface.co/senty-au/selfie_multiclass_256x256-ONNX/tree/6db8421a7150ac20558f2c24675078eb3a1a04d0
+Pinned model SHA256: 35ec1ecd9ee7f85073c99c00020b7f6751b69506eeacf683bc8665f6117f85b0
+The unmodified ONNX conversion is distributed with this container.
+License: https://www.apache.org/licenses/LICENSE-2.0
+Heddy adds a conservative visible hair-length heuristic; this is not a trained hair-length or gender classifier.

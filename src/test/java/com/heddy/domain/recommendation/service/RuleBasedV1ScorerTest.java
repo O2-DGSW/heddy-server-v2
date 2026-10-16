@@ -13,6 +13,8 @@ import com.heddy.domain.recommendation.model.ScoredRecommendation;
 import com.heddy.domain.treatment.model.ServiceType;
 import com.heddy.domain.treatment.model.TreatmentRecord;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -108,6 +110,61 @@ class RuleBasedV1ScorerTest {
         assertThat(scorer.score(longOnly, context(
                 profile(HairLength.BELOW_CHEST, HairType.WAVY, HairThickness.NORMAL,
                         HairCondition.DAMAGED, 10), Set.of(), Set.of(), Set.of(), List.of()))).isEmpty();
+    }
+
+    @Test
+    void highHistoryAndPreferenceScoresCannotOverrideMissingMinimumLength() {
+        UUID tag = UUID.randomUUID();
+        HairstyleCandidate medium = candidate(Set.of(ServiceType.CUT, ServiceType.PERM), Map.of(tag, "선호"));
+        RecommendationContext shortHair = context(
+                profile(HairLength.SHORT, HairType.WAVY, HairThickness.NORMAL, HairCondition.HEALTHY, 15),
+                Set.of(tag), Set.of(), Set.of(medium.hairstyleId()),
+                List.of(treatment(Set.of(ServiceType.CUT, ServiceType.PERM), 5, 0)));
+
+        assertThat(scorer.score(medium, shortHair)).isEmpty();
+    }
+
+    @ParameterizedTest
+    @EnumSource(HairLength.class)
+    void inferredMinimumAllowsOnlySufficientLength(HairLength length) {
+        HairstyleCandidate medium = withLengths(null, Set.of(HairLength.BELOW_CHIN, HairLength.BELOW_SHOULDER));
+        var result = scorer.score(medium, context(profile(length, null, null, null, null),
+                Set.of(), Set.of(), Set.of(), List.of()));
+
+        assertThat(result.isPresent()).isEqualTo(length != HairLength.SHORT);
+    }
+
+    @Test
+    void stricterOfExplicitAndCompatibleMinimumWins() {
+        var chinLength = context(profile(HairLength.BELOW_CHIN, null, null, null, null),
+                Set.of(), Set.of(), Set.of(), List.of());
+        assertThat(scorer.score(withLengths(HairLength.BELOW_CHIN,
+                Set.of(HairLength.BELOW_SHOULDER, HairLength.BELOW_CHEST)), chinLength)).isEmpty();
+        assertThat(scorer.score(withLengths(HairLength.BELOW_SHOULDER,
+                Set.of(HairLength.SHORT, HairLength.BELOW_CHIN)), chinLength)).isEmpty();
+    }
+
+    @Test
+    void unknownCatalogLengthIsNotAssumedSuitableForKnownUserLength() {
+        var shortHair = context(profile(HairLength.SHORT, null, null, null, null),
+                Set.of(), Set.of(), Set.of(), List.of());
+        assertThat(scorer.score(withLengths(null, Set.of()), shortHair)).isEmpty();
+        assertThat(scorer.score(withLengths(HairLength.SHORT, Set.of()), shortHair)).isPresent();
+        assertThat(scorer.score(withLengths(null, Set.of()),
+                context(null, Set.of(), Set.of(), Set.of(), List.of()))).isPresent();
+    }
+
+    @Test
+    void longerHairCanStillChooseShortCut() {
+        assertThat(scorer.score(withLengths(null, Set.of(HairLength.SHORT)),
+                context(profile(HairLength.BELOW_CHEST, null, null, null, null),
+                        Set.of(), Set.of(), Set.of(), List.of()))).isPresent();
+    }
+
+    private HairstyleCandidate withLengths(HairLength minimum, Set<HairLength> lengths) {
+        return new HairstyleCandidate(UUID.randomUUID(), "style", "CUT", UUID.randomUUID(),
+                "NONE", true, "1", Set.of(), lengths, Set.of(), Set.of(), Set.of(), Set.of(),
+                minimum, 0, ManagementDifficulty.LOW, ChemicalStressLevel.LOW, 1, "1", Map.of());
     }
 
     @Test

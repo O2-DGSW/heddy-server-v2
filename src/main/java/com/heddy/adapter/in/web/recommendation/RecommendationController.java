@@ -44,7 +44,9 @@ public class RecommendationController {
     }
 
     @GetMapping("/recommendations/latest")
-    @Operation(summary = "최신 추천 조회")
+    @Operation(summary = "최신 추천 조회",
+            description = "기존 추천이 있으면 현재 프로필·시술기록·카탈로그·알고리즘 기준으로 검증하고 "
+                    + "변경된 결과는 자동 재생성합니다. 최초 추천이 없으면 404를 반환합니다.")
     public ApiResponse<RecommendationResponse> latest(
             @AuthenticationPrincipal UUID userId,
             HttpServletRequest servletRequest

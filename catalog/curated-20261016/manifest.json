@@ -1880,22 +1880,22 @@
     },
     {
       "replaces_number": 38,
-      "hairstyle_id": "ce25d1de-73ad-573f-910b-af326e18de7b",
-      "file_id": "89853fad-61cb-5290-b48d-2469380fa554",
-      "upload_id": "1d0abfbe-0f5a-5800-a6fd-e1effa547825",
+      "hairstyle_id": "12a552fe-4ad8-5ee3-8a85-0795f3b27fb4",
+      "file_id": "c269cd83-125a-500e-bbe4-d44dfca09429",
+      "upload_id": "ce7b3303-dd4e-51a8-b77c-55c68dc52db1",
       "style_name": "이어턱 미디엄컷",
       "category": "MEDIUM",
       "style_presentation": "MASCULINE",
-      "image_file": "images/7653832.jpg",
-      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/89853fad-61cb-5290-b48d-2469380fa554.jpg",
-      "sha256": "543ffee35db54cc6f5429217950d7080899b32d6a9ec39cb28d207ab94d800d2",
-      "file_size": 194700,
+      "image_file": "images/31589335.jpg",
+      "object_key": "HAIRSTYLE_THUMBNAIL/curated-20261016/c269cd83-125a-500e-bbe4-d44dfca09429.jpg",
+      "sha256": "f8733ea98f929bf3385e9ea205d3793e640808340e68f33374ed1fca6d1dabfd",
+      "file_size": 140293,
       "width": 1200,
-      "height": 1800,
-      "source_photo_id": "7653832",
-      "source_url": "https://www.pexels.com/photo/close-up-photo-of-a-man-wearing-earrings-7653832/",
-      "download_url": "https://images.pexels.com/photos/7653832/pexels-photo-7653832.jpeg?auto=compress&w=1200",
-      "photographer": "cottonbro studio",
+      "height": 1798,
+      "source_photo_id": "31589335",
+      "source_url": "https://www.pexels.com/photo/portrait-of-male-model-with-striped-sweater-31589335/",
+      "download_url": "https://images.pexels.com/photos/31589335/pexels-photo-31589335/free-photo-of-portrait-of-male-model-with-striped-sweater.jpeg?auto=compress&w=1200",
+      "photographer": "Tim Diercks",
       "license": "Pexels License",
       "license_url": "https://www.pexels.com/license/",
       "terms_url": "https://www.pexels.com/terms-of-service/",
@@ -1935,7 +1935,7 @@
       "editorial_priority": 50,
       "tags": [
         "리프컷",
-        "사이드파트"
+        "센터파트"
       ]
     },
     {
@@ -3959,5 +3959,5 @@
       ]
     }
   ],
-  "sql_sha256": "3ab5c13b953e052fe0557a4a825f3c8b83673e502f037b7945f7d5005719bc48"
+  "sql_sha256": "321036801b6c38b95920fb3ce484e453114edc374d921a69f1135b3f80cb9953"
 }

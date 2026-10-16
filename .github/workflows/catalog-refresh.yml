@@ -1,0 +1,84 @@
+name: Refresh hairstyle catalogue
+
+on:
+  pull_request:
+    paths:
+      - 'catalog/**'
+      - 'scripts/catalog*.py'
+      - '.github/workflows/catalog-refresh.yml'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Upload the reviewed images and activate the catalogue in production
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: catalogue_test
+          POSTGRES_PASSWORD: disposable-test-password
+          POSTGRES_DB: catalogue_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U catalogue_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate reviewed images and classifications
+        run: python scripts/catalog.py catalog/curated-20261016 --fetch-images
+      - name: Test transaction and retry against current schema
+        env:
+          CATALOG_TEST_DATABASE_URL: postgresql://catalogue_test:disposable-test-password@localhost:5432/catalogue_test
+        run: python scripts/catalog_test.py catalog/curated-20261016
+
+  apply:
+    if: github.event_name == 'workflow_dispatch' && inputs.apply && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Fetch and verify the reviewed original images
+        run: python scripts/catalog.py catalog/curated-20261016 --fetch-images
+      - name: Bundle compatible S3 SDK
+        run: python -m pip install --disable-pip-version-check --no-compile --target /tmp/catalogue-vendor boto3==1.40.0
+      - name: Prepare SSH
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_PORT: ${{ secrets.EC2_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/catalogue_key
+          chmod 600 ~/.ssh/catalogue_key
+          ssh-keyscan -p "$EC2_PORT" "$EC2_HOST" >> ~/.ssh/known_hosts
+      - name: Upload verified release and apply atomically
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_PORT: ${{ secrets.EC2_PORT }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          remote_dir="/tmp/heddy-catalog-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          tar -czf /tmp/catalogue.tar.gz -C catalog curated-20261016 -C "$GITHUB_WORKSPACE/scripts" catalog.py -C /tmp catalogue-vendor
+          ssh -i ~/.ssh/catalogue_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" "mkdir -m 700 '$remote_dir'"
+          scp -i ~/.ssh/catalogue_key -P "$EC2_PORT" /tmp/catalogue.tar.gz "$EC2_USER@$EC2_HOST:$remote_dir/release.tar.gz"
+          ssh -i ~/.ssh/catalogue_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" "set -eu; cd '$remote_dir'; tar -xzf release.tar.gz; PYTHONPATH='$remote_dir/catalogue-vendor' python3 catalog.py curated-20261016 --apply"

@@ -33,7 +33,8 @@ public record RecommendationResponse(
             @JsonProperty("ar_candidate_style_count") int arCandidateStyleCount,
             @JsonProperty("style_preferences") StylePreferences stylePreferences,
             @JsonProperty("current_hair") CurrentHair currentHair,
-            @JsonProperty("available_care_time_minutes") Integer availableCareTimeMinutes
+            @JsonProperty("available_care_time_minutes") Integer availableCareTimeMinutes,
+            @JsonProperty("photo_analysis") PhotoAnalysis photoAnalysis
     ) {
         static Basis from(RecommendationBasis basis) {
             if (basis == null) {
@@ -45,7 +46,18 @@ public record RecommendationResponse(
                     basis.arCandidateStyleCount(),
                     new StylePreferences(basis.stylePreferences().preferredCount(),
                             basis.stylePreferences().excludedCount()),
-                    CurrentHair.from(basis.currentHair()), basis.availableCareTimeMinutes());
+                    CurrentHair.from(basis.currentHair()), basis.availableCareTimeMinutes(),
+                    PhotoAnalysis.from(basis.photoAnalysis()));
+        }
+    }
+
+    public record PhotoAnalysis(@JsonProperty("file_id") UUID fileId,
+            @JsonProperty("model_version") String modelVersion, String status,
+            @JsonProperty("observed_length") String observedLength, boolean applied) {
+        static PhotoAnalysis from(com.heddy.domain.recommendation.model.PhotoHairEvidence evidence) {
+            return evidence == null ? null : new PhotoAnalysis(evidence.fileId(), evidence.modelVersion(),
+                    evidence.status(), evidence.observedLength() == null ? null : evidence.observedLength().name(),
+                    evidence.applied());
         }
     }
 

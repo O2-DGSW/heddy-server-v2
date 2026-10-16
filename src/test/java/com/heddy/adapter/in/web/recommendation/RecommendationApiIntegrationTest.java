@@ -51,6 +51,9 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
     @Autowired JdbcTemplate jdbcTemplate;
     @Autowired EntityManager entityManager;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    com.heddy.domain.recommendation.port.out.PhotoHairLengthPort photoAnalyzer;
+
     private UUID treatmentRecordId;
 
     @BeforeEach
@@ -267,6 +270,84 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
                 SET compatible_hair_lengths = '["SHORT", "BELOW_CHIN"]'::jsonb
                 WHERE hairstyle_id = ?
                 """, UUID.fromString(id));
+    }
+
+    @Test
+    void auditedCatalogMigrationRemovesImpossibleLengthsAndAmbiguousReferences() {
+        insertStyle("94000000-0000-4000-8000-000000000004", "클래식 보브", "BOB", "NONE", 1, false);
+        insertStyle("94000000-0000-4000-8000-000000000005", "컬리 스타일 08", "CURLY", "NONE", 1, false);
+        insertStyle("94000000-0000-4000-8000-000000000006", "숏 스타일 05", "SHORT", "NONE", 1, false);
+        jdbcTemplate.update("UPDATE hairstyle_recommendation_profiles SET compatible_hair_lengths = '[\"SHORT\",\"BELOW_CHIN\",\"BELOW_SHOULDER\"]'::jsonb");
+        jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<Void>) connection -> {
+            org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(connection,
+                    new org.springframework.core.io.ClassPathResource("db/migration/V33__correct_audited_short_catalog.sql"));
+            return null;
+        });
+        assertThat(jdbcTemplate.queryForObject("SELECT minimum_hair_length FROM hairstyle_recommendation_profiles WHERE hairstyle_id = '94000000-0000-4000-8000-000000000004'", String.class))
+                .isEqualTo("BELOW_CHIN");
+        assertThat(jdbcTemplate.queryForObject("SELECT compatible_hair_lengths::text FROM hairstyle_recommendation_profiles WHERE hairstyle_id = '94000000-0000-4000-8000-000000000004'", String.class))
+                .doesNotContain("SHORT");
+        assertThat(jdbcTemplate.queryForObject("SELECT minimum_hair_length FROM hairstyle_recommendation_profiles WHERE hairstyle_id = '94000000-0000-4000-8000-000000000005'", String.class))
+                .isEqualTo("BELOW_SHOULDER");
+        assertThat(jdbcTemplate.queryForObject("SELECT active FROM hairstyle_assets WHERE hairstyle_id = '94000000-0000-4000-8000-000000000006'", Boolean.class)).isFalse();
+    }
+
+    @Test
+    void missingLengthDoesNotReturnArbitraryLongHair() throws Exception {
+        mockMvc.perform(post("/recommendations/generate").with(authentication(auth(OTHER_USER_ID)))
+                .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.code").value("RECOMMENDATION_HAIR_LENGTH_REQUIRED"));
+    }
+
+    @Test
+    void newPhotoChangesLatestRecommendationAndPersistsAnalysisEvidence() throws Exception {
+        String previous = generateRun();
+        insertStyle("94000000-0000-4000-8000-000000000004", "짧은 테스트 컷", "SHORT", "NONE", 1, false);
+        jdbcTemplate.update("UPDATE hairstyle_recommendation_profiles SET compatible_hair_lengths = '[\"SHORT\"]'::jsonb WHERE hairstyle_id = ?",
+                UUID.fromString("94000000-0000-4000-8000-000000000004"));
+        UUID fileId = attachAfterPhoto();
+        org.mockito.Mockito.when(photoAnalyzer.analyze(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(i -> new com.heddy.domain.recommendation.model.PhotoHairEvidence(
+                        ((com.heddy.domain.file.model.StoredFile) i.getArgument(0)).fileId(), "test-model", "ASSESSED",
+                        com.heddy.domain.account.model.HairProfile.HairLength.SHORT, false));
+        entityManager.clear();
+        String body = mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].hairstyle.style_name").value("짧은 테스트 컷"))
+                .andExpect(jsonPath("$.data.recommendation_basis.photo_analysis.file_id").value(fileId.toString()))
+                .andExpect(jsonPath("$.data.recommendation_basis.photo_analysis.applied").value(true))
+                .andExpect(jsonPath("$.data.recommendation_basis.current_hair.hair_length").value("SHORT"))
+                .andReturn().getResponse().getContentAsString();
+        String updated = runId(body);
+        assertThat(updated).isNotEqualTo(previous);
+        entityManager.clear();
+        assertThat(latestRun()).isEqualTo(updated);
+        assertThat(jdbcTemplate.queryForObject("SELECT hair_length FROM hair_profiles WHERE user_id = ?", String.class, USER_ID))
+                .isEqualTo("BELOW_SHOULDER");
+        // Replacing the file behind the same photo ID must also invalidate a cached run.
+        UUID replacement = attachAfterPhoto();
+        jdbcTemplate.update("DELETE FROM treatment_record_photos WHERE record_id = ? AND file_id = ?", treatmentRecordId, replacement);
+        jdbcTemplate.update("UPDATE treatment_record_photos SET file_id = ? WHERE record_id = ? AND file_id = ?",
+                replacement, treatmentRecordId, fileId);
+        entityManager.clear();
+        assertThat(latestRun()).isNotEqualTo(updated);
+    }
+
+    private UUID attachAfterPhoto() {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update("UPDATE hair_profiles SET updated_at = now() - interval '2 days' WHERE user_id = ?", USER_ID);
+        jdbcTemplate.update("""
+                INSERT INTO files (file_id, upload_id, user_id, purpose, status, object_key,
+                    content_type, file_name, file_size, expires_at)
+                VALUES (?, ?, ?, 'TREATMENT_PHOTO', 'READY', ?, 'image/jpeg', 'after.jpg', 1024, now() + interval '1 day')
+                """, id, UUID.randomUUID(), USER_ID, "test/" + id);
+        jdbcTemplate.update("""
+                INSERT INTO treatment_record_photos (photo_id, record_id, file_id, image_type, sort_order)
+                VALUES (?, ?, ?, 'AFTER', 0)
+                """, UUID.randomUUID(), treatmentRecordId, id);
+        return id;
     }
 
     private String generateRun() throws Exception {

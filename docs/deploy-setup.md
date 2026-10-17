@@ -81,6 +81,11 @@ HAIR_ANALYSIS_WORKER_THREADS=1
   `scripts/check-hair-analysis-model.sh`를 실행한다. 분석이 켜졌는데 파일이 없거나 비어 있거나
   읽을 수 없으면 기존 컨테이너를 유지하고 배포를 실패시킨다. 비활성화 상태는 503 경고를 남긴다.
   이 검사는 파일 접근만 검증하므로 ONNX 호환성과 실제 사진 추론은 별도로 확인해야 한다.
+- 작은 호스트에서 분석 실행은 엔진 단위로 직렬화하고 ONNX 내부 스레드는 1개로 제한한다.
+  CPU arena와 memory pattern 캐시를 끄므로 추론 버퍼를 계속 보유하지 않는다.
+  512px 입력 해상도와 기존 지표 계산식은 유지한다.
+- 공개 검증 모델의 정확한 버전·체크섬·사용 제한은 `docs/hair-analysis-model-NOTICE.txt`에 기록한다.
+  모델을 배치하는 경우 해당 NOTICE도 모델 파일과 함께 보관한다.
 - 모델 배치 후 `HAIR_ANALYSIS_ENABLED`를 바꿀 때는 GitHub Actions의 `PROD_ENV`에도 반영한다.
   서버 `.env`만 수정하면 다음 배포에서 다시 덮어써진다.
 - 인스턴스 역할에는 기존 업로드 권한과 함께 시술 사진 객체에 대한 `s3:GetObject`가 필요하다.

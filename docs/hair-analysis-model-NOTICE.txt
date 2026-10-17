@@ -1,0 +1,9 @@
+Face parsing model: jonathandinu/face-parsing (SegFormer B5, CelebAMask-HQ).
+Upstream: https://huggingface.co/jonathandinu/face-parsing
+Revision: 758b82e15a0178c9db39c1ff666a8b56e3a550c8
+File: onnx/model_quantized.onnx (unmodified)
+SHA256: 5bab9bfb3cb979f3098ac3b934b1641dbf87f835e0b03c2ca6d88dcf18c83d27
+Model-card license: non-commercial research and educational purposes.
+The weights are not stored in Git or bundled into the application image.
+Heddy computes visual metrics from the model's segmentation output; the model
+is not a trained classifier of treatment quality or physical hair damage.

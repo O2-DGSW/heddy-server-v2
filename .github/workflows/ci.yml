@@ -54,6 +54,9 @@ jobs:
       - name: Test
         run: ./gradlew test
 
+      - name: Verify deployment secret persistence
+        run: python3 scripts/deployment_bundle_test.py
+
       # build 는 test 를 포함하지만 앞 단계에서 이미 실행돼 UP-TO-DATE 로 넘어간다.
       # 단계를 나눠 둬야 테스트 실패와 컴파일·패키징 실패가 로그에서 구분된다.
       - name: Build

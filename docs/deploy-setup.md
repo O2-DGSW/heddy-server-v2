@@ -2,11 +2,11 @@
 
 `deploy.yml` 는 `main` 푸시와 수동 실행(`workflow_dispatch`)으로 동작한다.
 워크플로가 서버에 접속하려면 아래 시크릿이 먼저 등록돼 있어야 한다.
-**시크릿 등록과 v1 폐기는 사람이 직접 실행한다.**
+시크릿 등록은 저장소 관리 권한으로 수행한다. v1 폐기는 별도 수동 작업이다.
 
 ## 1. 저장소 시크릿 등록 (수동)
 
-레포 시크릿 5종. 로컬에서 한 번만 실행하면 된다.
+레포 시크릿 6종. 로컬에서 한 번만 등록하면 이후 배포에 재사용된다.
 
 ```bash
 gh secret set EC2_HOST   --body "<EC2 퍼블릭 IP 또는 도메인>"
@@ -17,6 +17,12 @@ gh secret set PROD_ENV   --body "$(cat ./prod.env)"             # 아래 2번 �
 ```
 
 - `EC2_SSH_KEY` 는 EC2 인스턴스에 SSH 로 접속 가능한 키의 **전체 내용**(헤더 포함)이어야 한다.
+- `OPENAI_API_KEY`는 별도 Actions Secret으로 등록한다. 키를 커밋하거나 명령줄 인자로 넘기지 않는다.
+  `scripts/create-deployment-bundle.py`가 `PROD_ENV`의 이전 키를 제거하고 별도 시크릿을 넣으므로,
+  매 배포에서 서버 `.env`가 교체되어도 유지된다. 키 교체는 이 시크릿만 갱신하면 된다.
+  시크릿 누락·잘못된 형식은 기존 서버를 변경하기 전 번들 생성 단계에서 차단한다.
+  CI/Deploy 모두 반복 배포·키 교체·누락 시 보존 테스트를 실행한다.
+  배포 전후 컨테이너에서 키 존재 여부를 확인하고, 값은 로그에 출력하지 않는다.
 - 워크플로가 쓰는 배포 디렉터리는 `/home/<EC2_USER>/heddy-server-v2` 다. v1 의 디렉터리와 섞이지 않게 별도 경로를 쓴다.
 
 ## 2. `PROD_ENV` 필수 값 체크리스트 (10종 + S3 자격증명 페어)
@@ -57,6 +63,41 @@ SHARE_PUBLIC_BASE_URL=https://heddy.site/s  # 선택: 미지정 시에도 이 �
 
 기능별 선택 변수(소셜 로그인 `KAKAO_APP_ID` · `GOOGLE_CLIENT_ID` · `APPLE_CLIENT_ID`,
 SMS `SOLAPI_*` 등)는 해당 기능을 켤 때 같은 파일에 추가하면 `.env` 째로 컨테이너에 전달된다.
+
+### 추천 설명 AI
+
+Spring에서 OpenAI Responses API를 직접 호출한다. 추천 점수·순위는 기존 규칙으로 결정하고,
+선택된 최대 3개 후보의 근거만 한 번에 보내 한국어 설명을 생성한다.
+이름·연락처·사용자/시술 UUID·사진·메모는 보내지 않는다. `store=false`를 사용한다.
+
+| 설정 | 기본값 | 용도 |
+|---|---|---|
+| `OPENAI_API_KEY` | 없음 | 별도 GitHub Actions Secret, 운영 필수 |
+| `RECOMMENDATION_AI_ENABLED` | `true` | `PROD_ENV`에서 `false`로 끌 수 있음 |
+| `OPENAI_RECOMMENDATION_MODEL` | `gpt-4.1-nano-2025-04-14` | 추론 단계 없이 짧은 설명을 생성하는 저비용 모델 |
+| `OPENAI_RECOMMENDATION_TIMEOUT_MS` | `8000` | 전체 호출 제한 시간, 최대 15000ms |
+
+- 출력 상한은 요청당 384토큰이다. 호출을 자동 재시도하지 않는다.
+- 키 누락(로컬), 시간 초과, 429, API 오류, 거절·불완전·잘못된 JSON 응답은 기본 문구로 대체한다.
+- 설명은 `recommendation_items.reasons_json`에 저장한다. 조회/동일 입력 재사용에는 추가 호출이 없다.
+  강제 새로고침에는 다시 호출하며, 모델·프롬프트 버전 변경도 재생성을 유발한다.
+- 화면은 `items[].explanation`을 표시하면 된다. 기존 클라이언트를 위해
+  `items[].reasons[0].message`에도 같은 설명을 반환한다. 클라이언트가 `code`만 보고 자체 문구를
+  만드는 경우 프론트 수정이 필요하다.
+- 생성 실패 시에도 해당 실행의 기본 문구는 저장·재사용된다. 설정 복구 후 강제 새로고침으로 다시 생성한다.
+- AI가 문장화해도 부족한 추천 메타데이터가 보완되지는 않는다. 시술 종류 일치는 세부 스타일 유사성의 근거가 아니다.
+- `429 credit_balance_exhausted`/`insufficient_quota`는 일시적인 속도 제한과 다르다.
+  [API 결제](https://platform.openai.com/settings/organization/billing)에서 잔액을 확인하고 충전한 후 다시 생성한다.
+  ChatGPT 구독과 API 결제는 별개다. 간단한 실험 모델로 `gpt-6-luna`도 선택할 수 있지만,
+  모델을 바꾸는 것만으로 크레딧 부족이 해결되지는 않는다.
+
+로컬 키는 Git에서 제외된 `.env.local`의 `OPENAI_API_KEY`에 저장한다. Spring이 자동으로 읽으며
+Docker 빌드 컨텍스트에서는 제외한다. 테스트 프로필은 AI를 끈다.
+
+모델/요금 근거: [GPT-4.1 nano](https://developers.openai.com/api/docs/models/gpt-4.1-nano),
+[OpenAI 요금](https://developers.openai.com/api/docs/pricing). 2026-10-17 확인 기준 표준 요금은
+입력 100만 토큰당 $0.10, 출력 $0.40이다. 추론 토큰이 없어 설명 생성의 토큰 사용량을 제한하기 쉽다.
+예를 들어 입력 1,000토큰 + 출력 384토큰이면 요청당 약 $0.000254이며 실제 비용은 입력량에 따라 다르다.
 
 헤어 분석을 켤 때는 아래 값도 추가한다. 모델 파일은 이미지에 넣지 않고 EC2의
 `/home/ubuntu/heddy-models`에서 컨테이너로 읽기 전용 마운트한다.

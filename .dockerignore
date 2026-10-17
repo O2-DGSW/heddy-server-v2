@@ -10,4 +10,7 @@ build/libs/*plain.jar
 *.iml
 .DS_Store
 .env
+.env.*
+.env-*
+deploy-bundle
 docker-compose.yml

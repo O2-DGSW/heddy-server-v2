@@ -1,7 +1,7 @@
 package com.heddy.adapter.out.ai;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.heddy.domain.analysis.model.ConfidenceGrade;
 import com.heddy.domain.analysis.model.HairAnalysisOutcome;
 import com.heddy.domain.analysis.model.HairAnalysisPrediction;
@@ -366,7 +366,7 @@ final class HairMetricCalculator {
     private String json(Map<String, Object> value) {
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalStateException("분석 근거를 JSON으로 만들 수 없습니다", exception);
         }
     }

@@ -1,6 +1,6 @@
 package com.heddy.adapter.out.ai;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.heddy.domain.analysis.model.HairAnalysisOutcome;
 import com.heddy.domain.analysis.model.MetricType;
 import org.junit.jupiter.api.Test;

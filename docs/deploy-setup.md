@@ -67,9 +67,10 @@ HAIR_ANALYSIS_MODEL_HOST_DIR=/home/ubuntu/heddy-models
 HAIR_ANALYSIS_MODEL_PATH=/opt/heddy/models/face-parsing.onnx
 HAIR_ANALYSIS_MODEL_VERSION=<학습 데이터와 가중치를 식별하는 버전>
 HAIR_ANALYSIS_WORKER_THREADS=1
+HAIR_ANALYSIS_INPUT_SIZE=320
 ```
 
-- ONNX 입력은 RGB `float32 [1,3,512,512]`, 출력은 19개 이상의 클래스 logits
+- ONNX 입력은 RGB `float32 [1,3,S,S]`(기본 S=512, 소형 운영 호스트 S=320), 출력은 19개 이상의 클래스 logits
   `[1,C,H,W]`여야 한다. 사용하는 클래스 번호는 skin=1, nose=2, left-eye=4,
   right-eye=5, hair=13이다.
 - 모델 파일이 없거나 열리지 않으면 앱을 분석 활성 상태로 기동하지 않는다. 기능을 끈 환경의
@@ -83,7 +84,11 @@ HAIR_ANALYSIS_WORKER_THREADS=1
   이 검사는 파일 접근만 검증하므로 ONNX 호환성과 실제 사진 추론은 별도로 확인해야 한다.
 - 작은 호스트에서 분석 실행은 엔진 단위로 직렬화하고 ONNX 내부 스레드는 1개로 제한한다.
   CPU arena와 memory pattern 캐시를 끄므로 추론 버퍼를 계속 보유하지 않는다.
-  512px 입력 해상도와 기존 지표 계산식은 유지한다.
+  기본 512px와 기존 지표 계산식은 유지한다. 2GB 운영 서버는 실제 추론 검증을 거친
+  `HAIR_ANALYSIS_INPUT_SIZE=320`을 사용한다. 작은 입력에서는 눈 등 세부 영역을 찾지 못해
+  재촬영 안내가 늘 수 있으므로 입력 크기를 모델 버전에도 포함한다.
+- 작은 운영 호스트의 JVM 힙은 `JAVA_TOOL_OPTIONS=-Xmx256m -Xms64m`로 제한한다.
+  모델 추론은 네이티브 메모리도 쓰므로 JVM 힙 외 여유가 필요하다. 호스트 swap 설정은 변경하지 않는다.
 - 공개 검증 모델의 정확한 버전·체크섬·사용 제한은 `docs/hair-analysis-model-NOTICE.txt`에 기록한다.
   모델을 배치하는 경우 해당 NOTICE도 모델 파일과 함께 보관한다.
 - 모델 배치 후 `HAIR_ANALYSIS_ENABLED`를 바꿀 때는 GitHub Actions의 `PROD_ENV`에도 반영한다.

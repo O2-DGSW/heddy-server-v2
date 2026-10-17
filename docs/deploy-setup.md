@@ -91,7 +91,9 @@ HAIR_ANALYSIS_INPUT_SIZE=320
   모델 추론은 네이티브 메모리도 쓰므로 JVM 힙 외 여유가 필요하다. 호스트 swap 설정은 변경하지 않는다.
 - 공개 검증 모델의 정확한 버전·체크섬·사용 제한은 `docs/hair-analysis-model-NOTICE.txt`에 기록한다.
   모델을 배치하는 경우 해당 NOTICE도 모델 파일과 함께 보관한다.
-- 모델 배치 후 `HAIR_ANALYSIS_ENABLED`를 바꿀 때는 GitHub Actions의 `PROD_ENV`에도 반영한다.
+- 현재 운영 분석 설정은 `config/hair-analysis.prod.env`에서 관리하며 배포 시 `PROD_ENV` 뒤에
+  적용한다(동일 키는 이 파일의 값이 우선). 기존 시크릿은 변경하거나 다시 읽어 올 필요가 없다.
+  분석을 끄거나 입력 크기를 바꿀 때는 이 파일을 수정하고 Actions로 배포한다.
   서버 `.env`만 수정하면 다음 배포에서 다시 덮어써진다.
 - 인스턴스 역할에는 기존 업로드 권한과 함께 시술 사진 객체에 대한 `s3:GetObject`가 필요하다.
   서버가 분석 시 S3 원본을 직접 읽으며 Presigned URL을 외부 AI 서비스에 전달하지 않는다.

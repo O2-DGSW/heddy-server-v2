@@ -99,6 +99,8 @@ jobs:
           cp docker-compose.prod.yml deploy-bundle/docker-compose.yml
           cp scripts/check-hair-analysis-model.sh deploy-bundle/check-hair-analysis-model.sh
           printf '%s\n' "$PROD_ENV" > deploy-bundle/.env
+          # Non-secret analysis settings are versioned; existing secrets stay in GitHub.
+          cat config/hair-analysis.prod.env >> deploy-bundle/.env
 
       - name: Upload compose and environment
         env:

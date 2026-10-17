@@ -4,7 +4,7 @@ import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.heddy.domain.analysis.model.HairAnalysisOutcome;
 import com.heddy.domain.analysis.port.out.HairAnalysisEnginePort;
 import jakarta.annotation.PreDestroy;

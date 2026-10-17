@@ -23,6 +23,7 @@ AGENTS.md
 .env
 .env.*
 .env-*
+/deploy-bundle/
 !.env.example
 .DS_Store
 

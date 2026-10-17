@@ -25,6 +25,7 @@ import com.heddy.domain.recommendation.port.in.GetRecommendationUseCase;
 import com.heddy.domain.recommendation.port.in.RecommendationResult;
 import com.heddy.domain.recommendation.port.out.HairstyleCatalogRepositoryPort;
 import com.heddy.domain.recommendation.port.out.RecommendationRepositoryPort;
+import com.heddy.domain.recommendation.port.out.RecommendationExplanationPort;
 import com.heddy.domain.recommendation.service.RecommendationDiversifier;
 import com.heddy.domain.recommendation.service.RuleBasedV1Scorer;
 import com.heddy.domain.style.model.UserStylePreference;
@@ -68,6 +69,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
     private final RecommendationRepositoryPort recommendationRepositoryPort;
     private final FileRepositoryPort fileRepositoryPort;
     private final FileStoragePort fileStoragePort;
+    private final RecommendationExplanationPort explanationPort;
     private final RuleBasedV1Scorer scorer;
     private final RecommendationDiversifier diversifier;
     private final Clock clock;
@@ -84,11 +86,12 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             RecommendationRepositoryPort recommendationRepositoryPort,
             FileRepositoryPort fileRepositoryPort,
             FileStoragePort fileStoragePort,
+            RecommendationExplanationPort explanationPort,
             RecommendationPhotoResolver photoResolver
     ) {
         this(accountRepositoryPort, hairProfileRepositoryPort, preferenceRepositoryPort,
                 savedStyleRepositoryPort, treatmentRepositoryPort, catalogRepositoryPort,
-                recommendationRepositoryPort, fileRepositoryPort, fileStoragePort,
+                recommendationRepositoryPort, fileRepositoryPort, fileStoragePort, explanationPort,
                 new RuleBasedV1Scorer(), new RecommendationDiversifier(), Clock.systemUTC(), photoResolver);
     }
 
@@ -102,6 +105,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             RecommendationRepositoryPort recommendationRepositoryPort,
             FileRepositoryPort fileRepositoryPort,
             FileStoragePort fileStoragePort,
+            RecommendationExplanationPort explanationPort,
             RuleBasedV1Scorer scorer,
             RecommendationDiversifier diversifier,
             Clock clock,
@@ -116,6 +120,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         this.recommendationRepositoryPort = recommendationRepositoryPort;
         this.fileRepositoryPort = fileRepositoryPort;
         this.fileStoragePort = fileStoragePort;
+        this.explanationPort = explanationPort;
         this.scorer = scorer;
         this.diversifier = diversifier;
         this.clock = clock;
@@ -176,8 +181,9 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         Map<UUID, TreatmentRecord> records = treatments.stream().collect(Collectors.toMap(
                 TreatmentRecord::recordId, Function.identity()));
         UUID runId = UUID.randomUUID();
+        Map<UUID, String> explanations = explanationPort.explain(selected, context);
         List<RecommendationItem> items = java.util.stream.IntStream.range(0, selected.size())
-                .mapToObj(index -> toItem(selected.get(index), index + 1, records)).toList();
+                .mapToObj(index -> toItem(selected.get(index), index + 1, records, explanations)).toList();
         RecommendationBasis basis = recommendationBasis(context, treatmentHistory, selected, photoEvidence);
         RecommendationRun run = new RecommendationRun(runId, userId,
                 RecommendationRun.Strategy.RULE_BASED_V1, RecommendationRun.Status.ACTIVE,
@@ -248,7 +254,8 @@ public class RecommendationService implements GenerateRecommendationUseCase,
     private RecommendationItem toItem(
             ScoredRecommendation scored,
             int rank,
-            Map<UUID, TreatmentRecord> records
+            Map<UUID, TreatmentRecord> records,
+            Map<UUID, String> explanations
     ) {
         TreatmentRecord source = records.get(scored.referenceRecordId());
         RecommendationReference reference = source == null ? null : new RecommendationReference(
@@ -257,8 +264,24 @@ public class RecommendationService implements GenerateRecommendationUseCase,
                         .map(reason -> reason.code().name()).findFirst().orElseThrow());
         return new RecommendationItem(UUID.randomUUID(), scored.candidate().hairstyleId(), null,
                 rank, BigDecimal.valueOf(scored.finalScore()).setScale(2, RoundingMode.HALF_UP),
-                scored.scoreBreakdown(), scored.reasons(), scored.candidate().managementDifficulty(),
+                scored.scoreBreakdown(), explainedReasons(scored, explanations), scored.candidate().managementDifficulty(),
                 scored.candidate().estimatedDailyCareMinutes(), reference);
+    }
+
+    private List<RecommendationReason> explainedReasons(ScoredRecommendation scored,
+                                                        Map<UUID, String> explanations) {
+        String explanation = explanations.get(scored.candidate().hairstyleId());
+        if (explanation == null || explanation.isBlank()) return scored.reasons();
+        var reasons = new java.util.ArrayList<>(scored.reasons());
+        if (reasons.isEmpty()) {
+            reasons.add(new RecommendationReason(RecommendationReason.Code.EDITORIAL_FALLBACK, Map.of()));
+        }
+        RecommendationReason first = reasons.getFirst();
+        Map<String, String> params = new LinkedHashMap<>(first.params());
+        params.put("ai_message", explanation);
+        params.put("explanation_version", explanationPort.cacheKey());
+        reasons.set(0, new RecommendationReason(first.code(), params));
+        return List.copyOf(reasons);
     }
 
     private Set<UUID> preferenceIds(
@@ -275,6 +298,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             TreatmentHistorySummary treatmentHistory
     ) {
         StringBuilder value = new StringBuilder("RULE_BASED_V1:CURRENT_LENGTH_V6|");
+        value.append(explanationPort.cacheKey()).append('|');
         HairProfile profile = context.hairProfile();
         if (profile != null) {
             value.append(profile.hairLength()).append('|').append(profile.hairType()).append('|')

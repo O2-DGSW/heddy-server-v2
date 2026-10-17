@@ -41,6 +41,9 @@ jobs:
       - name: Test and build application jar
         run: ./gradlew test bootJar
 
+      - name: Verify deployment secret persistence
+        run: python3 scripts/deployment_bundle_test.py
+
       # 멀티스테이지 Dockerfile 이 이미지 안에서 bootJar 를 다시 빌드한다.
       # CI 의 jar 는 최종 아티팩트가 아니라 테스트 통과 증명이다.
       - name: Resolve image name
@@ -93,14 +96,8 @@ jobs:
       - name: Create deployment bundle
         env:
           PROD_ENV: ${{ secrets.PROD_ENV }}
-        run: |
-          test -n "$PROD_ENV"
-          mkdir -p deploy-bundle
-          cp docker-compose.prod.yml deploy-bundle/docker-compose.yml
-          cp scripts/check-hair-analysis-model.sh deploy-bundle/check-hair-analysis-model.sh
-          printf '%s\n' "$PROD_ENV" > deploy-bundle/.env
-          # Non-secret analysis settings are versioned; existing secrets stay in GitHub.
-          cat config/hair-analysis.prod.env >> deploy-bundle/.env
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python3 scripts/create-deployment-bundle.py
 
       - name: Upload compose and environment
         env:
@@ -112,7 +109,9 @@ jobs:
           ssh -i ~/.ssh/deploy_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" "mkdir -p '$DEPLOY_PATH'"
           scp -i ~/.ssh/deploy_key -P "$EC2_PORT" deploy-bundle/docker-compose.yml "$EC2_USER@$EC2_HOST:$DEPLOY_PATH/docker-compose.yml"
           scp -i ~/.ssh/deploy_key -P "$EC2_PORT" deploy-bundle/check-hair-analysis-model.sh "$EC2_USER@$EC2_HOST:$DEPLOY_PATH/check-hair-analysis-model.sh"
+          scp -i ~/.ssh/deploy_key -P "$EC2_PORT" deploy-bundle/check-recommendation-ai.sh "$EC2_USER@$EC2_HOST:$DEPLOY_PATH/check-recommendation-ai.sh"
           scp -i ~/.ssh/deploy_key -P "$EC2_PORT" deploy-bundle/.env "$EC2_USER@$EC2_HOST:$DEPLOY_PATH/.env"
+          ssh -i ~/.ssh/deploy_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" "chmod 600 '$DEPLOY_PATH/.env'"
 
       - name: Pull and restart containers
         env:
@@ -127,8 +126,11 @@ jobs:
           cd "$DEPLOY_PATH"
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           APP_IMAGE_TAG="${{ github.sha }}" docker compose pull app
+          APP_IMAGE_TAG="${{ github.sha }}" docker compose config --quiet
+          APP_IMAGE_TAG="${{ github.sha }}" docker compose run --rm -T --no-deps --entrypoint sh app -s < check-recommendation-ai.sh
           # 기존 앱을 내리기 전에 후보 컨테이너의 사용자/마운트로 모델 접근을 검사한다.
           APP_IMAGE_TAG="${{ github.sha }}" docker compose run --rm -T --no-deps --entrypoint sh app -s < check-hair-analysis-model.sh
           APP_IMAGE_TAG="${{ github.sha }}" docker compose up -d --remove-orphans --wait --wait-timeout 120
+          APP_IMAGE_TAG="${{ github.sha }}" docker compose exec -T app sh -s < check-recommendation-ai.sh
           docker image prune -f
           EOF

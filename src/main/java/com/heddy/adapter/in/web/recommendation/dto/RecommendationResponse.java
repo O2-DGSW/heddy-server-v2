@@ -96,6 +96,7 @@ public record RecommendationResponse(
             @JsonProperty("recommended_color") UUID recommendedColor,
             @JsonProperty("management_difficulty") String managementDifficulty,
             @JsonProperty("estimated_daily_care_minutes") int estimatedDailyCareMinutes,
+            String explanation,
             List<Reason> reasons,
             @JsonProperty("reference_records") List<ReferenceRecord> referenceRecords
     ) {
@@ -107,6 +108,7 @@ public record RecommendationResponse(
                     value.thumbnailUrl() == null ? null : value.thumbnailUrl().toString(),
                     value.hairstyle().arMode(), value.hairstyle().assetVersion()), item.colorId(),
                     item.managementDifficulty().name(), item.estimatedDailyCareMinutes(),
+                    item.reasons().isEmpty() ? "기본 추천 스타일입니다." : Reason.message(item.reasons().getFirst()),
                     item.reasons().stream().map(Reason::from).toList(),
                     reference == null ? List.of() : List.of(ReferenceRecord.from(reference)));
         }
@@ -138,6 +140,8 @@ public record RecommendationResponse(
         }
 
         private static String message(RecommendationReason reason) {
+            String generated = reason.params().get("ai_message");
+            if (generated != null && !generated.isBlank()) return generated;
             return switch (reason.code()) {
                 case PHOTO_SHAPE_MATCH -> "최근 시술 사진의 머리 윤곽이 ‘"
                         + reason.params().getOrDefault("style_name", "이 스타일") + "’의 참고 사진과 유사합니다.";
@@ -150,7 +154,7 @@ public record RecommendationResponse(
                 case SAVED_STYLE_MATCH -> "이전에 저장한 스타일입니다.";
                 case PREFERRED_TAG_MATCH -> "선호하는 ‘"
                         + reason.params().getOrDefault("tag_name", "스타일") + "’ 태그와 일치합니다.";
-                case HAIR_PROFILE_COMPATIBLE -> "현재 모발 특성과 잘 맞습니다.";
+                case HAIR_PROFILE_COMPATIBLE -> "등록한 모발 특성 중 일부 조건과 일치합니다.";
                 case CARE_TIME_FIT -> "평소 관리 가능 시간에 적합합니다.";
                 case EDITORIAL_FALLBACK -> "기본 추천 우선순위를 반영했습니다.";
             };

@@ -2,6 +2,8 @@ package com.heddy.adapter.in.web.recommendation;
 
 import com.heddy.support.PostgresIntegrationTest;
 import jakarta.persistence.EntityManager;
+import com.heddy.domain.recommendation.port.out.RecommendationExplanationPort;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +23,13 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -53,11 +59,14 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
 
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     com.heddy.domain.recommendation.port.out.PhotoHairLengthPort photoAnalyzer;
+    @MockitoBean RecommendationExplanationPort explanationPort;
 
     private UUID treatmentRecordId;
 
     @BeforeEach
     void setUp() {
+        when(explanationPort.cacheKey()).thenReturn("test-explanation-v1");
+        when(explanationPort.explain(anyList(), any())).thenReturn(Map.of());
         insertUser(USER_ID);
         insertUser(OTHER_USER_ID);
         jdbcTemplate.update("""
@@ -151,6 +160,44 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
         mockMvc.perform(get("/recommendations/{id}", runId)
                         .with(authentication(auth(OTHER_USER_ID))))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void persistsAiExplanationAndDoesNotCallAgainOnReadsOrReuse() throws Exception {
+        String explanation = "선호하는 태그와 맞고 하루 관리 시간도 설정한 범위 안에 들어요.";
+        when(explanationPort.explain(anyList(), any())).thenReturn(Map.of(
+                UUID.fromString("94000000-0000-4000-8000-000000000001"), explanation));
+        String response = mockMvc.perform(post("/recommendations/generate")
+                        .with(authentication(auth(USER_ID))).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].explanation").value(explanation))
+                .andExpect(jsonPath("$.data.items[0].reasons[0].message").value(explanation))
+                .andReturn().getResponse().getContentAsString();
+        String runId = new com.fasterxml.jackson.databind.ObjectMapper().readTree(response)
+                .path("data").path("recommendation_run_id").asText();
+        mockMvc.perform(get("/recommendations/{id}", runId).with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].explanation").value(explanation));
+        mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].explanation").value(explanation));
+        mockMvc.perform(post("/recommendations/generate")
+                        .with(authentication(auth(USER_ID))).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_run_id").value(runId))
+                .andExpect(jsonPath("$.data.items[0].explanation").value(explanation));
+        verify(explanationPort, times(1)).explain(anyList(), any());
+        assertThat(jdbcTemplate.queryForObject("""
+                SELECT reasons_json::text FROM recommendation_items
+                WHERE recommendation_run_id = ? AND display_rank = 1
+                """, String.class, UUID.fromString(runId))).contains(explanation);
+
+        when(explanationPort.cacheKey()).thenReturn("test-explanation-v2");
+        mockMvc.perform(post("/recommendations/generate")
+                        .with(authentication(auth(USER_ID))).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_run_id").value(org.hamcrest.Matchers.not(runId)));
+        verify(explanationPort, times(2)).explain(anyList(), any());
     }
 
     @Test

@@ -152,7 +152,13 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         RecommendationContext context = new RecommendationContext(
                 profile, preferred, excluded, saved, treatments, generatedAt);
 
-        String canonical = canonicalSnapshot(context, candidates, treatmentHistory) + "|photo:" + photo.evidence();
+        // Hard filters run before downloading catalog images. ONNX observations are cached in memory.
+        var eligible = scorer.scoreAll(candidates, context).stream().map(ScoredRecommendation::candidate).toList();
+        var similarities = photoResolver.similarities(photo.evidence(), eligible);
+        var photoEvidence = photo.evidence().withComparedStyles(similarities.size());
+        context = new RecommendationContext(profile, preferred, excluded, saved, treatments, generatedAt, similarities);
+        String canonical = canonicalSnapshot(context, candidates, treatmentHistory) + "|photo:" + photoEvidence
+                + "|similarities:" + new java.util.TreeMap<>(similarities);
         String inputHash = sha256(canonical);
         if (!forceRefresh) {
             RecommendationRun reusable = recommendationRepositoryPort.findActiveByInputHash(
@@ -172,7 +178,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         UUID runId = UUID.randomUUID();
         List<RecommendationItem> items = java.util.stream.IntStream.range(0, selected.size())
                 .mapToObj(index -> toItem(selected.get(index), index + 1, records)).toList();
-        RecommendationBasis basis = recommendationBasis(context, treatmentHistory, selected, photo.evidence());
+        RecommendationBasis basis = recommendationBasis(context, treatmentHistory, selected, photoEvidence);
         RecommendationRun run = new RecommendationRun(runId, userId,
                 RecommendationRun.Strategy.RULE_BASED_V1, RecommendationRun.Status.ACTIVE,
                 inputHash, context.coldStart(), basis, generatedAt, items);
@@ -247,7 +253,8 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         TreatmentRecord source = records.get(scored.referenceRecordId());
         RecommendationReference reference = source == null ? null : new RecommendationReference(
                 source.recordId(), source.performedAt(), source.satisfaction(),
-                RecommendationReason.Code.SIMILAR_HIGH_SATISFACTION_HISTORY.name());
+                scored.reasons().stream().filter(reason -> reason.params().containsKey("record_id"))
+                        .map(reason -> reason.code().name()).findFirst().orElseThrow());
         return new RecommendationItem(UUID.randomUUID(), scored.candidate().hairstyleId(), null,
                 rank, BigDecimal.valueOf(scored.finalScore()).setScale(2, RoundingMode.HALF_UP),
                 scored.scoreBreakdown(), scored.reasons(), scored.candidate().managementDifficulty(),
@@ -267,7 +274,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             List<HairstyleCandidate> candidates,
             TreatmentHistorySummary treatmentHistory
     ) {
-        StringBuilder value = new StringBuilder("RULE_BASED_V1:PHOTO_LENGTH_V3|");
+        StringBuilder value = new StringBuilder("RULE_BASED_V1:PHOTO_SHAPE_TREATMENT_V5|");
         HairProfile profile = context.hairProfile();
         if (profile != null) {
             value.append(profile.hairLength()).append('|').append(profile.hairType()).append('|')
@@ -282,10 +289,12 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         context.recentTreatments().stream().sorted(Comparator.comparing(TreatmentRecord::recordId))
                 .forEach(record -> value.append('|').append(record.recordId()).append(':')
                         .append(record.performedAt()).append(':').append(record.satisfaction()).append(':')
-                        .append(record.serviceTypes().stream().map(Enum::name).sorted().toList()));
+                        .append(record.serviceTypes().stream().map(Enum::name).sorted().toList())
+                        .append(':').append(record.cutLength()).append(':').append(record.cutShape())
+                        .append(':').append(record.permType()));
         candidates.stream().sorted(Comparator.comparing(HairstyleCandidate::hairstyleId))
                 .forEach(candidate -> value.append('|').append(candidate.hairstyleId()).append(':')
-                        .append(candidate.assetVersion()).append(':').append(candidate.metadataVersion())
+                        .append(candidate.styleName()).append(':').append(candidate.assetVersion()).append(':').append(candidate.metadataVersion())
                         .append(':').append(candidate.arMode())
                         .append(':').append(candidate.category())
                         .append(':').append(candidate.thumbnailFileId())
@@ -301,7 +310,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
                         .append(':').append(candidate.compatibleHairThicknesses().stream().sorted().toList())
                         .append(':').append(candidate.compatibleHairConditions().stream().sorted().toList())
                         .append(':').append(candidate.contraindicatedHairConditions().stream().sorted().toList())
-                        .append(':').append(candidate.tags().keySet().stream().sorted().toList()));
+                        .append(':').append(new java.util.TreeMap<>(candidate.tags())));
         return value.toString();
     }
 

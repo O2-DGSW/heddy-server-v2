@@ -53,6 +53,47 @@ final class PhotoHairLengthEstimator {
         return HairLength.BELOW_SHOULDER;
     }
 
+    /** Face-relative hair occupancy; rejects profiles and incomplete framing before comparing silhouettes. */
+    List<Double> shape(float[][][] logits) {
+        if (estimate(logits) == null) return List.of();
+        int h = logits.length, w = logits[0].length;
+        List<Integer> faceX = new ArrayList<>(), faceY = new ArrayList<>();
+        boolean[][] hair = new boolean[h][w];
+        for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
+            float[] scores = logits[y][x];
+            int best = 0;
+            for (int c = 1; c < scores.length; c++) if (scores[c] > scores[best]) best = c;
+            double sum = 0;
+            for (float score : scores) sum += Math.exp(score - scores[best]);
+            if (1 / sum < .80) continue;
+            if (best == 3) { faceX.add(x); faceY.add(y); }
+            hair[y][x] = best == 1;
+        }
+        if (faceX.size() < 500) return List.of();
+        int[] fx = faceX.stream().mapToInt(Integer::intValue).sorted().toArray();
+        int[] fy = faceY.stream().mapToInt(Integer::intValue).sorted().toArray();
+        double left = percentile(fx, .05), right = percentile(fx, .95);
+        double top = percentile(fy, .05), bottom = percentile(fy, .95);
+        double fw = right - left, fh = bottom - top, cx = (left + right) / 2;
+        if (fw / fh < .55 || fw / fh > 1.25) return List.of();
+        // A fixed grid in face coordinates makes scale/background independent comparisons possible.
+        int columns = 8, rows = 12;
+        double x0 = cx - fw * 1.25, y0 = top - fh * .9;
+        double cellW = fw * 2.5 / columns, cellH = fh * 3.4 / rows;
+        List<Double> shape = new ArrayList<>(columns * rows);
+        for (int gy = 0; gy < rows; gy++) for (int gx = 0; gx < columns; gx++) {
+            int seen = 0, occupied = 0;
+            for (int y = (int)Math.floor(y0 + gy * cellH); y < y0 + (gy + 1) * cellH; y++) {
+                for (int x = (int)Math.floor(x0 + gx * cellW); x < x0 + (gx + 1) * cellW; x++) {
+                    seen++;
+                    if (y >= 0 && y < h && x >= 0 && x < w && hair[y][x]) occupied++;
+                }
+            }
+            shape.add(seen == 0 ? 0.0 : Math.round(occupied * 1000.0 / seen) / 1000.0);
+        }
+        return List.copyOf(shape);
+    }
+
     private static int percentile(int[] sorted, double quantile) {
         return sorted[Math.min(sorted.length - 1, (int) (sorted.length * quantile))];
     }

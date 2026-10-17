@@ -14,9 +14,15 @@ public record RecommendationContext(
         Set<UUID> excludedTagIds,
         Set<UUID> savedHairstyleIds,
         List<TreatmentRecord> recentTreatments,
-        Instant generatedAt
+        Instant generatedAt,
+        java.util.Map<UUID, Double> photoSimilarities
 ) {
+    public RecommendationContext(HairProfile profile, Set<UUID> preferred, Set<UUID> excluded,
+            Set<UUID> saved, List<TreatmentRecord> treatments, Instant generatedAt) {
+        this(profile, preferred, excluded, saved, treatments, generatedAt, java.util.Map.of());
+    }
     public RecommendationContext {
+        photoSimilarities = photoSimilarities == null ? java.util.Map.of() : java.util.Map.copyOf(photoSimilarities);
         preferredTagIds = preferredTagIds == null ? Set.of() : Set.copyOf(preferredTagIds);
         excludedTagIds = excludedTagIds == null ? Set.of() : Set.copyOf(excludedTagIds);
         savedHairstyleIds = savedHairstyleIds == null ? Set.of() : Set.copyOf(savedHairstyleIds);

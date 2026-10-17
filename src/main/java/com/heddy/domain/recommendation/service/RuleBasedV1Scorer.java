@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,7 +60,14 @@ public final class RuleBasedV1Scorer {
             availableMaximum += 10;
         }
 
-        double raw = history.score() + savedStyleScore + preferredTagScore
+        double similarity = context.photoSimilarities().getOrDefault(candidate.hairstyleId(), 0.0);
+        double photoScore = 30 * similarity;
+        if (!context.photoSimilarities().isEmpty()) availableMaximum += 30;
+        if (similarity >= .60) {
+            reasons.addFirst(new RecommendationReason(RecommendationReason.Code.PHOTO_SHAPE_MATCH,
+                    Map.of("style_name", candidate.styleName(), "similarity", number(similarity))));
+        }
+        double raw = photoScore + history.score() + savedStyleScore + preferredTagScore
                 + hair.score() + careTimeScore;
         double finalScore = availableMaximum == 0 ? 0 : raw / availableMaximum * 100;
         if (availableMaximum == 0) {
@@ -70,7 +76,7 @@ public final class RuleBasedV1Scorer {
         }
         ScoreBreakdown breakdown = new ScoreBreakdown(
                 history.score(), savedStyleScore, preferredTagScore, hair.score(), careTimeScore,
-                raw, availableMaximum, clamp(finalScore));
+                raw, availableMaximum, clamp(finalScore), photoScore);
         return Optional.of(new ScoredRecommendation(
                 candidate, breakdown, reasons, history.referenceRecordId()));
     }
@@ -109,31 +115,44 @@ public final class RuleBasedV1Scorer {
             RecommendationContext context,
             List<RecommendationReason> reasons
     ) {
-        double best = 0;
+        double best = 0, penalty = 0;
         TreatmentRecord bestRecord = null;
+        TreatmentStyleMatcher.Match bestMatch = null;
+        var matcher = new TreatmentStyleMatcher();
         for (TreatmentRecord record : context.recentTreatments()) {
-            if (record.satisfaction() == null) {
+            if (record.satisfaction() == null || record.satisfaction() == 3) continue;
+            var match = matcher.match(candidate, record);
+            long daysAgo = Math.max(0, Duration.between(record.performedAt(), context.generatedAt()).toDays());
+            double recency = Math.pow(0.5, daysAgo / 180.0);
+            if (record.satisfaction() <= 2) {
+                // Only a specific match can penalize a style: disliking one haircut does not reject all CUTs.
+                if (!match.details().isEmpty()) {
+                    penalty = Math.max(penalty, match.score() * (3 - record.satisfaction()) / 2.0 * recency);
+                }
                 continue;
             }
-            double similarity = jaccard(candidate.serviceTypes(), record.serviceTypes());
-            double satisfaction = (record.satisfaction() - 1.0) / 4.0;
-            long daysAgo = Math.max(0, Duration.between(
-                    record.performedAt(), context.generatedAt()).toDays());
-            double recency = Math.pow(0.5, daysAgo / 180.0);
-            double score = 40 * similarity * satisfaction * recency;
+            double score = match.score() * (record.satisfaction() - 3) / 2.0 * recency;
             if (score > best || (score == best && bestRecord != null
                     && record.recordId().compareTo(bestRecord.recordId()) < 0)) {
                 best = score;
                 bestRecord = record;
+                bestMatch = match;
             }
         }
-        if (bestRecord != null && best > 0) {
-            reasons.add(new RecommendationReason(
-                    RecommendationReason.Code.SIMILAR_HIGH_SATISFACTION_HISTORY,
-                    Map.of("record_id", bestRecord.recordId().toString(),
-                            "satisfaction", bestRecord.satisfaction().toString())));
+        if (bestRecord != null && best > penalty) {
+            var params = new HashMap<String, String>();
+            params.put("record_id", bestRecord.recordId().toString());
+            params.put("satisfaction", bestRecord.satisfaction().toString());
+            params.put("style_name", candidate.styleName());
+            params.put("matched_details", String.join(", ", bestMatch.details()));
+            params.put("service_types", bestRecord.serviceTypes().stream()
+                    .filter(candidate.serviceTypes()::contains).map(Enum::name).sorted()
+                    .collect(java.util.stream.Collectors.joining(", ")));
+            reasons.add(new RecommendationReason(bestMatch.details().isEmpty()
+                    ? RecommendationReason.Code.HISTORY_SERVICE_MATCH
+                    : RecommendationReason.Code.SIMILAR_HIGH_SATISFACTION_HISTORY, params));
         }
-        return new HistoryResult(best, bestRecord == null ? null : bestRecord.recordId());
+        return new HistoryResult(best - penalty, best > penalty && bestRecord != null ? bestRecord.recordId() : null);
     }
 
     private double savedStyleScore(
@@ -237,17 +256,6 @@ public final class RuleBasedV1Scorer {
 
     private static boolean disjoint(Set<UUID> first, Set<UUID> second) {
         return first.stream().noneMatch(second::contains);
-    }
-
-    private static double jaccard(Set<?> first, Set<?> second) {
-        if (first.isEmpty() && second.isEmpty()) {
-            return 0;
-        }
-        Set<Object> union = new HashSet<>(first);
-        union.addAll(second);
-        Set<Object> intersection = new HashSet<>(first);
-        intersection.retainAll(second);
-        return intersection.size() / (double) union.size();
     }
 
     private static double clamp(double value) {

@@ -108,6 +108,7 @@ class RecommendationRunEntity {
             photo.put("status", evidence.status());
             putEnum(photo, "observed_length", evidence.observedLength());
             photo.put("applied", evidence.applied());
+            photo.put("compared_style_count", evidence.comparedStyleCount());
             value.put("photo_analysis", photo);
         }
         return value;
@@ -144,7 +145,8 @@ class RecommendationRunEntity {
         return new com.heddy.domain.recommendation.model.PhotoHairEvidence(
                 value.get("file_id") == null ? null : UUID.fromString(value.get("file_id").toString()),
                 (String) value.get("model_version"), (String) value.get("status"),
-                enumValue(value, "observed_length", HairLength.class), Boolean.TRUE.equals(value.get("applied")));
+                enumValue(value, "observed_length", HairLength.class), Boolean.TRUE.equals(value.get("applied")),
+                List.of(), integer(value, "compared_style_count", 0));
     }
 
     private static void putEnum(Map<String, Object> target, String key, Enum<?> value) {

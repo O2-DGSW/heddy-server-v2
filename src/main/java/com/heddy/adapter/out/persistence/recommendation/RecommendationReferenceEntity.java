@@ -21,12 +21,19 @@ class RecommendationReferenceEntity {
     @Column(name = "reference_reason", nullable = false, length = 255, updatable = false)
     private String referenceReasonCode;
 
+    @Column(name = "performed_at_snapshot", nullable = false, updatable = false)
+    private java.time.Instant performedAtSnapshot;
+    @Column(name = "satisfaction_snapshot", updatable = false)
+    private Integer satisfactionSnapshot;
+
     protected RecommendationReferenceEntity() { }
 
-    RecommendationReferenceEntity(UUID recommendationItemId, UUID recordId, String reasonCode) {
+    RecommendationReferenceEntity(UUID recommendationItemId, com.heddy.domain.recommendation.model.RecommendationReference reference) {
         this.recommendationItemId = recommendationItemId;
-        this.recordId = recordId;
-        this.referenceReasonCode = reasonCode;
+        this.recordId = reference.recordId();
+        this.referenceReasonCode = reference.reasonCode();
+        this.performedAtSnapshot = reference.performedAt();
+        this.satisfactionSnapshot = reference.satisfaction();
     }
 
     static class Key implements Serializable {

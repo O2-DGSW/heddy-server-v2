@@ -8,6 +8,11 @@ public record ScoreBreakdown(
         double careTimeScore,
         double rawScore,
         double availableMaximumScore,
-        double finalScore
+        double finalScore,
+        double photoSimilarityScore
 ) {
+    public ScoreBreakdown(double history, double saved, double preferred, double hair, double care,
+            double raw, double maximum, double score) {
+        this(history, saved, preferred, hair, care, raw, maximum, score, 0);
+    }
 }

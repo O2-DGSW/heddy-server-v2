@@ -50,19 +50,19 @@ public final class RecommendationReadOnlyAudit {
     }
     static List<TreatmentRecord> history(Connection c, UUID user) throws Exception {
         List<TreatmentRecord> out = new ArrayList<>();
-        try(PreparedStatement p=c.prepareStatement("SELECT record_id,service_types::text,performed_at,satisfaction,created_at FROM treatment_records WHERE user_id=? ORDER BY performed_at DESC,created_at DESC,record_id DESC LIMIT 10")) {
+        try(PreparedStatement p=c.prepareStatement("SELECT record_id,service_types::text,performed_at,satisfaction,created_at,cut_length,cut_shape,perm_type FROM treatment_records WHERE user_id=? ORDER BY performed_at DESC,created_at DESC,record_id DESC LIMIT 10")) {
             p.setObject(1,user);
             try(ResultSet r=p.executeQuery()) { while(r.next()) {
                 int score=r.getInt(4); Integer satisfaction=r.wasNull()?null:score;
-                out.add(new TreatmentRecord(r.getObject(1,UUID.class), user,enums(ServiceType.class,r.getString(2)),null,null,r.getTimestamp(3).toInstant(),satisfaction,null,null,null,null,null,photos(c,r.getObject(1,UUID.class)),r.getTimestamp(5).toInstant()));
+                out.add(new TreatmentRecord(r.getObject(1,UUID.class), user,enums(ServiceType.class,r.getString(2)),null,null,r.getTimestamp(3).toInstant(),satisfaction,null,null,null,null,null,null,null,"Asia/Seoul",r.getString(6),r.getString(7),r.getString(8),null,List.of(),photos(c,r.getObject(1,UUID.class)),r.getTimestamp(5).toInstant()));
             }}
         }
         return out;
     }
     static List<HairstyleCandidate> catalog(Connection c) throws Exception {
         Map<UUID,Map<UUID,String>> tags = new HashMap<>();
-        try(Statement s=c.createStatement();ResultSet r=s.executeQuery("SELECT hairstyle_id,style_tag_id FROM hairstyle_style_tags")) {
-            while(r.next()) tags.computeIfAbsent(r.getObject(1,UUID.class), ignored->new HashMap<>()).put(r.getObject(2,UUID.class), "");
+        try(Statement s=c.createStatement();ResultSet r=s.executeQuery("SELECT h.hairstyle_id,h.style_tag_id,t.tag_name FROM hairstyle_style_tags h JOIN style_tags t ON t.style_tag_id=h.style_tag_id")) {
+            while(r.next()) tags.computeIfAbsent(r.getObject(1,UUID.class), ignored->new HashMap<>()).put(r.getObject(2,UUID.class), r.getString(3));
         }
         List<HairstyleCandidate> out=new ArrayList<>();
         try(Statement s=c.createStatement();ResultSet r=s.executeQuery("SELECT a.*,p.* FROM hairstyle_assets a JOIN hairstyle_recommendation_profiles p USING(hairstyle_id) JOIN files f ON f.file_id=a.thumbnail_file_id WHERE a.active AND f.status='READY' ORDER BY a.hairstyle_id")) {
@@ -134,7 +134,9 @@ public final class RecommendationReadOnlyAudit {
                 Instant now = Instant.now();
                 System.out.println("READ_ONLY_RECOMMENDATION_AUDIT catalog=" + candidates.size());
                 try (var stmt = c.createStatement(); var rs = stmt.executeQuery(
-                        "SELECT user_id,left(md5(user_id::text),8) alias FROM users WHERE status='ACTIVE' ORDER BY alias LIMIT 100")) {
+                        args.length > 0 && args[0].equals("--latest-account")
+                        ? "SELECT u.user_id,left(md5(u.user_id::text),8) alias FROM users u JOIN recommendation_runs r USING(user_id) WHERE u.status='ACTIVE' ORDER BY r.generated_at DESC LIMIT 1"
+                        : "SELECT user_id,left(md5(user_id::text),8) alias FROM users WHERE status='ACTIVE' ORDER BY alias LIMIT 100")) {
                     while (rs.next()) {
                         UUID id = rs.getObject(1,UUID.class); String alias = rs.getString(2);
                         HairProfile original = profile(c,id); List<TreatmentRecord> history = history(c,id);
@@ -142,7 +144,8 @@ public final class RecommendationReadOnlyAudit {
                             if (!method.getName().equals("findByIdAndUserId")) throw new UnsupportedOperationException("Audit only reads records");
                             return history.stream().filter(record -> record.recordId().equals(values[0]) && id.equals(values[1])).findFirst();
                         });
-                        var resolved = new RecommendationPhotoResolver(records,files,analyzer).resolve(id,original,history);
+                        var resolver = new RecommendationPhotoResolver(records,files,analyzer);
+                        var resolved = resolver.resolve(id,original,history);
                         HairProfile effective = resolved.profile(); var evidence = resolved.evidence();
                         System.out.println("account=" + alias + " entered=" + (original == null ? null : original.hairLength())
                                 + " effective=" + (effective == null ? null : effective.hairLength()) + " photo=" + evidence.status()
@@ -154,16 +157,21 @@ public final class RecommendationReadOnlyAudit {
                                 ids(c,"SELECT style_tag_id FROM user_style_preferences WHERE user_id=? AND preference_type='PREFERRED'",id),
                                 ids(c,"SELECT style_tag_id FROM user_style_preferences WHERE user_id=? AND preference_type='EXCLUDED'",id),
                                 ids(c,"SELECT hairstyle_id FROM saved_styles WHERE user_id=?",id),history,now);
+                        var eligible = scorer.scoreAll(candidates,context).stream().map(ScoredRecommendation::candidate).toList();
+                        var similarities = resolver.similarities(evidence, eligible);
+                        context = new RecommendationContext(effective,context.preferredTagIds(),context.excludedTagIds(),
+                                context.savedHairstyleIds(),history,now,similarities);
                         var scores = scorer.scoreAll(candidates,context);
+                        System.out.println("  photo_compared_styles=" + similarities.size());
                         System.out.println("  history=" + history.size() + " preferred=" + context.preferredTagIds().size()
                                 + " saved=" + context.savedHairstyleIds().size() + " eligible=" + scores.size());
                         for (var item : diversifier.topThree(scores)) {
                             var b = item.scoreBreakdown();
-                            System.out.printf(Locale.ROOT,"  %s [%s] score=%.2f history=%.2f hair=%.2f preferred=%.2f saved=%.2f%n",
+                            System.out.printf(Locale.ROOT,"  %s [%s] score=%.2f history=%.2f hair=%.2f preferred=%.2f saved=%.2f photo=%.2f%n",
                                     item.candidate().styleName(),item.candidate().category(),item.finalScore(),b.historyScore(),
-                                    b.hairCompatibilityScore(),b.preferredTagScore(),b.savedStyleScore());
+                                    b.hairCompatibilityScore(),b.preferredTagScore(),b.savedStyleScore(),b.photoSimilarityScore());
                         }
-                        var withoutHistory = new RecommendationContext(effective,context.preferredTagIds(),context.excludedTagIds(),context.savedHairstyleIds(),List.of(),now);
+                        var withoutHistory = new RecommendationContext(effective,context.preferredTagIds(),context.excludedTagIds(),context.savedHairstyleIds(),List.of(),now,similarities);
                         System.out.println("  without_history=" + diversifier.topThree(scorer.scoreAll(candidates,withoutHistory)).stream().map(x -> x.candidate().styleName()).toList());
                     }
                 }

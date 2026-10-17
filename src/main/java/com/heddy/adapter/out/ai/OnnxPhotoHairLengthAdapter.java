@@ -26,7 +26,7 @@ import java.util.Map;
 @Component
 @ConditionalOnProperty(name = "app.photo-length.enabled", havingValue = "true")
 public class OnnxPhotoHairLengthAdapter implements PhotoHairLengthPort {
-    public static final String MODEL_VERSION = "selfie-multiclass-v1-length-v1";
+    public static final String MODEL_VERSION = "selfie-multiclass-v1-shape-v2";
     private static final String MODEL_SHA256 = "35ec1ecd9ee7f85073c99c00020b7f6751b69506eeacf683bc8665f6117f85b0";
     private static final Logger log = LoggerFactory.getLogger(OnnxPhotoHairLengthAdapter.class);
     private final OrtEnvironment environment = OrtEnvironment.getEnvironment();
@@ -78,7 +78,9 @@ public class OnnxPhotoHairLengthAdapter implements PhotoHairLengthPort {
                  var result = session.run(Map.of("input_29", tensor))) {
                 float[][][] logits = ((float[][][][]) result.get(0).getValue())[0];
                 var length = estimator.estimate(logits);
-                var observation = evidence(file, length == null ? "UNCERTAIN" : "ASSESSED", length);
+                var observation = new PhotoHairEvidence(file.fileId(), MODEL_VERSION,
+                        length == null ? "UNCERTAIN" : "ASSESSED", length, false,
+                        length == null ? java.util.List.of() : estimator.shape(logits), 0);
                 cache.put(key, observation);
                 return observation;
             }

@@ -70,6 +70,7 @@ class RecommendationItemEntity {
 
     private static Map<String, Double> breakdownMap(ScoreBreakdown value) {
         Map<String, Double> result = new LinkedHashMap<>();
+        result.put("photo_similarity", value.photoSimilarityScore());
         result.put("history", value.historyScore());
         result.put("saved_style", value.savedStyleScore());
         result.put("preferred_tag", value.preferredTagScore());
@@ -84,7 +85,7 @@ class RecommendationItemEntity {
     private ScoreBreakdown toBreakdown() {
         return new ScoreBreakdown(value("history"), value("saved_style"), value("preferred_tag"),
                 value("hair_compatibility"), value("care_time"), value("raw"),
-                value("available_maximum"), value("final"));
+                value("available_maximum"), value("final"), value("photo_similarity"));
     }
 
     private double value(String key) {

@@ -40,8 +40,8 @@ class RuleBasedV1ScorerTest {
         double partial = scorer.score(candidate(Set.of(ServiceType.CUT), Map.of()), context)
                 .orElseThrow().scoreBreakdown().historyScore();
 
-        assertThat(exact).isEqualTo(40);
-        assertThat(partial).isEqualTo(20);
+        assertThat(exact).isEqualTo(10);
+        assertThat(partial).isEqualTo(5);
     }
 
     @Test
@@ -58,8 +58,8 @@ class RuleBasedV1ScorerTest {
                 .orElseThrow().scoreBreakdown().historyScore();
 
         assertThat(onePoint).isZero();
-        assertThat(recentFive).isEqualTo(40);
-        assertThat(oldFive).isCloseTo(20, org.assertj.core.data.Offset.offset(0.0001));
+        assertThat(recentFive).isEqualTo(10);
+        assertThat(oldFive).isCloseTo(5, org.assertj.core.data.Offset.offset(0.0001));
     }
 
     @Test
@@ -176,6 +176,87 @@ class RuleBasedV1ScorerTest {
         assertThat(result.finalScore()).isZero();
         assertThat(result.reasons()).extracting(reason -> reason.code().name())
                 .containsExactly("EDITORIAL_FALLBACK");
+    }
+
+    @Test
+    void changingCutShapeChangesTheWinnerEvenWithIdenticalServiceTypes() {
+        var layered = named("레이어드 C컬", "MEDIUM", ServiceType.CUT);
+        var buzz = named("버즈컷", "SHORT", ServiceType.CUT);
+        var history = detailed("LAYERED", null, null, 5);
+        var first = scorer.scoreAll(List.of(buzz, layered), context(null, Set.of(), Set.of(), Set.of(), List.of(history)));
+        assertThat(first.getFirst().candidate()).isEqualTo(layered);
+        assertThat(first.getFirst().scoreBreakdown().historyScore()).isEqualTo(40);
+        assertThat(first.getFirst().reasons().getFirst().params().get("matched_details")).contains("LAYERED");
+        var changed = detailed("BUZZ", null, null, 5);
+        assertThat(scorer.scoreAll(List.of(layered, buzz), context(null, Set.of(), Set.of(), Set.of(), List.of(changed)))
+                .getFirst().candidate()).isEqualTo(buzz);
+    }
+
+    @Test
+    void lowSatisfactionDoesNotProducePositiveHistoryReasonOrReference() {
+        var style = named("레이어드 C컬", "MEDIUM", ServiceType.CUT);
+        var result = scorer.score(style, context(null, Set.of(), Set.of(), Set.of(),
+                List.of(detailed("LAYERED", null, null, 2)))).orElseThrow();
+        assertThat(result.referenceRecordId()).isNull();
+        assertThat(result.scoreBreakdown().historyScore()).isNegative();
+        assertThat(result.finalScore()).isZero();
+        assertThat(result.reasons()).noneMatch(r -> r.code().name().contains("HISTORY"));
+    }
+
+    @Test
+    void genericServiceMatchDoesNotClaimSimilarStyle() {
+        var result = scorer.score(candidate(Set.of(ServiceType.CUT), Map.of()), context(null,
+                Set.of(), Set.of(), Set.of(), List.of(treatment(Set.of(ServiceType.CUT), 5, 0)))).orElseThrow();
+        assertThat(result.reasons()).extracting(r -> r.code().name()).containsExactly("HISTORY_SERVICE_MATCH");
+    }
+
+    @Test
+    void lengthAndPermDetailsDistinguishCandidatesAndUnknownDetailsDoNotMatch() {
+        var shortCut = named("버즈컷", "SHORT", ServiceType.CUT);
+        var medium = named("레이어드 C컬", "MEDIUM", ServiceType.CUT);
+        var length = detailed(null, "MEDIUM", null, 5);
+        assertThat(scorer.scoreAll(List.of(shortCut, medium), context(null, Set.of(), Set.of(), Set.of(), List.of(length)))
+                .getFirst().candidate()).isEqualTo(medium);
+        var wave = named("내추럴 웨이브", "MEDIUM", ServiceType.PERM);
+        var cCurl = named("레이어드 C컬", "MEDIUM", ServiceType.PERM);
+        var perm = detailed(null, null, "C_CURL", 5);
+        assertThat(scorer.scoreAll(List.of(wave, cCurl), context(null, Set.of(), Set.of(), Set.of(), List.of(perm)))
+                .getFirst().candidate()).isEqualTo(cCurl);
+        var unknown = detailed("UNKNOWN", null, null, 5);
+        assertThat(scorer.score(medium, context(null, Set.of(), Set.of(), Set.of(), List.of(unknown)))
+                .orElseThrow().scoreBreakdown().historyScore()).isEqualTo(10);
+    }
+
+    @Test
+    void photoShapeChangesRankingWithinTheSameHairLength() {
+        var fringe = named("사이드 프린지", "SHORT", ServiceType.CUT);
+        var buzz = named("버즈컷", "SHORT", ServiceType.CUT);
+        var profile = profile(HairLength.SHORT, null, null, null, null);
+        var firstPhoto = new RecommendationContext(profile, Set.of(), Set.of(), Set.of(), List.of(), NOW,
+                Map.of(fringe.hairstyleId(), .85, buzz.hairstyleId(), .15));
+        var secondPhoto = new RecommendationContext(profile, Set.of(), Set.of(), Set.of(), List.of(), NOW,
+                Map.of(fringe.hairstyleId(), .20, buzz.hairstyleId(), .90));
+        var first = scorer.scoreAll(List.of(buzz, fringe), firstPhoto).getFirst();
+        assertThat(first.candidate()).isEqualTo(fringe);
+        assertThat(first.reasons().getFirst().code().name()).isEqualTo("PHOTO_SHAPE_MATCH");
+        assertThat(scorer.scoreAll(List.of(fringe, buzz), secondPhoto).getFirst().candidate()).isEqualTo(buzz);
+        // Incompatible lengths remain excluded even with a perfect visual match.
+        var medium = candidate(Set.of(ServiceType.CUT), Map.of());
+        assertThat(scorer.score(medium, new RecommendationContext(profile, Set.of(), Set.of(), Set.of(), List.of(), NOW,
+                Map.of(medium.hairstyleId(), 1.0)))).isEmpty();
+    }
+
+    private TreatmentRecord detailed(String shape, String length, String perm, int satisfaction) {
+        return new TreatmentRecord(UUID.randomUUID(), UUID.randomUUID(),
+                Set.of(perm == null ? ServiceType.CUT : ServiceType.PERM), null, null, NOW, satisfaction,
+                null, null, null, null, null, null, null, "Asia/Seoul", length, shape, perm, null,
+                List.of(), List.of(), NOW);
+    }
+
+    private HairstyleCandidate named(String name, String category, ServiceType service) {
+        return new HairstyleCandidate(UUID.randomUUID(), name, category, UUID.randomUUID(), "NONE", true, "1",
+                Set.of(service), Set.of(HairLength.SHORT), Set.of(), Set.of(), Set.of(), Set.of(),
+                HairLength.SHORT, 0, ManagementDifficulty.LOW, ChemicalStressLevel.LOW, 1, "1", Map.of());
     }
 
     private RecommendationContext context(

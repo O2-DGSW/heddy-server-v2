@@ -163,6 +163,49 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
+    void retriesCachedFallbackAfterCooldownButKeepsSuccessfulExplanations() throws Exception {
+        when(explanationPort.isEnabled()).thenReturn(true);
+        String initial = mockMvc.perform(post("/recommendations/generate")
+                        .with(authentication(auth(USER_ID))).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String firstId = new com.fasterxml.jackson.databind.ObjectMapper().readTree(initial)
+                .path("data").path("recommendation_run_id").asText();
+        mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_run_id").value(firstId));
+        verify(explanationPort, times(1)).explain(anyList(), any());
+
+        entityManager.flush();
+        jdbcTemplate.update("UPDATE recommendation_runs SET generated_at = now() - interval '12 minutes' WHERE recommendation_run_id = ?",
+                UUID.fromString(firstId));
+        entityManager.clear();
+        String explanation = "선호한 스타일과 일치하고 관리 시간도 설정한 범위 안에 들어요.";
+        when(explanationPort.explain(anyList(), any())).thenAnswer(invocation -> {
+            List<com.heddy.domain.recommendation.model.ScoredRecommendation> selected = invocation.getArgument(0);
+            return selected.stream().collect(java.util.stream.Collectors.toMap(
+                    scored -> scored.candidate().hairstyleId(), ignored -> explanation));
+        });
+        String recovered = mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_run_id").value(org.hamcrest.Matchers.not(firstId)))
+                .andExpect(jsonPath("$.data.items[0].explanation").value(explanation))
+                .andReturn().getResponse().getContentAsString();
+        String recoveredId = new com.fasterxml.jackson.databind.ObjectMapper().readTree(recovered)
+                .path("data").path("recommendation_run_id").asText();
+        verify(explanationPort, times(2)).explain(anyList(), any());
+
+        entityManager.flush();
+        jdbcTemplate.update("UPDATE recommendation_runs SET generated_at = now() - interval '6 minutes' WHERE recommendation_run_id = ?",
+                UUID.fromString(recoveredId));
+        entityManager.clear();
+        mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_run_id").value(recoveredId))
+                .andExpect(jsonPath("$.data.items[0].explanation").value(explanation));
+        verify(explanationPort, times(2)).explain(anyList(), any());
+    }
+
+    @Test
     void persistsAiExplanationAndDoesNotCallAgainOnReadsOrReuse() throws Exception {
         String explanation = "선호하는 태그와 맞고 하루 관리 시간도 설정한 범위 안에 들어요.";
         when(explanationPort.explain(anyList(), any())).thenReturn(Map.of(

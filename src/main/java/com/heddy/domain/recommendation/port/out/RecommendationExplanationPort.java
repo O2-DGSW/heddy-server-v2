@@ -11,6 +11,8 @@ import java.util.UUID;
 public interface RecommendationExplanationPort {
     Map<UUID, String> explain(List<ScoredRecommendation> selected, RecommendationContext context);
 
+    boolean isEnabled();
+
     /** 설명 모델/프롬프트가 바뀌면 이전 추천 캐시를 재사용하지 않는다. */
     String cacheKey();
 }

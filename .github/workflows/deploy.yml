@@ -97,7 +97,10 @@ jobs:
           test -n "$PROD_ENV"
           mkdir -p deploy-bundle
           cp docker-compose.prod.yml deploy-bundle/docker-compose.yml
+          cp scripts/check-hair-analysis-model.sh deploy-bundle/check-hair-analysis-model.sh
           printf '%s\n' "$PROD_ENV" > deploy-bundle/.env
+          # Non-secret analysis settings are versioned; existing secrets stay in GitHub.
+          cat config/hair-analysis.prod.env >> deploy-bundle/.env
 
       - name: Upload compose and environment
         env:
@@ -108,6 +111,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" "mkdir -p '$DEPLOY_PATH'"
           scp -i ~/.ssh/deploy_key -P "$EC2_PORT" deploy-bundle/docker-compose.yml "$EC2_USER@$EC2_HOST:$DEPLOY_PATH/docker-compose.yml"
+          scp -i ~/.ssh/deploy_key -P "$EC2_PORT" deploy-bundle/check-hair-analysis-model.sh "$EC2_USER@$EC2_HOST:$DEPLOY_PATH/check-hair-analysis-model.sh"
           scp -i ~/.ssh/deploy_key -P "$EC2_PORT" deploy-bundle/.env "$EC2_USER@$EC2_HOST:$DEPLOY_PATH/.env"
 
       - name: Pull and restart containers
@@ -123,6 +127,8 @@ jobs:
           cd "$DEPLOY_PATH"
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           APP_IMAGE_TAG="${{ github.sha }}" docker compose pull app
+          # 기존 앱을 내리기 전에 후보 컨테이너의 사용자/마운트로 모델 접근을 검사한다.
+          APP_IMAGE_TAG="${{ github.sha }}" docker compose run --rm -T --no-deps --entrypoint sh app -s < check-hair-analysis-model.sh
           APP_IMAGE_TAG="${{ github.sha }}" docker compose up -d --remove-orphans
           docker image prune -f
           EOF

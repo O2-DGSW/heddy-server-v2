@@ -60,9 +60,15 @@ public class OnnxFaceParsingHairAnalysisAdapter implements HairAnalysisEnginePor
         }
         try {
             environment = OrtEnvironment.getEnvironment();
-            OrtSession.SessionOptions options = new OrtSession.SessionOptions();
-            options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
-            session = environment.createSession(path.toString(), options);
+            try (OrtSession.SessionOptions options = new OrtSession.SessionOptions()) {
+                options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
+                // Small production hosts also run the API, DB and recommendation model.
+                options.setIntraOpNumThreads(1);
+                options.setInterOpNumThreads(1);
+                options.setCPUArenaAllocator(false);
+                options.setMemoryPatternOptimization(false);
+                session = environment.createSession(path.toString(), options);
+            }
             if (session.getInputNames().size() != 1) {
                 throw new IllegalStateException("얼굴 파싱 모델 입력은 하나여야 합니다");
             }
@@ -81,7 +87,7 @@ public class OnnxFaceParsingHairAnalysisAdapter implements HairAnalysisEnginePor
     }
 
     @Override
-    public HairAnalysisOutcome analyze(byte[] imageBytes) {
+    public synchronized HairAnalysisOutcome analyze(byte[] imageBytes) {
         final BufferedImage image;
         try {
             image = decode(imageBytes);

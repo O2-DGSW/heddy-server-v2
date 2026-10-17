@@ -186,7 +186,7 @@ class RuleBasedV1ScorerTest {
         var first = scorer.scoreAll(List.of(buzz, layered), context(null, Set.of(), Set.of(), Set.of(), List.of(history)));
         assertThat(first.getFirst().candidate()).isEqualTo(layered);
         assertThat(first.getFirst().scoreBreakdown().historyScore()).isEqualTo(40);
-        assertThat(first.getFirst().reasons().getFirst().params().get("matched_details")).contains("LAYERED");
+        assertThat(first.getFirst().reasons().getFirst().params().get("matched_details")).contains("레이어드");
         var changed = detailed("BUZZ", null, null, 5);
         assertThat(scorer.scoreAll(List.of(layered, buzz), context(null, Set.of(), Set.of(), Set.of(), List.of(changed)))
                 .getFirst().candidate()).isEqualTo(buzz);

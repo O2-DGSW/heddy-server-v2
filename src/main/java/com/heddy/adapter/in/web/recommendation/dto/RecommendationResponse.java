@@ -125,6 +125,18 @@ public record RecommendationResponse(
             return new Reason(reason.code().name(), message(reason), reason.params());
         }
 
+        private static String serviceNames(String types) {
+            return java.util.Arrays.stream(types.split(", ")).map(type -> switch (type) {
+                case "CUT" -> "커트";
+                case "PERM" -> "펌";
+                case "COLOR" -> "염색";
+                case "BLEACH" -> "탈색";
+                case "CLINIC" -> "클리닉";
+                case "STYLING" -> "스타일링";
+                default -> "기타";
+            }).collect(java.util.stream.Collectors.joining(", "));
+        }
+
         private static String message(RecommendationReason reason) {
             return switch (reason.code()) {
                 case PHOTO_SHAPE_MATCH -> "최근 시술 사진의 머리 윤곽이 ‘"
@@ -133,7 +145,7 @@ public record RecommendationResponse(
                         + "은 만족도 " + reason.params().getOrDefault("satisfaction", "4")
                         + "점 기록의 " + reason.params().getOrDefault("matched_details", "시술 특성") + "와 일치합니다.";
                 case HISTORY_SERVICE_MATCH -> "만족도 " + reason.params().getOrDefault("satisfaction", "4")
-                        + "점 기록과 시술 종류(" + reason.params().getOrDefault("service_types", "")
+                        + "점 기록과 시술 종류(" + serviceNames(reason.params().getOrDefault("service_types", ""))
                         + ")가 같습니다. 세부 스타일의 유사성은 확인되지 않았습니다.";
                 case SAVED_STYLE_MATCH -> "이전에 저장한 스타일입니다.";
                 case PREFERRED_TAG_MATCH -> "선호하는 ‘"

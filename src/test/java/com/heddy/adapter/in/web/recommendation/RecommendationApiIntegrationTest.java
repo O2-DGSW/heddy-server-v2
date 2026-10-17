@@ -275,7 +275,7 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
         String response = mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].hairstyle.style_name").value("내추럴 보브"))
-                .andExpect(jsonPath("$.data.items[0].reasons[0].message").value(org.hamcrest.Matchers.containsString("BOB")))
+                .andExpect(jsonPath("$.data.items[0].reasons[0].message").value(org.hamcrest.Matchers.containsString("보브")))
                 .andReturn().getResponse().getContentAsString();
         assertThat(runId(response)).isNotEqualTo(oldId);
         assertThat(latestRun()).isEqualTo(runId(response));

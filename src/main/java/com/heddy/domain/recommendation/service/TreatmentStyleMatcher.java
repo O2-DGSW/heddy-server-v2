@@ -45,21 +45,21 @@ final class TreatmentStyleMatcher {
             detailWeight += 3;
             if (cut && matches(record.cutShape(), labels, SHAPES)) {
                 matchedWeight += 3;
-                details.add("커트 형태 ‘" + record.cutShape() + "’");
+                details.add("커트 형태 ‘" + label(record.cutShape(), SHAPES) + "’");
             }
         }
         if (record.permType() != null && record.serviceTypes().contains(ServiceType.PERM)) {
             detailWeight += 3;
             if (perm && matches(record.permType(), labels, PERMS)) {
                 matchedWeight += 3;
-                details.add("펌 종류 ‘" + record.permType() + "’");
+                details.add("펌 종류 ‘" + label(record.permType(), PERMS) + "’");
             }
         }
         if (record.cutLength() != null && record.serviceTypes().contains(ServiceType.CUT)) {
             detailWeight += 2;
             if (cut && matchesLength(record.cutLength(), candidate.category())) {
                 matchedWeight += 2;
-                details.add("커트 길이 ‘" + record.cutLength() + "’");
+                details.add("커트 길이 ‘" + lengthLabel(candidate.category()) + "’");
             }
         }
         Set<ServiceType> union = new java.util.HashSet<>(record.serviceTypes());
@@ -69,6 +69,24 @@ final class TreatmentStyleMatcher {
         // CUT alone is weak evidence, not a 40-point endorsement of every haircut.
         double score = 10 * service + (detailWeight == 0 ? 0 : 30 * matchedWeight / detailWeight);
         return new Match(score, List.copyOf(details));
+    }
+
+    private String label(String input, Map<String, List<String>> aliases) {
+        String normalized = normalize(input);
+        return aliases.entrySet().stream()
+                .filter(e -> normalize(e.getKey()).equals(normalized)
+                        || e.getValue().stream().anyMatch(v -> normalize(v).equals(normalized)))
+                .map(e -> e.getValue().get(1)).findFirst().orElse(input);
+    }
+
+    private String lengthLabel(String category) {
+        return switch (normalize(category)) {
+            case "SHORT" -> "숏";
+            case "BOB" -> "단발";
+            case "MEDIUM" -> "미디엄";
+            case "LONG" -> "롱";
+            default -> category;
+        };
     }
 
     private boolean matches(String input, List<String> labels, Map<String, List<String>> aliases) {

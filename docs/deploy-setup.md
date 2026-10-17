@@ -77,6 +77,12 @@ HAIR_ANALYSIS_WORKER_THREADS=1
 - 참고용 공개 `jonathandinu/face-parsing`/CelebAMask-HQ 가중치는 비상업 용도 제한이 있으므로
   운영 서비스에 그대로 배포하지 않는다. 실제 운영에는 사용 권리를 확보한 가중치를 같은 ONNX
   계약으로 내보내 배치한다.
+- 배포 워크플로는 기존 앱을 재시작하기 전에 후보 이미지의 실제 사용자와 모델 마운트로
+  `scripts/check-hair-analysis-model.sh`를 실행한다. 분석이 켜졌는데 파일이 없거나 비어 있거나
+  읽을 수 없으면 기존 컨테이너를 유지하고 배포를 실패시킨다. 비활성화 상태는 503 경고를 남긴다.
+  이 검사는 파일 접근만 검증하므로 ONNX 호환성과 실제 사진 추론은 별도로 확인해야 한다.
+- 모델 배치 후 `HAIR_ANALYSIS_ENABLED`를 바꿀 때는 GitHub Actions의 `PROD_ENV`에도 반영한다.
+  서버 `.env`만 수정하면 다음 배포에서 다시 덮어써진다.
 - 인스턴스 역할에는 기존 업로드 권한과 함께 시술 사진 객체에 대한 `s3:GetObject`가 필요하다.
   서버가 분석 시 S3 원본을 직접 읽으며 Presigned URL을 외부 AI 서비스에 전달하지 않는다.
 

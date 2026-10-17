@@ -45,6 +45,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Comparator;
@@ -168,7 +169,8 @@ public class RecommendationService implements GenerateRecommendationUseCase,
         if (!forceRefresh) {
             RecommendationRun reusable = recommendationRepositoryPort.findActiveByInputHash(
                     userId, RecommendationRun.Strategy.RULE_BASED_V1.name(), inputHash).orElse(null);
-            if (reusable != null && reusable.recommendationBasis() != null) {
+            if (reusable != null && reusable.recommendationBasis() != null
+                    && canReuseExplanation(reusable, generatedAt)) {
                 return render(reusable);
             }
         }
@@ -189,6 +191,15 @@ public class RecommendationService implements GenerateRecommendationUseCase,
                 RecommendationRun.Strategy.RULE_BASED_V1, RecommendationRun.Status.ACTIVE,
                 inputHash, context.coldStart(), basis, generatedAt, items);
         return render(recommendationRepositoryPort.insert(run, canonical));
+    }
+
+    private boolean canReuseExplanation(RecommendationRun run, Instant now) {
+        if (!explanationPort.isEnabled()) return true;
+        boolean complete = !run.items().isEmpty() && run.items().stream().allMatch(item ->
+                item.reasons().stream().anyMatch(reason ->
+                        !reason.params().getOrDefault("ai_message", "").isBlank()));
+        // 실패 때 저장한 기본 설명도 잠시 재사용해 호출 폭주를 막고, 충전/장애 복구 후에는 재시도한다.
+        return complete || now.isBefore(run.generatedAt().plus(Duration.ofMinutes(5)));
     }
 
     @Override

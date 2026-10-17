@@ -131,7 +131,7 @@ class RuleBasedV1ScorerTest {
         var result = scorer.score(medium, context(profile(length, null, null, null, null),
                 Set.of(), Set.of(), Set.of(), List.of()));
 
-        assertThat(result.isPresent()).isEqualTo(length != HairLength.SHORT);
+        assertThat(result.isPresent()).isEqualTo(length == HairLength.BELOW_CHIN || length == HairLength.BELOW_SHOULDER);
     }
 
     @Test
@@ -155,10 +155,21 @@ class RuleBasedV1ScorerTest {
     }
 
     @Test
-    void longerHairCanStillChooseShortCut() {
+    void longHairDoesNotImplicitlyRequestAShortCut() {
         assertThat(scorer.score(withLengths(null, Set.of(HairLength.SHORT)),
                 context(profile(HairLength.BELOW_CHEST, null, null, null, null),
-                        Set.of(), Set.of(), Set.of(), List.of()))).isPresent();
+                        Set.of(), Set.of(), Set.of(), List.of()))).isEmpty();
+    }
+
+    @Test
+    void broadCompatibilityDoesNotMakeABuzzCutALongHairRecommendation() {
+        var buzz = new HairstyleCandidate(UUID.randomUUID(), "버즈컷", "SHORT", UUID.randomUUID(),
+                "NONE", true, "1", Set.of(ServiceType.CUT), Set.of(HairLength.SHORT, HairLength.BELOW_SHOULDER),
+                Set.of(), Set.of(), Set.of(), Set.of(), HairLength.SHORT, 0,
+                ManagementDifficulty.LOW, ChemicalStressLevel.LOW, 100, "1", Map.of());
+        assertThat(scorer.score(buzz, context(profile(HairLength.BELOW_SHOULDER, null, null, null, null),
+                Set.of(), Set.of(), Set.of(buzz.hairstyleId()),
+                List.of(treatment(Set.of(ServiceType.CUT), 5, 0))))).isEmpty();
     }
 
     private HairstyleCandidate withLengths(HairLength minimum, Set<HairLength> lengths) {

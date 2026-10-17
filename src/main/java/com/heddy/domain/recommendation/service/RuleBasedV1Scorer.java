@@ -105,6 +105,15 @@ public final class RuleBasedV1Scorer {
             if (minimumLength == null || profile.hairLength().compareTo(minimumLength) < 0) {
                 return false;
             }
+            // The default recommendation preserves current length. Minimum length alone answers
+            // whether a cut is possible, not whether a drastic shortening was requested.
+            boolean compatible = candidate.compatibleHairLengths().isEmpty()
+                    ? profile.hairLength() == minimumLength
+                    : candidate.compatibleHairLengths().contains(profile.hairLength());
+            if (!compatible || ("SHORT".equals(candidate.category())
+                    && profile.hairLength() != HairProfile.HairLength.SHORT)) {
+                return false;
+            }
         }
         return profile.hairCondition() == null
                 || !candidate.contraindicatedHairConditions().contains(profile.hairCondition());

@@ -30,6 +30,10 @@ class RecommendationPhotoResolverTest {
         assertThat(resolved.evidence().applied()).isTrue();
         assertThat(original.hairLength()).isEqualTo(HairLength.BELOW_SHOULDER);
     }
+    @Test void unclassifiedPhotoIsUsedWhenNoAfterPhotoExists() {
+        var record = record(now, ImageType.OTHER, user);
+        assertThat(resolver.resolve(user, null, List.of(record)).evidence().applied()).isTrue();
+    }
     @Test void longerPhotoNeverOverridesExplicitShortProfile() {
         var record = record(now, ImageType.AFTER, user);
         when(analyzer.analyze(any())).thenAnswer(i -> new PhotoHairEvidence(((StoredFile)i.getArgument(0)).fileId(),
@@ -38,11 +42,11 @@ class RecommendationPhotoResolverTest {
         assertThat(resolved.profile().hairLength()).isEqualTo(HairLength.SHORT);
         assertThat(resolved.evidence().applied()).isFalse();
     }
-    @Test void newerExplicitProfileWinsAndSkipsInference() {
+    @Test void newerExplicitProfileKeepsLengthButStillAllowsShapeAnalysis() {
         var record = record(now, ImageType.AFTER, user);
         var resolved = resolver.resolve(user, profile(HairLength.BELOW_CHIN, now.plusSeconds(60)), List.of(record));
         assertThat(resolved.evidence().status()).isEqualTo("NEWER_PROFILE");
-        verifyNoInteractions(analyzer);
+        verify(analyzer).analyze(any());
     }
     @Test void neverUsesBeforePhotoOrAnotherAccountsFile() {
         var before = record(now, ImageType.BEFORE, user);
@@ -63,6 +67,30 @@ class RecommendationPhotoResolverTest {
         when(analyzer.analyze(any())).thenReturn(PhotoHairEvidence.absent("UNCERTAIN"));
         var original = profile(HairLength.BELOW_CHIN, now.minusSeconds(60));
         assertThat(resolver.resolve(user, original, List.of(record)).profile()).isEqualTo(original);
+    }
+    @Test void shapeComparisonOnlyReadsReadySystemCatalogFiles() {
+        var shape = java.util.Collections.nCopies(96, .5);
+        var evidence = new PhotoHairEvidence(UUID.randomUUID(), "shape-v1", "ASSESSED", HairLength.SHORT, false, shape, 0);
+        var valid = catalogFile(FileOwnerType.SYSTEM, FileStatus.READY);
+        var foreign = catalogFile(FileOwnerType.USER, FileStatus.READY);
+        var pending = catalogFile(FileOwnerType.SYSTEM, FileStatus.PENDING);
+        var inputs = List.of(valid, foreign, pending);
+        when(files.findAllById(any())).thenReturn(inputs);
+        when(analyzer.analyze(valid)).thenReturn(new PhotoHairEvidence(valid.fileId(), "shape-v1", "ASSESSED",
+                HairLength.SHORT, false, shape, 0));
+        var candidates = inputs.stream().map(file -> new com.heddy.domain.recommendation.model.HairstyleCandidate(
+                file.fileId(), "test", "SHORT", file.fileId(), "NONE", true, "1", Set.of(ServiceType.CUT),
+                Set.of(HairLength.SHORT), Set.of(), Set.of(), Set.of(), Set.of(), HairLength.SHORT, 0,
+                com.heddy.domain.recommendation.model.HairstyleCandidate.ManagementDifficulty.LOW,
+                com.heddy.domain.recommendation.model.HairstyleCandidate.ChemicalStressLevel.LOW, 0, "1", Map.of())).toList();
+        assertThat(resolver.similarities(evidence, candidates)).containsExactlyEntriesOf(Map.of(valid.fileId(), 1.0));
+        verify(analyzer).analyze(valid);
+        verifyNoMoreInteractions(analyzer);
+    }
+    private StoredFile catalogFile(FileOwnerType owner, FileStatus status) {
+        return new StoredFile(UUID.randomUUID(), UUID.randomUUID(), owner == FileOwnerType.USER ? UUID.randomUUID() : null,
+                owner, FilePurpose.HAIRSTYLE_THUMBNAIL, status, "test", "image/jpeg", "test.jpg", 1024,
+                null, null, null, now, now, null);
     }
     private HairProfile profile(HairLength length, Instant updated) {
         return new HairProfile(UUID.randomUUID(), user, null, null, length, null, null, now.minusSeconds(3600), updated);

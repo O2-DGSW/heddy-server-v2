@@ -53,11 +53,12 @@ public record RecommendationResponse(
 
     public record PhotoAnalysis(@JsonProperty("file_id") UUID fileId,
             @JsonProperty("model_version") String modelVersion, String status,
-            @JsonProperty("observed_length") String observedLength, boolean applied) {
+            @JsonProperty("observed_length") String observedLength, boolean applied,
+            @JsonProperty("compared_style_count") int comparedStyleCount) {
         static PhotoAnalysis from(com.heddy.domain.recommendation.model.PhotoHairEvidence evidence) {
             return evidence == null ? null : new PhotoAnalysis(evidence.fileId(), evidence.modelVersion(),
                     evidence.status(), evidence.observedLength() == null ? null : evidence.observedLength().name(),
-                    evidence.applied());
+                    evidence.applied(), evidence.comparedStyleCount());
         }
     }
 
@@ -124,9 +125,28 @@ public record RecommendationResponse(
             return new Reason(reason.code().name(), message(reason), reason.params());
         }
 
+        private static String serviceNames(String types) {
+            return java.util.Arrays.stream(types.split(", ")).map(type -> switch (type) {
+                case "CUT" -> "커트";
+                case "PERM" -> "펌";
+                case "COLOR" -> "염색";
+                case "BLEACH" -> "탈색";
+                case "CLINIC" -> "클리닉";
+                case "STYLING" -> "스타일링";
+                default -> "기타";
+            }).collect(java.util.stream.Collectors.joining(", "));
+        }
+
         private static String message(RecommendationReason reason) {
             return switch (reason.code()) {
-                case SIMILAR_HIGH_SATISFACTION_HISTORY -> "이전에 만족한 시술과 유사합니다.";
+                case PHOTO_SHAPE_MATCH -> "최근 시술 사진의 머리 윤곽이 ‘"
+                        + reason.params().getOrDefault("style_name", "이 스타일") + "’의 참고 사진과 유사합니다.";
+                case SIMILAR_HIGH_SATISFACTION_HISTORY -> reason.params().getOrDefault("style_name", "이 스타일")
+                        + "은 만족도 " + reason.params().getOrDefault("satisfaction", "4")
+                        + "점 기록의 " + reason.params().getOrDefault("matched_details", "시술 특성") + "와 일치합니다.";
+                case HISTORY_SERVICE_MATCH -> "만족도 " + reason.params().getOrDefault("satisfaction", "4")
+                        + "점 기록과 시술 종류(" + serviceNames(reason.params().getOrDefault("service_types", ""))
+                        + ")가 같습니다. 세부 스타일의 유사성은 확인되지 않았습니다.";
                 case SAVED_STYLE_MATCH -> "이전에 저장한 스타일입니다.";
                 case PREFERRED_TAG_MATCH -> "선호하는 ‘"
                         + reason.params().getOrDefault("tag_name", "스타일") + "’ 태그와 일치합니다.";

@@ -30,7 +30,7 @@ public class RecommendationPersistenceAdapter
         List<RecommendationReferenceEntity> references = run.items().stream()
                 .filter(item -> item.referenceRecord() != null)
                 .map(item -> new RecommendationReferenceEntity(item.recommendationItemId(),
-                        item.referenceRecord().recordId(), item.referenceRecord().reasonCode()))
+                        item.referenceRecord()))
                 .toList();
         if (!references.isEmpty()) {
             referenceRepository.saveAllAndFlush(references);

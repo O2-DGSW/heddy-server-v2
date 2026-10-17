@@ -23,6 +23,20 @@ class PhotoHairLengthEstimatorTest {
     @Test void rejectsUncertainSegmentation() {
         assertThat(estimator.estimate(new float[256][256][6])).isNull();
     }
+    @Test void distinguishesHairSilhouettesWithTheSameLength() {
+        var full = portrait(80);
+        var closeCut = portrait(80);
+        rectangle(closeCut, 65, 30, 185, 55, 0);
+        assertThat(estimator.estimate(full)).isEqualTo(estimator.estimate(closeCut));
+        var a = estimator.shape(full);
+        var b = estimator.shape(closeCut);
+        assertThat(a).hasSize(96);
+        assertThat(b).hasSize(96);
+        assertThat(com.heddy.domain.recommendation.service.HairShapeSimilarity.compare(a, a)).isEqualTo(1);
+        assertThat(com.heddy.domain.recommendation.service.HairShapeSimilarity.compare(a, b)).isLessThan(.8);
+        assertThat(estimator.shape(new float[256][256][6])).isEmpty();
+    }
+
     private float[][][] portrait(int hairBottom) {
         float[][][] result = new float[256][256][6];
         rectangle(result, 0, 0, 256, 256, 0);

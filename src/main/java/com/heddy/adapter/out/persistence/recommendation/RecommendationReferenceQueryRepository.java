@@ -22,9 +22,9 @@ class RecommendationReferenceQueryRepository {
         Map<UUID, RecommendationReference> result = new LinkedHashMap<>();
         jdbcTemplate.query("""
                 SELECT reference.recommendation_item_id, reference.record_id,
-                       reference.reference_reason, record.performed_at, record.satisfaction
+                       reference.reference_reason, reference.performed_at_snapshot AS performed_at,
+                       reference.satisfaction_snapshot AS satisfaction
                 FROM recommendation_reference_records reference
-                JOIN treatment_records record ON record.record_id = reference.record_id
                 WHERE reference.recommendation_item_id IN (:ids)
                 ORDER BY reference.recommendation_item_id, reference.record_id
                 """, Map.of("ids", itemIds), (org.springframework.jdbc.core.RowCallbackHandler) rows -> result.put(

@@ -262,6 +262,41 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
         assertThat(runCount()).isEqualTo(2);
     }
 
+    @Test
+    void cutShapeEditReranksLatestAndThenReusesItWithoutANewAccount() throws Exception {
+        jdbcTemplate.update("UPDATE treatment_records SET cut_shape = 'LAYERED' WHERE record_id = ?", treatmentRecordId);
+        String oldId = generateRun();
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(
+                        "/treatment-records/{id}", treatmentRecordId)
+                        .with(authentication(auth(USER_ID))).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cut_shape\":\"BOB\"}"))
+                .andExpect(status().isOk());
+        entityManager.clear();
+        String response = mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].hairstyle.style_name").value("내추럴 보브"))
+                .andExpect(jsonPath("$.data.items[0].reasons[0].message").value(org.hamcrest.Matchers.containsString("보브")))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(runId(response)).isNotEqualTo(oldId);
+        assertThat(latestRun()).isEqualTo(runId(response));
+    }
+
+    @Test
+    void historicalReferenceDateAndRatingStayFrozenAfterRecordEdit() throws Exception {
+        String oldId = generateRun();
+        String before = mockMvc.perform(get("/recommendations/{id}", oldId).with(authentication(auth(USER_ID))))
+                .andReturn().getResponse().getContentAsString();
+        var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        var reference = mapper.readTree(before).path("data").path("items").get(0).path("reference_records");
+        jdbcTemplate.update("UPDATE treatment_records SET performed_at = now() - interval '7 days', satisfaction = 2 WHERE record_id = ?",
+                treatmentRecordId);
+        entityManager.clear();
+        String after = mockMvc.perform(get("/recommendations/{id}", oldId).with(authentication(auth(USER_ID))))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(mapper.readTree(after).path("data").path("items").get(0).path("reference_records")).isEqualTo(reference);
+        assertThat(latestRun()).isNotEqualTo(oldId);
+    }
+
     private void insertShortStyle() {
         String id = "94000000-0000-4000-8000-000000000004";
         insertStyle(id, "클린 픽시컷", "SHORT", "NONE", 60, false);
@@ -361,6 +396,37 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.recommendation_basis.photo_analysis.file_id").value(newerFile.toString()));
         org.mockito.Mockito.verify(photoAnalyzer).analyze(org.mockito.ArgumentMatchers.argThat(f -> f.fileId().equals(newerFile)));
+    }
+
+    @Test
+    void replacingPhotoWithSameLengthChangesRankingAndPersistsItsEvidence() throws Exception {
+        UUID oldPhoto = attachAfterPhoto();
+        jdbcTemplate.update("UPDATE files SET created_at = now() - interval '1 hour' WHERE file_id = ?", oldPhoto);
+        var left = java.util.stream.IntStream.range(0, 96).mapToObj(i -> i < 48 ? 1.0 : 0.0).toList();
+        var right = java.util.stream.IntStream.range(0, 96).mapToObj(i -> i < 48 ? 0.0 : 1.0).toList();
+        org.mockito.Mockito.when(photoAnalyzer.analyze(org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> {
+            com.heddy.domain.file.model.StoredFile file = invocation.getArgument(0);
+            boolean first = file.fileId().equals(oldPhoto) || file.fileName().equals("레이어드 C컬.jpg");
+            return new com.heddy.domain.recommendation.model.PhotoHairEvidence(file.fileId(), "shape-test",
+                    "ASSESSED", com.heddy.domain.account.model.HairProfile.HairLength.BELOW_SHOULDER,
+                    false, first ? left : right, 0);
+        });
+        String oldId = generateRun();
+        UUID newPhoto = attachAfterPhoto();
+        entityManager.clear();
+        String response = mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].hairstyle.style_name").value("내추럴 보브"))
+                .andExpect(jsonPath("$.data.items[0].reasons[0].code").value("PHOTO_SHAPE_MATCH"))
+                .andExpect(jsonPath("$.data.recommendation_basis.photo_analysis.file_id").value(newPhoto.toString()))
+                .andExpect(jsonPath("$.data.recommendation_basis.photo_analysis.compared_style_count").value(3))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(runId(response)).isNotEqualTo(oldId);
+        entityManager.clear();
+        assertThat(latestRun()).isEqualTo(runId(response));
+        mockMvc.perform(get("/recommendations/{id}", runId(response)).with(authentication(auth(USER_ID))))
+                .andExpect(jsonPath("$.data.items[0].reasons[0].code").value("PHOTO_SHAPE_MATCH"))
+                .andExpect(jsonPath("$.data.recommendation_basis.photo_analysis.compared_style_count").value(3));
     }
 
     private UUID attachAfterPhoto() {

@@ -274,7 +274,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             List<HairstyleCandidate> candidates,
             TreatmentHistorySummary treatmentHistory
     ) {
-        StringBuilder value = new StringBuilder("RULE_BASED_V1:PHOTO_SHAPE_TREATMENT_V5|");
+        StringBuilder value = new StringBuilder("RULE_BASED_V1:CURRENT_LENGTH_V6|");
         HairProfile profile = context.hairProfile();
         if (profile != null) {
             value.append(profile.hairLength()).append('|').append(profile.hairType()).append('|')

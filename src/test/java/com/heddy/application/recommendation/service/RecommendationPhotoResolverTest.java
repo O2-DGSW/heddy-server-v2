@@ -34,13 +34,13 @@ class RecommendationPhotoResolverTest {
         var record = record(now, ImageType.OTHER, user);
         assertThat(resolver.resolve(user, null, List.of(record)).evidence().applied()).isTrue();
     }
-    @Test void longerPhotoNeverOverridesExplicitShortProfile() {
+    @Test void newerLongPhotoReplacesOldShortProfile() {
         var record = record(now, ImageType.AFTER, user);
         when(analyzer.analyze(any())).thenAnswer(i -> new PhotoHairEvidence(((StoredFile)i.getArgument(0)).fileId(),
                 "test", "ASSESSED", HairLength.BELOW_SHOULDER, false));
         var resolved = resolver.resolve(user, profile(HairLength.SHORT, now.minusSeconds(60)), List.of(record));
-        assertThat(resolved.profile().hairLength()).isEqualTo(HairLength.SHORT);
-        assertThat(resolved.evidence().applied()).isFalse();
+        assertThat(resolved.profile().hairLength()).isEqualTo(HairLength.BELOW_SHOULDER);
+        assertThat(resolved.evidence().applied()).isTrue();
     }
     @Test void newerExplicitProfileKeepsLengthButStillAllowsShapeAnalysis() {
         var record = record(now, ImageType.AFTER, user);

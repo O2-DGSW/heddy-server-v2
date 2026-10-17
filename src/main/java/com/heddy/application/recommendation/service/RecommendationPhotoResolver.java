@@ -53,9 +53,9 @@ public class RecommendationPhotoResolver {
                     "NEWER_PROFILE", evidence.observedLength(), false, evidence.hairShape(), 0));
         }
         var observed = evidence.observedLength();
-        // An inferred longer length must never undo a user's explicit short-hair constraint.
-        boolean apply = observed != null && (profile == null || profile.hairLength() == null
-                || observed.ordinal() <= profile.hairLength().ordinal());
+        // A newer result photo updates current length in either direction. The newer-profile guard
+        // above already protects a user's subsequent correction; an old SHORT profile is not a goal.
+        boolean apply = observed != null;
         if (!apply) return new Resolved(profile, evidence);
         HairProfile effective = profile == null
                 ? HairProfile.create(userId, null, null, observed, null, null)

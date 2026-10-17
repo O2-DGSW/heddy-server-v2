@@ -429,6 +429,32 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.recommendation_basis.photo_analysis.compared_style_count").value(3));
     }
 
+    @Test
+    void newLongTreatmentPhotoReplacesOldShortRunAndExcludesBuzzCuts() throws Exception {
+        insertShortStyle();
+        jdbcTemplate.update("UPDATE hair_profiles SET hair_length = 'SHORT' WHERE user_id = ?", USER_ID);
+        String oldId = generateRun();
+        UUID photo = attachAfterPhoto();
+        org.mockito.Mockito.when(photoAnalyzer.analyze(org.mockito.ArgumentMatchers.any())).thenAnswer(invocation ->
+                new com.heddy.domain.recommendation.model.PhotoHairEvidence(
+                        ((com.heddy.domain.file.model.StoredFile) invocation.getArgument(0)).fileId(),
+                        "long-photo", "ASSESSED", com.heddy.domain.account.model.HairProfile.HairLength.BELOW_SHOULDER, false));
+        entityManager.clear();
+        String response = mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_basis.current_hair.hair_length").value("BELOW_SHOULDER"))
+                .andExpect(jsonPath("$.data.recommendation_basis.photo_analysis.file_id").value(photo.toString()))
+                .andExpect(jsonPath("$.data.recommendation_basis.photo_analysis.applied").value(true))
+                .andExpect(jsonPath("$.data.items[*].hairstyle.style_name")
+                        .value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("클린 픽시컷"))))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(runId(response)).isNotEqualTo(oldId);
+        assertThat(latestRun()).isEqualTo(runId(response));
+        // The derived recommendation length does not silently rewrite the user's saved profile.
+        assertThat(jdbcTemplate.queryForObject("SELECT hair_length FROM hair_profiles WHERE user_id = ?", String.class, USER_ID))
+                .isEqualTo("SHORT");
+    }
+
     private UUID attachAfterPhoto() {
         UUID id = UUID.randomUUID();
         jdbcTemplate.update("UPDATE hair_profiles SET updated_at = now() - interval '2 days' WHERE user_id = ?", USER_ID);

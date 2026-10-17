@@ -129,6 +129,6 @@ jobs:
           APP_IMAGE_TAG="${{ github.sha }}" docker compose pull app
           # 기존 앱을 내리기 전에 후보 컨테이너의 사용자/마운트로 모델 접근을 검사한다.
           APP_IMAGE_TAG="${{ github.sha }}" docker compose run --rm -T --no-deps --entrypoint sh app -s < check-hair-analysis-model.sh
-          APP_IMAGE_TAG="${{ github.sha }}" docker compose up -d --remove-orphans
+          APP_IMAGE_TAG="${{ github.sha }}" docker compose up -d --remove-orphans --wait --wait-timeout 120
           docker image prune -f
           EOF

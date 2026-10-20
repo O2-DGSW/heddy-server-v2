@@ -331,6 +331,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
                 .forEach(candidate -> value.append('|').append(candidate.hairstyleId()).append(':')
                         .append(candidate.styleName()).append(':').append(candidate.assetVersion()).append(':').append(candidate.metadataVersion())
                         .append(':').append(candidate.arMode())
+                        .append(':').append(candidate.arGroomName())
                         .append(':').append(candidate.category())
                         .append(':').append(candidate.thumbnailFileId())
                         .append(':').append(candidate.active())

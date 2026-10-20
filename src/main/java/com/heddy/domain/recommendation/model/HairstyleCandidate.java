@@ -33,8 +33,35 @@ public record HairstyleCandidate(
         ChemicalStressLevel chemicalStressLevel,
         int editorialPriority,
         String metadataVersion,
-        Map<UUID, String> tags
+        Map<UUID, String> tags,
+        String arGroomName
 ) {
+
+    public HairstyleCandidate(
+        UUID hairstyleId,
+        String styleName,
+        String category,
+        UUID thumbnailFileId,
+        String arMode,
+        boolean active,
+        String assetVersion,
+        Set<ServiceType> serviceTypes,
+        Set<HairLength> compatibleHairLengths,
+        Set<HairType> compatibleHairTypes,
+        Set<HairThickness> compatibleHairThicknesses,
+        Set<HairCondition> compatibleHairConditions,
+        Set<HairCondition> contraindicatedHairConditions,
+        HairLength minimumHairLength,
+        int estimatedDailyCareMinutes,
+        ManagementDifficulty managementDifficulty,
+        ChemicalStressLevel chemicalStressLevel,
+        int editorialPriority,
+        String metadataVersion,
+        Map<UUID, String> tags
+    ) {
+        this(hairstyleId, styleName, category, thumbnailFileId, arMode, active, assetVersion, serviceTypes, compatibleHairLengths, compatibleHairTypes, compatibleHairThicknesses, compatibleHairConditions, contraindicatedHairConditions, minimumHairLength, estimatedDailyCareMinutes, managementDifficulty, chemicalStressLevel, editorialPriority, metadataVersion, tags, null);
+    }
+
     public enum ManagementDifficulty { LOW, MEDIUM, HIGH }
     public enum ChemicalStressLevel { LOW, MEDIUM, HIGH }
 
@@ -68,6 +95,7 @@ public record HairstyleCandidate(
     }
 
     public boolean supportsAr() {
-        return !"NONE".equals(arMode);
+        return "THREE_D".equals(arMode) ? arGroomName != null && !arGroomName.isBlank()
+                : !"NONE".equals(arMode);
     }
 }

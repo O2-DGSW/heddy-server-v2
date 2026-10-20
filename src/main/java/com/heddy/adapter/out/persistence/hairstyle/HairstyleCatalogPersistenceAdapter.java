@@ -77,7 +77,7 @@ public class HairstyleCatalogPersistenceAdapter implements HairstyleCatalogRepos
                 profile.estimatedDailyCareMinutes(),
                 ManagementDifficulty.valueOf(profile.managementDifficulty()),
                 ChemicalStressLevel.valueOf(profile.chemicalStressLevel()),
-                profile.editorialPriority(), profile.metadataVersion(), tags);
+                profile.editorialPriority(), profile.metadataVersion(), tags, asset.arGroomName());
     }
 
     private static <E extends Enum<E>> Set<E> parse(Set<String> values, Class<E> type) {

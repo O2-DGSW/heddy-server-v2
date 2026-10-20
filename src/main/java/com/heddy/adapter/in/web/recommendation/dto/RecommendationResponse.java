@@ -106,7 +106,8 @@ public record RecommendationResponse(
             return new Item(item.displayRank(), item.score(), new Hairstyle(
                     value.hairstyle().hairstyleId(), value.hairstyle().styleName(),
                     value.thumbnailUrl() == null ? null : value.thumbnailUrl().toString(),
-                    value.hairstyle().arMode(), value.hairstyle().assetVersion()), item.colorId(),
+                    value.hairstyle().arMode(), value.hairstyle().assetVersion(),
+                    value.hairstyle().arGroomName()), item.colorId(),
                     item.managementDifficulty().name(), item.estimatedDailyCareMinutes(),
                     item.reasons().isEmpty() ? "기본 추천 스타일입니다." : Reason.message(item.reasons().getFirst()),
                     item.reasons().stream().map(Reason::from).toList(),
@@ -119,7 +120,8 @@ public record RecommendationResponse(
             @JsonProperty("style_name") String styleName,
             @JsonProperty("thumbnail_url") String thumbnailUrl,
             @JsonProperty("ar_mode") String arMode,
-            @JsonProperty("asset_version") String assetVersion
+            @JsonProperty("asset_version") String assetVersion,
+            @JsonProperty("ar_groom_name") String arGroomName
     ) { }
 
     public record Reason(String code, String message, Map<String, String> params) {

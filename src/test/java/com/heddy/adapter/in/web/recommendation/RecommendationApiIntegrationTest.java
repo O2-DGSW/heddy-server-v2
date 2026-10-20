@@ -94,6 +94,31 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
+    void returnsExactArGroomAndInvalidatesCachedRecommendationWhenMappingChanges() throws Exception {
+        UUID styleId = UUID.fromString("94000000-0000-4000-8000-000000000001");
+        jdbcTemplate.update("UPDATE hairstyle_assets SET ar_mode = 'THREE_D', ar_groom_name = 'guile-cut' WHERE hairstyle_id = ?", styleId);
+        entityManager.clear();
+        String body = mockMvc.perform(post("/recommendations/generate")
+                        .with(authentication(auth(USER_ID))).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].hairstyle.ar_groom_name").value("guile-cut"))
+                .andExpect(jsonPath("$.data.items[0].hairstyle.ar_mode").value("THREE_D"))
+                .andExpect(jsonPath("$.data.items[1].hairstyle.ar_groom_name").doesNotExist())
+                .andReturn().getResponse().getContentAsString();
+        String previousId = runId(body);
+        assertThat(latestRun()).isEqualTo(previousId);
+        jdbcTemplate.update("UPDATE hairstyle_assets SET ar_groom_name = 'guile-short-cut' WHERE hairstyle_id = ?", styleId);
+        entityManager.clear();
+        String updated = mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].hairstyle.ar_groom_name").value("guile-short-cut"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(runId(updated)).isNotEqualTo(previousId);
+        mockMvc.perform(get("/recommendations/{id}", runId(updated)).with(authentication(auth(OTHER_USER_ID))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void generatesReusesAndProtectsRuleBasedRecommendation() throws Exception {
         String response = mockMvc.perform(post("/recommendations/generate")
                         .with(authentication(auth(USER_ID)))

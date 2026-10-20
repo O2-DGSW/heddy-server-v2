@@ -21,3 +21,39 @@
 - 카탈로그 호환성·점수·정렬 조건도 입력 해시에 포함한다. 운영 메타데이터 버전을 빠뜨린
   수정도 이전 결과를 재사용하지 않는다. `/recommendations/{id}`는 과거 실행 조회를 유지한다.
 - `force_refresh=true`는 새 실행을 만들지만 같은 입력의 순위를 무작위로 섞지는 않는다.
+
+## 추천 → AR 연결 (2026-10-20)
+
+AR은 `O2-DGSW/AR-hairstyle` GPU 서버가 GLB를 렌더링해 WebRTC 영상으로 전달한다.
+추천 UUID와 AR `/grooms`의 `name`을 `hairstyle_assets.ar_groom_name`으로 연결한다.
+추천 응답은 `items[].hairstyle.ar_groom_name`과 `ar_mode=THREE_D`를 반환하며,
+앱은 `/ar?groom=<이름>`으로 이동해 목록 로딩 후 정확히 일치하는 스타일을 선택한다.
+매핑이 없으면 버튼을 비활성화하고 GPU 목록에서 사라진 경우 원본 화면과 안내를 표시한다.
+
+`catalog/ar-notion-20261020/manifest.json`에는 운영 GPU 서버의 56개 중 시험용
+`short-swept`, `side-sweep`, `long-wave`를 제외한 53개를 기록했다.
+미변환 스타일(버스트 페이드, 보울컷, 여자 애즈펌)은 등록하지 않는다.
+GLB는 GPU 서버에 유지하고 모델의 PNG 썸네일을 비공개 S3의
+`HAIRSTYLE_THUMBNAIL/ar-notion-20261020/`에 저장한다. 조회에는 기존 만료 URL을 쓴다.
+
+길이·관리 시간·난이도·약제 부담은 원본 길이/시술/관리쉬움 태그 기반의 **초기 추정값**이며
+전문가 검증을 받은 개인 적합성 정보가 아니다. 모질·굵기·상태 호환성은 근거 없이 채우지
+않으며 펌은 손상 모발을 보수적으로 제외한다. 성별은 원본 메타데이터로 보존하고 현재
+추천기에 성별 필터를 새로 도입하지 않는다. 선호 태그는 기존 ID에 명시적으로 연결한다.
+
+운영 적용 순서:
+
+1. V37 및 `ar_groom_name` 응답 서버와 groom 전달 앱을 배포한다.
+2. `/grooms`의 53개 GLB 헤더·썸네일을 검증하고 manifest와 `images/<groom>.png`를
+   bundle로 준비한다. 이미지 SHA-256은 커밋된 manifest와 일치해야 한다.
+3. `python3 scripts/ar_catalog_test.py <bundle>`로 임시 PostgreSQL 검증을 수행한다.
+4. EC2의 기존 boto3 환경으로 `python scripts/ar_catalog.py <bundle> --apply`를 실행한다.
+   자격증명은 기존 앱 컨테이너에서 메모리로 읽으며 출력하거나 별도 파일로 복사하지 않는다.
+5. S3 바이트를 검증한 뒤 한 트랜잭션으로 등록하고 새 53개만 추천 활성화한다.
+   기존 카탈로그·저장 스타일·추천 이력은 삭제하지 않는다. 기존 추천은 STALE 처리하며
+   `/recommendations/latest` 재방문 때 새 카탈로그를 반영한다.
+
+서버 `~/heddy-catalog-backups/ar-notion-20261020/`에 최초 활성 상태와 복원 SQL을 저장한다.
+카탈로그가 백업 후 바뀌었으면 적용을 거부한다. 재시도에서도 최초 백업을 덮어쓰지 않는다.
+복구하려면 그 경로의 `restore.sql`로 이전 활성 상태를 복원한다. 신규 객체와 행은
+참조 보존을 위해 삭제하지 않고 비활성화한다.

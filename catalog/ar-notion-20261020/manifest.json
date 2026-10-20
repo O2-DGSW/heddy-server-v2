@@ -1,0 +1,2076 @@
+{
+  "release": "ar-notion-20261020",
+  "source": "O2-DGSW/AR-hairstyle + live /grooms",
+  "metadata_policy": "Initial tag-derived length and care estimates; compatibility is unspecified and requires domain review.",
+  "excluded_test_grooms": [
+    "short-swept",
+    "side-sweep",
+    "long-wave"
+  ],
+  "entries": [
+    {
+      "name": "aegyo-perm",
+      "label": "애교머리펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "러블리"
+      ],
+      "hairstyle_id": "07fed3f9-7ecf-58c8-835f-29cc31a098d3",
+      "file_id": "7534f465-97bc-5867-9ca9-4b73dc03f80e",
+      "upload_id": "14518419-365e-52c6-9a8f-c523dd94e0ef",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/aegyo-perm.png",
+      "image_file": "images/aegyo-perm.png",
+      "sha256": "a20efe9935187bfb6350a27923a4dd15d7a8ec336bcdd43deb79f445e1d793c8",
+      "file_size": 188531,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42929344
+    },
+    {
+      "name": "announcer-perm",
+      "label": "아나운서펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "미디움",
+        "클래식"
+      ],
+      "hairstyle_id": "ea95e705-f63b-55b6-9d6f-eabd8ba50aa4",
+      "file_id": "e66d2141-b3bb-5ddb-9584-66aa42a2243b",
+      "upload_id": "2afba7be-b354-5bae-997f-f5ff6f807527",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/announcer-perm.png",
+      "image_file": "images/announcer-perm.png",
+      "sha256": "4c588c70f0dbd1da68ac7bc2b0f8e6df31fcacb9a2cdd22fea0c712aba0d7ced",
+      "file_size": 163245,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 43110760
+    },
+    {
+      "name": "as-perm",
+      "label": "애즈펌",
+      "gender": "남자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "내추럴",
+        "트렌디"
+      ],
+      "hairstyle_id": "aefb2861-95bb-59f5-8c4c-0b21c561e0ad",
+      "file_id": "c97b311b-eee2-59a5-ac1a-acf4f6df8ba7",
+      "upload_id": "92241e21-8091-5128-95f2-fd2a7f0cc77a",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/as-perm.png",
+      "image_file": "images/as-perm.png",
+      "sha256": "8a63bdeea6fb6026587d71baf6a66dd1ff8d410ac2f47a6984afae73fff2747d",
+      "file_size": 129864,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 38597456
+    },
+    {
+      "name": "bob-cut",
+      "label": "보브컷",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "클래식",
+        "러블리"
+      ],
+      "hairstyle_id": "01e5004d-76e6-5903-9f90-833ebcb6ce2b",
+      "file_id": "964d46b2-3559-5ee6-b903-e3b2ae42e972",
+      "upload_id": "1ce1a121-8836-5dc4-9203-a6d5dd9fc075",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/bob-cut.png",
+      "image_file": "images/bob-cut.png",
+      "sha256": "e5b6f7f9092b1944aa7065084765ac2c349e22bf4517ec528524c0b8a4279095",
+      "file_size": 334566,
+      "width": 768,
+      "height": 768,
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "BOB",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 39026072
+    },
+    {
+      "name": "build-perm",
+      "label": "빌드펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "미디움",
+        "웨이브",
+        "볼륨"
+      ],
+      "hairstyle_id": "3e1c31fe-93db-507c-add5-a1b7a5a42bd5",
+      "file_id": "cc082054-3f05-5567-9db3-57ed0c6d1487",
+      "upload_id": "b016d57e-ded1-50cc-aefb-a65308dc94e7",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/build-perm.png",
+      "image_file": "images/build-perm.png",
+      "sha256": "6d0e73fd33ee98eab5a20cf96193dba863c9c55fd11c4ce46f8d4ff9bca8d358",
+      "file_size": 190013,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 41973544
+    },
+    {
+      "name": "buzz-cut",
+      "label": "버즈컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "관리쉬움"
+      ],
+      "hairstyle_id": "86ecbdda-03df-50a3-ab61-550fb103f790",
+      "file_id": "cb24a7a3-066c-5cdd-9144-79e6b443e177",
+      "upload_id": "74cd0235-724d-56f2-aa3d-ca040d6fa43c",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/buzz-cut.png",
+      "image_file": "images/buzz-cut.png",
+      "sha256": "a72fbacbc68c9e059b63b86e2977aebb31593ce02a1751ce148dc6628472e4b8",
+      "file_size": 128445,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 41053380
+    },
+    {
+      "name": "c-curl-perm",
+      "label": "C컬펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "미디움",
+        "웨이브",
+        "러블리"
+      ],
+      "hairstyle_id": "d419401a-42cb-59db-98cb-bba1aee5a6c0",
+      "file_id": "96a17731-1d99-554b-9ad0-790c5a9d9050",
+      "upload_id": "88101ca3-0b92-5540-ab88-eedf715bf17e",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/c-curl-perm.png",
+      "image_file": "images/c-curl-perm.png",
+      "sha256": "acd947c6004dc819959d80f2142052b52ad97068483cc47766a41ce6e5e1fce3",
+      "file_size": 149174,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 43920788
+    },
+    {
+      "name": "caesar-cut",
+      "label": "시저컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "클래식",
+        "이마노출"
+      ],
+      "hairstyle_id": "32d47525-90ca-5b14-b02e-7a7b3572de06",
+      "file_id": "58110b9b-ef87-5d0e-91be-256246e0ff20",
+      "upload_id": "1c44eaeb-52c4-5b97-93e4-870448e52912",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/caesar-cut.png",
+      "image_file": "images/caesar-cut.png",
+      "sha256": "179e68943cc47a22cd878d1b69b48d41e25ec6110b966f57c2365996258e6499",
+      "file_size": 139863,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 39553256
+    },
+    {
+      "name": "comma-perm",
+      "label": "쉼표펌",
+      "gender": "남자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "내추럴",
+        "이마노출"
+      ],
+      "hairstyle_id": "130d94be-dc7e-5cf5-b097-6277570ee8bb",
+      "file_id": "c4d53ef7-40d9-5846-ab10-6d335da6f4b9",
+      "upload_id": "df807bfb-21d6-5d68-979f-0451c1f40748",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/comma-perm.png",
+      "image_file": "images/comma-perm.png",
+      "sha256": "ef3e2a71a16a71086eb9819e4c022f95d9fe5532b683c4f304523232241d04b7",
+      "file_size": 104896,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 39689340
+    },
+    {
+      "name": "crew-cut",
+      "label": "크루컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "관리쉬움",
+        "클래식"
+      ],
+      "hairstyle_id": "ba267aaa-5d13-5e65-bb5a-957281678df0",
+      "file_id": "73e59bca-aee7-50f1-bfaa-b8b3922078f4",
+      "upload_id": "8f2853f4-480f-58d1-81f0-aded3aa97d4b",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/crew-cut.png",
+      "image_file": "images/crew-cut.png",
+      "sha256": "1cc6fe3b72aa348690d92d4f0ebb8856d2c67502134414e4373e1fd3e3799568",
+      "file_size": 104261,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42112860
+    },
+    {
+      "name": "crop-cut",
+      "label": "크롭컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "트렌디",
+        "관리쉬움"
+      ],
+      "hairstyle_id": "d3b0d7e8-1bf7-5c88-9b56-3234259d348b",
+      "file_id": "372b9eeb-db0d-5f88-8ffe-080e0c1c0c61",
+      "upload_id": "4853f9cd-0be6-5748-aca7-76bdcdf0d145",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/crop-cut.png",
+      "image_file": "images/crop-cut.png",
+      "sha256": "8905167616a92771c8a6be313622ee3cf6da9e689222f41866a7ecdadd437eae",
+      "file_size": 105655,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 41536140
+    },
+    {
+      "name": "curtain-cut",
+      "label": "커튼(가르마)컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "미디움",
+        "클래식",
+        "이마노출"
+      ],
+      "hairstyle_id": "d7590223-b3a3-5dad-a91b-a6632d43f6ac",
+      "file_id": "65af2587-1c7a-5c5f-971e-1fefdacdcfbf",
+      "upload_id": "bc392371-090c-5479-8866-7ecd425287bc",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/curtain-cut.png",
+      "image_file": "images/curtain-cut.png",
+      "sha256": "bd586455b1723e31fce0500925a6fc4195116c8a38917d6b901515fe4f5110e6",
+      "file_size": 164841,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "BOB",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 40366500
+    },
+    {
+      "name": "danbal-cut",
+      "label": "단발컷",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "클래식"
+      ],
+      "hairstyle_id": "f904cea8-9314-5553-9fa0-45939f8ab690",
+      "file_id": "d1557637-900f-50bb-8838-002355cc559a",
+      "upload_id": "676e722c-c1e9-5a0a-a96b-8748eb568630",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/danbal-cut.png",
+      "image_file": "images/danbal-cut.png",
+      "sha256": "081c85215457353e4f0a58b16f773522e55230f239ca75eee224cf178638a70e",
+      "file_size": 180451,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "BOB",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 37842540
+    },
+    {
+      "name": "dandy-cut",
+      "label": "댄디컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "클래식",
+        "관리쉬움"
+      ],
+      "hairstyle_id": "bf725c93-101b-53e9-a48d-0721ef77ea7f",
+      "file_id": "67fa8a2d-7b2b-5895-898e-6b6c4174df3a",
+      "upload_id": "b2ef17b2-5e1f-5ca2-9a29-d060140e3197",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/dandy-cut.png",
+      "image_file": "images/dandy-cut.png",
+      "sha256": "7a21ce7bc35d4594a7bd21984cbaaf1951e99cdd213dd6e03811756280438659",
+      "file_size": 151036,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 33889740
+    },
+    {
+      "name": "down-block-perm",
+      "label": "다운블럭펌",
+      "gender": "남자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "관리쉬움"
+      ],
+      "hairstyle_id": "1faa356d-d1f5-5a47-bd4a-bc53e7016043",
+      "file_id": "1b2620a0-d7c1-575f-8cfc-f921bcb542a7",
+      "upload_id": "61c15745-216f-5df3-91de-f3eb05a9b16d",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/down-block-perm.png",
+      "image_file": "images/down-block-perm.png",
+      "sha256": "805e4c7d54d7675cb05cb45c5b695f840411032ac6aefc3a593193a8f8ffb8b9",
+      "file_size": 151269,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 40852500
+    },
+    {
+      "name": "down-perm",
+      "label": "다운펌",
+      "gender": "남자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "관리쉬움"
+      ],
+      "hairstyle_id": "c987cd4e-ce3b-51ea-a2f3-4e9fa400d858",
+      "file_id": "d95f3b2b-eee0-5c2a-827e-e13bcaed2079",
+      "upload_id": "01913cb6-2f56-591d-9a6f-a53d745b40a4",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/down-perm.png",
+      "image_file": "images/down-perm.png",
+      "sha256": "ff67705c43e7e8651eb4ffdd97024e1e85d45cca29894c92bfed02c258a89666",
+      "file_size": 151952,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 39355612
+    },
+    {
+      "name": "glam-perm",
+      "label": "글램펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "롱",
+        "볼륨",
+        "시크"
+      ],
+      "hairstyle_id": "c0ea7bc2-3590-5c93-9373-98bf45b1263a",
+      "file_id": "93ab679f-fc2e-5dca-8389-2a9d11ce028d",
+      "upload_id": "093b4644-430f-590d-8810-db3e6678bba1",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/glam-perm.png",
+      "image_file": "images/glam-perm.png",
+      "sha256": "c60242fd91c2116550f2ee31d3e6f63246c8799f8870cbd56b1726ae52f66715",
+      "file_size": 179761,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHEST",
+      "compatible_hair_lengths": [
+        "BELOW_CHEST"
+      ],
+      "category": "LONG",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42466024
+    },
+    {
+      "name": "glossy-straight",
+      "label": "글로시 스트레이트",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "롱",
+        "스트레이트",
+        "시크",
+        "2026트렌드"
+      ],
+      "hairstyle_id": "93612b1f-b843-5926-8715-6971d6a9221e",
+      "file_id": "c430f47a-37a5-5fad-9fa2-9450c6ff6e95",
+      "upload_id": "29b5ccc6-1a24-597e-8f52-369233541b3d",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/glossy-straight.png",
+      "image_file": "images/glossy-straight.png",
+      "sha256": "d4115812b3060b4ea6543befe4dce3bdd1da6abb7ef28b16b1a0e52469d8dbb5",
+      "file_size": 132464,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHEST",
+      "compatible_hair_lengths": [
+        "BELOW_CHEST"
+      ],
+      "category": "LONG",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 41992960
+    },
+    {
+      "name": "guile-cut",
+      "label": "가일컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "내추럴"
+      ],
+      "hairstyle_id": "6ed3b933-1584-5ea6-b420-ac4a1e0e4130",
+      "file_id": "042f570c-5493-5739-b87f-952523685c53",
+      "upload_id": "47ee3465-2347-5f7b-8502-b0023f4f753e",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/guile-cut.png",
+      "image_file": "images/guile-cut.png",
+      "sha256": "f03699258267865895e18d6bb7384d9d862258b76485560fc7e923354b139393",
+      "file_size": 167416,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 39008940
+    },
+    {
+      "name": "guile-short-cut",
+      "label": "가일숏컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "내추럴"
+      ],
+      "hairstyle_id": "98fbccf5-e6ae-543c-a50d-4297a4524cf2",
+      "file_id": "e6e2f2c2-073a-5747-b9c5-fac9b812fd0a",
+      "upload_id": "f2ed68c7-5b68-5b4b-990c-a86b2beb97e1",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/guile-short-cut.png",
+      "image_file": "images/guile-short-cut.png",
+      "sha256": "0486b46d3fca7153c99aecd17dc30b20f06159890ac72b4b57026a29259afd97",
+      "file_size": 125222,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 38299380
+    },
+    {
+      "name": "hippie-perm-m",
+      "label": "히피펌(남자)",
+      "gender": "남자",
+      "type": "펌",
+      "tags": [
+        "미디움",
+        "웨이브",
+        "내추럴"
+      ],
+      "hairstyle_id": "3f755e38-80a5-55e1-a1c9-8c2b98b413e3",
+      "file_id": "f2709d3b-c926-5b52-934b-22fea18d119f",
+      "upload_id": "6513fee4-113b-5be8-9b79-0cf7869a23c0",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/hippie-perm-m.png",
+      "image_file": "images/hippie-perm-m.png",
+      "sha256": "62a096ed0c2669cda2a2d0933fcf584f7a503dc2083aec3bfe0194d1ae403461",
+      "file_size": 153564,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "BOB",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 39906420
+    },
+    {
+      "name": "hippie-perm",
+      "label": "히피펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "미디움",
+        "웨이브",
+        "내추럴"
+      ],
+      "hairstyle_id": "5c22267d-e6af-5d3c-a513-1c625bd1d84e",
+      "file_id": "562086e5-a6d3-50c8-b89c-8dae910156be",
+      "upload_id": "9acecb95-c53e-502d-9607-c7aa21a10b08",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/hippie-perm.png",
+      "image_file": "images/hippie-perm.png",
+      "sha256": "799d1bc53912c70013e8a444e525f64277ab8da8e5e2bcaa237fe23df8594800",
+      "file_size": 345754,
+      "width": 768,
+      "height": 768,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42875200
+    },
+    {
+      "name": "hush-cut",
+      "label": "허쉬컷",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "미디움",
+        "내추럴",
+        "트렌디",
+        "2026트렌드"
+      ],
+      "hairstyle_id": "23f76893-6390-52f7-ab96-f17b9d492372",
+      "file_id": "890656b9-4cca-5c04-bc54-badad2520b6f",
+      "upload_id": "a9e051df-a562-59f6-8380-2844172d67e5",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/hush-cut.png",
+      "image_file": "images/hush-cut.png",
+      "sha256": "17e1c77c4f2a9a0c55d96b1bcb1a2b18f6e4525efe5634ad0011b4d9984854cd",
+      "file_size": 157013,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 43567624
+    },
+    {
+      "name": "iron-perm",
+      "label": "아이롱펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "미디움",
+        "웨이브",
+        "러블리",
+        "2026트렌드"
+      ],
+      "hairstyle_id": "9c295ecb-fc16-536e-8541-80f6f557ba86",
+      "file_id": "acc346c6-4f6f-5805-8cf2-37646bb83f4c",
+      "upload_id": "e8252c7d-2676-512a-953b-9938d17b83aa",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/iron-perm.png",
+      "image_file": "images/iron-perm.png",
+      "sha256": "5b97a0c7bc1bb9b3771cdfb28ccd753730b1d5f730973d2ac72e1ef942a78e86",
+      "file_size": 166176,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 43198264
+    },
+    {
+      "name": "ivy-league-cut",
+      "label": "아이비리그컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "클래식"
+      ],
+      "hairstyle_id": "3dc98ed1-446c-597c-babc-9b1ba0a268ea",
+      "file_id": "15a4718d-6533-53f7-a8c7-ed160f57104b",
+      "upload_id": "0ea6ef7a-4a32-5128-8bb9-3f18d26765de",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/ivy-league-cut.png",
+      "image_file": "images/ivy-league-cut.png",
+      "sha256": "1f5f134bff1e304a974903fbe891d178cb35f4ce011e073963b8463933fb6459",
+      "file_size": 119484,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 41315816
+    },
+    {
+      "name": "jelly-perm",
+      "label": "젤리펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "웨이브",
+        "러블리"
+      ],
+      "hairstyle_id": "6db5cf96-d085-5b7f-bbd9-9b251cbe95e5",
+      "file_id": "09dae276-36dc-5ec2-afcb-39652cda5c1d",
+      "upload_id": "e31dde65-23fe-5ffc-af3c-e98b2684e4ad",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/jelly-perm.png",
+      "image_file": "images/jelly-perm.png",
+      "sha256": "1acf307c3376fd5f442803db48bbd87c77521f2ff5dc1263b795ffc9577158c7",
+      "file_size": 229433,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "BOB",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42414184
+    },
+    {
+      "name": "layered-cut",
+      "label": "레이어드컷",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "미디움",
+        "롱",
+        "내추럴"
+      ],
+      "hairstyle_id": "306f749f-9f1f-5578-aa12-5b7022efac13",
+      "file_id": "4553723a-5ef3-502c-ab2c-920fbaca298a",
+      "upload_id": "1d58c504-2ddc-5bcf-b5fe-52529fa5c5bb",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/layered-cut.png",
+      "image_file": "images/layered-cut.png",
+      "sha256": "d6e8363178c5ea0b13bb8b69ec684eb6f28e98938aeb29cdb049c0f92aec10dc",
+      "file_size": 157968,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42349380
+    },
+    {
+      "name": "leaf-cut",
+      "label": "리프컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "내추럴",
+        "트렌디"
+      ],
+      "hairstyle_id": "7b00b3e9-c543-51b4-98db-649818cb49fa",
+      "file_id": "31f33f3a-c988-51f3-97b2-ccf3e217c684",
+      "upload_id": "0b1d688b-1115-5e82-a846-9e3aa263194d",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/leaf-cut.png",
+      "image_file": "images/leaf-cut.png",
+      "sha256": "eaad5aa75127cadc062037ac0cfe195a59462ffd2daf2db774d04c183cd4c3e3",
+      "file_size": 282955,
+      "width": 768,
+      "height": 768,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 39738876
+    },
+    {
+      "name": "leaf-perm",
+      "label": "리프펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "웨이브",
+        "내추럴"
+      ],
+      "hairstyle_id": "a93cbd7f-69e5-5b61-ad2a-aecae18fba6a",
+      "file_id": "343d9f7d-04a8-53fd-ae4a-01f24e5d503e",
+      "upload_id": "2d11f7cf-0143-5216-8cf7-04b25374fbdf",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/leaf-perm.png",
+      "image_file": "images/leaf-perm.png",
+      "sha256": "775358b540c3455371fcf42645980e334f3b061cea22b60c75948f0d1ccaf565",
+      "file_size": 165352,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "BOB",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 41302856
+    },
+    {
+      "name": "medium-cut",
+      "label": "미디움컷",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "미디움",
+        "내추럴"
+      ],
+      "hairstyle_id": "4fd9e4d9-bb26-584b-b97b-0e3df765919d",
+      "file_id": "d93669ca-9dbb-5596-9ea8-b8f7dea4a236",
+      "upload_id": "64a954d4-36df-54a2-bd9a-28b5f9fa0ab1",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/medium-cut.png",
+      "image_file": "images/medium-cut.png",
+      "sha256": "d8e0b3b8e975496d16a541ec04abd2d0a856a96e918762087e52236314a284cf",
+      "file_size": 147451,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42874248
+    },
+    {
+      "name": "mix-perm",
+      "label": "믹스펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "미디움",
+        "웨이브",
+        "트렌디",
+        "2026트렌드"
+      ],
+      "hairstyle_id": "89a0109e-4242-542c-9c72-8d10b8f24479",
+      "file_id": "83fdaa6a-40c1-533e-8024-b1a3d49f5981",
+      "upload_id": "bd9b0ec5-41ba-533c-a28b-863c2d319f22",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/mix-perm.png",
+      "image_file": "images/mix-perm.png",
+      "sha256": "aebd1cd91cf965c8ea8c5aee19a213ba80bcf1eea9ef13e1a0e002135ee0858c",
+      "file_size": 177627,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 41442180
+    },
+    {
+      "name": "part-perm",
+      "label": "가르마펌",
+      "gender": "남자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "이마노출",
+        "클래식"
+      ],
+      "hairstyle_id": "a5ee93e2-88cc-5223-9ccd-9d62750ef4d8",
+      "file_id": "195530ab-7c1a-5d92-a25f-c82f1912b852",
+      "upload_id": "ca3677a2-8cff-5feb-869e-ed2c7239a340",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/part-perm.png",
+      "image_file": "images/part-perm.png",
+      "sha256": "7f9b5351655b10e5529549e284d9c7e1f187b1704d75ed68e4932bc48f5349ef",
+      "file_size": 148893,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 37790700
+    },
+    {
+      "name": "pixie-cut",
+      "label": "픽시컷",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "시크",
+        "관리쉬움"
+      ],
+      "hairstyle_id": "69bd3009-ad17-5379-8d9a-25aee123538b",
+      "file_id": "a1903b74-74a4-5036-8355-b230aba06a52",
+      "upload_id": "29e29098-91b2-569a-bdae-f173f9f96ff0",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/pixie-cut.png",
+      "image_file": "images/pixie-cut.png",
+      "sha256": "b47a568120718e8c02aed6e5ed8e74e4b7c80b2059bc7d58000a085f32befd76",
+      "file_size": 135813,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 33614344
+    },
+    {
+      "name": "pomade-cut",
+      "label": "포마드컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "클래식",
+        "시크"
+      ],
+      "hairstyle_id": "384abc4a-e73a-5832-9385-1de353158ecd",
+      "file_id": "395e64ed-e946-532d-9232-505164059690",
+      "upload_id": "0e35e52d-00ad-57df-9adb-c54c3c8b1718",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/pomade-cut.png",
+      "image_file": "images/pomade-cut.png",
+      "sha256": "23b452d141736d34ad48cb9ce4f2b912bf052995ed90a611e0397d1da34ccb91",
+      "file_size": 106873,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42080456
+    },
+    {
+      "name": "regent-cut",
+      "label": "리젠트컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "클래식",
+        "시크"
+      ],
+      "hairstyle_id": "dfae71ab-5f66-524b-a30b-46cf312d3752",
+      "file_id": "1381bd1f-1c07-5738-8add-4a76ea0abef8",
+      "upload_id": "fbf160b0-5e92-51a7-8352-191a871125d5",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/regent-cut.png",
+      "image_file": "images/regent-cut.png",
+      "sha256": "93824b0dc2571f426a3ecac21ab330e9992e3f32aa43d3e4e314593cd0ac2329",
+      "file_size": 131500,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 39750896
+    },
+    {
+      "name": "regent-perm",
+      "label": "리젠트펌",
+      "gender": "남자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "클래식",
+        "볼륨"
+      ],
+      "hairstyle_id": "ffcd7961-ae2d-5f29-a36a-33d5fcabbb6c",
+      "file_id": "81e91072-e277-5d7a-9eeb-d40f552e21dd",
+      "upload_id": "bdb3e117-7678-5651-88af-4fb9f5e52352",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/regent-perm.png",
+      "image_file": "images/regent-perm.png",
+      "sha256": "127b95902301c4d60a0802d5677d9ec7373fd276bf1679417b7990edbaeed03b",
+      "file_size": 117018,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 41344980
+    },
+    {
+      "name": "s-curl-perm",
+      "label": "S컬펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "미디움",
+        "웨이브",
+        "볼륨"
+      ],
+      "hairstyle_id": "8143d99f-8fce-534d-a39e-67b18242762a",
+      "file_id": "34b6de9e-2d98-52ea-8d77-dc722d5c417e",
+      "upload_id": "785f15e6-6784-5a45-909c-a2c3f4032606",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/s-curl-perm.png",
+      "image_file": "images/s-curl-perm.png",
+      "sha256": "8efc16266c0717904a55bc70706f3a5b0053ac85dbeab51d54ed0137af71e1f9",
+      "file_size": 182852,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42537300
+    },
+    {
+      "name": "seethrough-part-perm",
+      "label": "시스루가르마펌",
+      "gender": "남자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "이마노출",
+        "트렌디"
+      ],
+      "hairstyle_id": "d7f744e6-a7ad-570b-bcbb-de6faddd0292",
+      "file_id": "5e28084e-53ab-518f-bdf2-c31eae55d22c",
+      "upload_id": "92e98bc4-e4fc-5810-a9c2-c2618339eced",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/seethrough-part-perm.png",
+      "image_file": "images/seethrough-part-perm.png",
+      "sha256": "8e18cabb465e3be8af2427fb16021aed07d0579bfeea59c1f4af629da7055db6",
+      "file_size": 154225,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 40894616
+    },
+    {
+      "name": "setting-perm",
+      "label": "셋팅펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "미디움",
+        "볼륨",
+        "클래식"
+      ],
+      "hairstyle_id": "b97be0e4-9c64-5dae-8aaa-f986d0e62f8e",
+      "file_id": "674640cd-6c6f-5fe9-8ca1-7a64cbb6477e",
+      "upload_id": "1a84a632-e306-51aa-8076-94c914454913",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/setting-perm.png",
+      "image_file": "images/setting-perm.png",
+      "sha256": "a1a523e92afbb66a6a50b0558d781f9b117011158f70780f54613a45a920621a",
+      "file_size": 170782,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42048068
+    },
+    {
+      "name": "shaggy-cut",
+      "label": "샤기컷",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "미디움",
+        "트렌디"
+      ],
+      "hairstyle_id": "ae528c6f-6af4-52f7-b42c-1ed81019bd57",
+      "file_id": "591cda03-7f16-575b-9e41-bab41f9488c6",
+      "upload_id": "19fad6d5-a790-593f-8ca8-9f96cf87d6dd",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/shaggy-cut.png",
+      "image_file": "images/shaggy-cut.png",
+      "sha256": "9ca662bf6e74689ee460132dff7254eef4cf50fe419109ba253740770739b7cf",
+      "file_size": 159129,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42572944
+    },
+    {
+      "name": "short-perm",
+      "label": "숏펌",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "웨이브",
+        "볼륨",
+        "2026트렌드"
+      ],
+      "hairstyle_id": "15b284e4-fc8e-5fc2-a43b-b2513839d9f9",
+      "file_id": "e90c0ef2-4203-52ac-ba1c-2936b7b17e07",
+      "upload_id": "8a9eac99-8840-5761-a8db-f558876890a3",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/short-perm.png",
+      "image_file": "images/short-perm.png",
+      "sha256": "7b2317d5f16711f19bdd0235fdcc1677472f6d3a436d5b20cca8c7c087398aee",
+      "file_size": 167552,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 42508136
+    },
+    {
+      "name": "sleek-cut",
+      "label": "슬릭컷",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "시크"
+      ],
+      "hairstyle_id": "4b71af5b-8fd3-585d-9370-63eb79306402",
+      "file_id": "965e91c3-2038-5cb1-8990-e1fe44a3fb55",
+      "upload_id": "0457e758-8635-5144-b7e3-edbf78dbcd22",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/sleek-cut.png",
+      "image_file": "images/sleek-cut.png",
+      "sha256": "e73b900bdeb96b8a2cc79bf11d230adb6f540fd3bbd4137733b3d33fa2fb99df",
+      "file_size": 160829,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "BOB",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 43078380
+    },
+    {
+      "name": "slick-back-cut",
+      "label": "슬릭백컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "시크",
+        "클래식"
+      ],
+      "hairstyle_id": "eeefdf4c-4b8d-5e45-84ae-83e66d517d18",
+      "file_id": "efff8706-ef8e-5844-ac00-5a0bed52a839",
+      "upload_id": "99ee8e30-1106-597c-8896-53517218489a",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/slick-back-cut.png",
+      "image_file": "images/slick-back-cut.png",
+      "sha256": "fcfc67bfe397946b16cc1a28a113f9e20a30e6b0829ac99d6224a36863629e47",
+      "file_size": 106127,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 36403980
+    },
+    {
+      "name": "soft-mullet",
+      "label": "소프트 멀릿",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "미디움",
+        "트렌디",
+        "2026트렌드"
+      ],
+      "hairstyle_id": "3183b117-4c0d-53b7-ab74-4276f387d48b",
+      "file_id": "715f2e4b-dbe7-5f0a-a92e-bc225b1b4170",
+      "upload_id": "80d152a4-17a2-57f7-9d5d-74b598604cbf",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/soft-mullet.png",
+      "image_file": "images/soft-mullet.png",
+      "sha256": "b2fa35783e405df233ba70670ed451cd4f7f7fee54646af4f32ed714c6dc23f9",
+      "file_size": 146961,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "BOB",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 35568064
+    },
+    {
+      "name": "soft-two-block",
+      "label": "소프트투블럭",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "내추럴",
+        "트렌디"
+      ],
+      "hairstyle_id": "77b70a3d-48ef-56ea-b3f6-1548d38c4101",
+      "file_id": "e95e7472-5704-5b18-992f-2ec913574506",
+      "upload_id": "3f25b198-6762-5c35-b739-d3cfe984c272",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/soft-two-block.png",
+      "image_file": "images/soft-two-block.png",
+      "sha256": "50b801d0eb350175c40e03b7ad62fd75f6d2c3826f7611c78c60785908ba600b",
+      "file_size": 169468,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 41481060
+    },
+    {
+      "name": "spin-swallow-perm",
+      "label": "스핀스왈로펌",
+      "gender": "남자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "볼륨",
+        "트렌디"
+      ],
+      "hairstyle_id": "ee746af0-dc92-59e6-899d-19f2eaa2b4c3",
+      "file_id": "4fd5fe9d-efa8-5bf0-984f-4d1520ae9c2c",
+      "upload_id": "3a50bf06-cd30-56f5-89fd-07fb8b1e72ce",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/spin-swallow-perm.png",
+      "image_file": "images/spin-swallow-perm.png",
+      "sha256": "84961cf17d904677e9ba75c48ed89576513ad41dced28fcde521b24d6af4ca61",
+      "file_size": 164761,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 37583344
+    },
+    {
+      "name": "swallow-cut",
+      "label": "스왈로컷",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "볼륨"
+      ],
+      "hairstyle_id": "6bcb3af2-e895-533a-86e0-35b3805de5fb",
+      "file_id": "383ac57e-ee59-5b96-970a-e33408465ffb",
+      "upload_id": "0e3c1450-7237-50b9-8762-c1a1e4a948c3",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/swallow-cut.png",
+      "image_file": "images/swallow-cut.png",
+      "sha256": "8ca77a0cece1109b4b2c3c0c0fd9c9390e1ea8f828f4355a9b912db77ff005df",
+      "file_size": 154944,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 40288736
+    },
+    {
+      "name": "tassel-cut",
+      "label": "태슬컷",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "트렌디",
+        "2026트렌드"
+      ],
+      "hairstyle_id": "c605ca50-8fc8-50ab-b67f-cf38d511f5c1",
+      "file_id": "cb374852-0f18-5d0b-ab0e-78dac6717887",
+      "upload_id": "b82ee01f-24af-57ea-a99e-a401d2fc9e40",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/tassel-cut.png",
+      "image_file": "images/tassel-cut.png",
+      "sha256": "eec457ba9dfac1080b50e4ae56a80d02c80161193655c7cd2d064c89ad7bfbc7",
+      "file_size": 170170,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "BOB",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 40732624
+    },
+    {
+      "name": "two-block",
+      "label": "투블럭",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "숏",
+        "관리쉬움",
+        "트렌디"
+      ],
+      "hairstyle_id": "2c12189c-faa1-5648-9ecb-7eb9fb6da7ec",
+      "file_id": "051d8a0e-ea7a-575b-98d1-5e6ca21b13d9",
+      "upload_id": "03bb5e5d-5145-5f0c-a5ee-9964ac494047",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/two-block.png",
+      "image_file": "images/two-block.png",
+      "sha256": "89d2d6d864add8ab5b730951121346884a5c412d57d2355ddbd56b9dd0f9a0f1",
+      "file_size": 157514,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 5,
+      "management_difficulty": "LOW",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 37473184
+    },
+    {
+      "name": "volume-magic",
+      "label": "볼륨매직",
+      "gender": "여자",
+      "type": "펌",
+      "tags": [
+        "롱",
+        "스트레이트",
+        "볼륨"
+      ],
+      "hairstyle_id": "628e03bb-5ba1-54ce-8600-8a11a5de6c5e",
+      "file_id": "e5bd8e1e-d182-5584-847c-d8a3bb5ba76d",
+      "upload_id": "15c41e7e-a22b-5eb9-8955-9ce34e574c7d",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/volume-magic.png",
+      "image_file": "images/volume-magic.png",
+      "sha256": "4a42fae1f426249ff8404af7d384a81507bbcac2bfa5af315a3b0b4d5880946e",
+      "file_size": 155323,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHEST",
+      "compatible_hair_lengths": [
+        "BELOW_CHEST"
+      ],
+      "category": "LONG",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 41409784
+    },
+    {
+      "name": "volume-perm",
+      "label": "볼륨펌",
+      "gender": "남자",
+      "type": "펌",
+      "tags": [
+        "숏",
+        "볼륨"
+      ],
+      "hairstyle_id": "7d538424-8f7d-55fb-a97f-91de9b23f4c8",
+      "file_id": "e4d7b0fa-f0bc-582f-8dc6-0029b3fbc869",
+      "upload_id": "841217b8-4c15-565c-b6ac-02f551128e17",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/volume-perm.png",
+      "image_file": "images/volume-perm.png",
+      "sha256": "0b888d6561e0cad6ff2fccabf640c799ac0b84e846ccdbdc129977243e49b6c0",
+      "file_size": 162572,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "SHORT",
+      "compatible_hair_lengths": [
+        "SHORT",
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "SHORT",
+      "estimated_daily_care_minutes": 15,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "MEDIUM",
+      "service_types": [
+        "PERM"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 37444012
+    },
+    {
+      "name": "wolf-cut-m",
+      "label": "울프컷(남자)",
+      "gender": "남자",
+      "type": "컷",
+      "tags": [
+        "미디움",
+        "트렌디"
+      ],
+      "hairstyle_id": "d226a8c3-45b1-54a7-8d98-86bbbc4b5826",
+      "file_id": "c3e36ca5-5726-5a5a-b01b-2abd00501f12",
+      "upload_id": "1bb266a5-9c91-5b35-9423-09421a782038",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/wolf-cut-m.png",
+      "image_file": "images/wolf-cut-m.png",
+      "sha256": "23fc6ff6f74506726f6e3c4c6748ebaba323c5cdc0685e5b5a0ba773fc0947c5",
+      "file_size": 148904,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_CHIN",
+      "compatible_hair_lengths": [
+        "BELOW_CHIN",
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "BOB",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 40991816
+    },
+    {
+      "name": "wolf-cut-w",
+      "label": "울프컷(여자)",
+      "gender": "여자",
+      "type": "컷",
+      "tags": [
+        "미디움",
+        "트렌디",
+        "시크"
+      ],
+      "hairstyle_id": "b5242331-d513-578d-9051-891af2eb0841",
+      "file_id": "2038050a-2e96-5d06-bb18-aa336510a073",
+      "upload_id": "adda1e04-ef38-5e83-b7a1-43670e5a1035",
+      "object_key": "HAIRSTYLE_THUMBNAIL/ar-notion-20261020/wolf-cut-w.png",
+      "image_file": "images/wolf-cut-w.png",
+      "sha256": "980a8101780a35e68636d02dfb252e0f7e6096742ee63f76dc395ed2a66e7762",
+      "file_size": 205856,
+      "width": 512,
+      "height": 512,
+      "minimum_hair_length": "BELOW_SHOULDER",
+      "compatible_hair_lengths": [
+        "BELOW_SHOULDER",
+        "BELOW_CHEST"
+      ],
+      "category": "MEDIUM",
+      "estimated_daily_care_minutes": 10,
+      "management_difficulty": "MEDIUM",
+      "chemical_stress_level": "LOW",
+      "service_types": [
+        "CUT"
+      ],
+      "user_fit": {
+        "scale_mul": 1.12,
+        "offset_up_cm": -2.5,
+        "offset_fwd_cm": 1.0
+      },
+      "model_bytes": 43907820
+    }
+  ]
+}

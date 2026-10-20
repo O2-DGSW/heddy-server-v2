@@ -8,16 +8,32 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 
 /** 정렬된 후보에서 카테고리·대표 태그 편중을 결정론적으로 줄인다. */
 public final class RecommendationDiversifier {
 
     public List<ScoredRecommendation> topThree(List<ScoredRecommendation> orderedCandidates) {
+        return topThree(orderedCandidates, Map.of());
+    }
+
+    /** 새로고침은 미노출/저노출 후보부터 선택하고 같은 노출 횟수 안에서는 기존 순위를 유지한다. */
+    public List<ScoredRecommendation> topThree(
+            List<ScoredRecommendation> orderedCandidates, Map<UUID, Long> exposureCounts
+    ) {
         List<ScoredRecommendation> selected = new ArrayList<>(3);
-        addEligible(orderedCandidates, selected, true, true);
-        addEligible(orderedCandidates, selected, true, false);
-        addEligible(orderedCandidates, selected, false, false);
+        Map<Long, List<ScoredRecommendation>> tiers = new TreeMap<>();
+        for (ScoredRecommendation candidate : orderedCandidates) {
+            long exposures = exposureCounts.getOrDefault(candidate.candidate().hairstyleId(), 0L);
+            tiers.computeIfAbsent(exposures, ignored -> new ArrayList<>()).add(candidate);
+        }
+        for (List<ScoredRecommendation> tier : tiers.values()) {
+            addEligible(tier, selected, true, true);
+            addEligible(tier, selected, true, false);
+            addEligible(tier, selected, false, false);
+            if (selected.size() == 3) break;
+        }
         return List.copyOf(selected);
     }
 

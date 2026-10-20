@@ -56,6 +56,7 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
     @Autowired MockMvc mockMvc;
     @Autowired JdbcTemplate jdbcTemplate;
     @Autowired EntityManager entityManager;
+    @Autowired com.heddy.domain.recommendation.port.out.RecommendationRepositoryPort recommendationRepository;
 
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     com.heddy.domain.recommendation.port.out.PhotoHairLengthPort photoAnalyzer;
@@ -375,6 +376,70 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         assertThat(runId(response)).isNotEqualTo(oldId);
         assertThat(runCount()).isEqualTo(2);
+    }
+
+    @Test
+    void forcedRefreshExploresEligibleStylesAndLatestKeepsTheRefreshedSelection() throws Exception {
+        for (int i = 4; i <= 9; i++) {
+            insertStyle("94000000-0000-4000-8000-%012d".formatted(i),
+                    "추가 스타일 " + i, "MEDIUM", "OVERLAY", 10 - i, false);
+        }
+        var seen = new java.util.HashSet<UUID>();
+        String firstId = generateRun();
+        seen.addAll(styleIdsForRun(firstId));
+        assertThat(seen).hasSize(3);
+        for (int round = 0; round < 2; round++) {
+            String response = mockMvc.perform(post("/recommendations/generate")
+                            .with(authentication(auth(USER_ID)))
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"force_refresh\":true}"))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            String refreshedId = runId(response);
+            var styles = styleIdsForRun(refreshedId);
+            assertThat(styles).hasSize(3).doesNotHaveDuplicates().doesNotContainAnyElementsOf(seen);
+            seen.addAll(styles);
+            assertThat(latestRun()).isEqualTo(refreshedId);
+            assertThat(generateRun()).isEqualTo(refreshedId);
+        }
+        assertThat(seen).hasSize(9);
+        assertThat(runCount()).isEqualTo(3);
+        mockMvc.perform(get("/recommendations/{id}", firstId).with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_run_id").value(firstId));
+    }
+
+    @Test
+    void refreshHistoryIsLimitedToTwentyRunsOfTheSameUserAndInput() throws Exception {
+        UUID initialRunId = UUID.fromString(generateRun());
+        String hash = jdbcTemplate.queryForObject(
+                "SELECT input_hash FROM recommendation_runs WHERE recommendation_run_id = ?", String.class, initialRunId);
+        // Each group copies the same three styles. Only this user's matching input may count.
+        for (var group : List.of(new Object[]{USER_ID, hash}, new Object[]{OTHER_USER_ID, hash},
+                new Object[]{USER_ID, "different-input"})) {
+            jdbcTemplate.update("""
+                    WITH copied AS (
+                        INSERT INTO recommendation_runs
+                            (recommendation_run_id, user_id, strategy, status, input_snapshot_json, input_hash, generated_at)
+                        SELECT gen_random_uuid(), ?, 'RULE_BASED_V1', 'ACTIVE', '{}'::jsonb, ?,
+                            now() + n * interval '1 second' FROM generate_series(1,25) n
+                        RETURNING recommendation_run_id
+                    )
+                    INSERT INTO recommendation_items
+                        (recommendation_item_id, recommendation_run_id, hairstyle_id, display_rank,
+                         score, score_breakdown_json, reasons_json, management_difficulty, estimated_daily_care_minutes)
+                    SELECT gen_random_uuid(), copied.recommendation_run_id, item.hairstyle_id, item.display_rank,
+                        item.score, item.score_breakdown_json, item.reasons_json,
+                        item.management_difficulty, item.estimated_daily_care_minutes
+                    FROM copied CROSS JOIN recommendation_items item WHERE item.recommendation_run_id = ?
+                    """, group[0], group[1], initialRunId);
+        }
+        assertThat(recommendationRepository.findRecentExposureCounts(USER_ID, hash))
+                .hasSize(3).allSatisfy((id, count) -> assertThat(count).isEqualTo(20L));
+    }
+
+    private List<UUID> styleIdsForRun(String runId) {
+        return jdbcTemplate.queryForList(
+                "SELECT hairstyle_id FROM recommendation_items WHERE recommendation_run_id = ? ORDER BY display_rank",
+                UUID.class, UUID.fromString(runId));
     }
 
     @Test

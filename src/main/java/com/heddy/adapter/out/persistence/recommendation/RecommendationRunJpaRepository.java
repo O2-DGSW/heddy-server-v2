@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 interface RecommendationRunJpaRepository extends JpaRepository<RecommendationRunEntity, UUID> {
@@ -13,6 +14,26 @@ interface RecommendationRunJpaRepository extends JpaRepository<RecommendationRun
             UUID userId, String strategy, String inputHash, String status);
     Optional<RecommendationRunEntity> findFirstByUserIdOrderByGeneratedAtDescRecommendationRunIdDesc(UUID userId);
     Optional<RecommendationRunEntity> findByRecommendationRunIdAndUserId(UUID recommendationRunId, UUID userId);
+
+    interface HairstyleExposure {
+        UUID getHairstyleId();
+        Long getExposureCount();
+    }
+
+    @Query(value = """
+            SELECT item.hairstyle_id AS "hairstyleId", count(*) AS "exposureCount"
+            FROM recommendation_items item
+            JOIN (
+                SELECT recommendation_run_id
+                FROM recommendation_runs
+                WHERE user_id = :userId AND input_hash = :inputHash
+                ORDER BY generated_at DESC, recommendation_run_id DESC
+                LIMIT 20
+            ) recent ON recent.recommendation_run_id = item.recommendation_run_id
+            GROUP BY item.hairstyle_id
+            """, nativeQuery = true)
+    List<HairstyleExposure> findRecentExposureCounts(
+            @Param("userId") UUID userId, @Param("inputHash") String inputHash);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(value = """

@@ -175,8 +175,10 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             }
         }
 
+        Map<UUID, Long> exposureCounts = forceRefresh
+                ? recommendationRepositoryPort.findRecentExposureCounts(userId, inputHash) : Map.of();
         List<ScoredRecommendation> selected = diversifier.topThree(
-                scorer.scoreAll(candidates, context));
+                scorer.scoreAll(candidates, context), exposureCounts);
         if (selected.isEmpty()) {
             throw new RecommendationException(RecommendationError.NO_ELIGIBLE_CANDIDATES);
         }

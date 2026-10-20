@@ -37,6 +37,30 @@ class RecommendationDiversifierTest {
         assertThat(diversifier.topThree(candidates)).isEqualTo(diversifier.topThree(candidates));
     }
 
+    @Test
+    void prioritizesUnseenStylesEvenWhenTheirCategoryAndTagMatch() {
+        UUID sameTag = UUID.randomUUID();
+        var seen = item("B", UUID.randomUUID(), 100);
+        var unseen = List.of(item("A", sameTag, 90), item("A", sameTag, 80), item("A", sameTag, 70));
+        var candidates = new java.util.ArrayList<>(List.of(seen));
+        candidates.addAll(unseen);
+
+        assertThat(diversifier.topThree(candidates, Map.of(seen.candidate().hairstyleId(), 1L)))
+                .containsExactlyElementsOf(unseen);
+    }
+
+    @Test
+    void fillsFromLeastExposedStylesWithoutDuplicatesWhenUnseenStylesRunOut() {
+        var frequent = item("A", UUID.randomUUID(), 100);
+        var rare = item("B", UUID.randomUUID(), 90);
+        var unseen = item("C", UUID.randomUUID(), 80);
+        var counts = Map.of(frequent.candidate().hairstyleId(), 4L, rare.candidate().hairstyleId(), 1L);
+
+        assertThat(diversifier.topThree(List.of(frequent, rare, unseen), counts))
+                .containsExactly(unseen, rare, frequent);
+        assertThat(diversifier.topThree(List.of(frequent), counts)).containsExactly(frequent);
+    }
+
     private ScoredRecommendation item(String category, UUID tagId, double score) {
         HairstyleCandidate candidate = new HairstyleCandidate(UUID.randomUUID(), "style", category,
                 UUID.randomUUID(), "NONE", true, "1", Set.of(), Set.of(), Set.of(), Set.of(), Set.of(),

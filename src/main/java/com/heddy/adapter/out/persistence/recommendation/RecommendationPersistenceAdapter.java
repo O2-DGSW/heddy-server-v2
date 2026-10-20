@@ -55,6 +55,14 @@ public class RecommendationPersistenceAdapter
     }
 
     @Override
+    public Map<UUID, Long> findRecentExposureCounts(UUID userId, String inputHash) {
+        return runRepository.findRecentExposureCounts(userId, inputHash).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        RecommendationRunJpaRepository.HairstyleExposure::getHairstyleId,
+                        RecommendationRunJpaRepository.HairstyleExposure::getExposureCount));
+    }
+
+    @Override
     public Optional<RecommendationRun> findByIdAndUserId(UUID recommendationRunId, UUID userId) {
         return runRepository.findByRecommendationRunIdAndUserId(recommendationRunId, userId)
                 .map(this::assemble);

@@ -23,10 +23,13 @@ public final class RecommendationDiversifier {
             List<ScoredRecommendation> orderedCandidates, Map<UUID, Long> exposureCounts
     ) {
         List<ScoredRecommendation> selected = new ArrayList<>(3);
-        Map<Long, List<ScoredRecommendation>> tiers = new TreeMap<>();
+        // Explicit preferences take priority over variety and refresh exposure counts.
+        // Nonmatching styles only fill remaining slots when matching candidates are insufficient.
+        Map<Tier, List<ScoredRecommendation>> tiers = new TreeMap<>();
         for (ScoredRecommendation candidate : orderedCandidates) {
             long exposures = exposureCounts.getOrDefault(candidate.candidate().hairstyleId(), 0L);
-            tiers.computeIfAbsent(exposures, ignored -> new ArrayList<>()).add(candidate);
+            Tier tier = new Tier(candidate.scoreBreakdown().preferredTagScore() > 0 ? 0 : 1, exposures);
+            tiers.computeIfAbsent(tier, ignored -> new ArrayList<>()).add(candidate);
         }
         for (List<ScoredRecommendation> tier : tiers.values()) {
             addEligible(tier, selected, true, true);
@@ -35,6 +38,13 @@ public final class RecommendationDiversifier {
             if (selected.size() == 3) break;
         }
         return List.copyOf(selected);
+    }
+
+    private record Tier(int preferenceOrder, long exposures) implements Comparable<Tier> {
+        public int compareTo(Tier other) {
+            int preference = Integer.compare(preferenceOrder, other.preferenceOrder);
+            return preference != 0 ? preference : Long.compare(exposures, other.exposures);
+        }
     }
 
     private void addEligible(

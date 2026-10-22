@@ -48,6 +48,13 @@ class RecommendationPhotoResolverTest {
         assertThat(resolved.evidence().status()).isEqualTo("NEWER_PROFILE");
         verify(analyzer).analyze(any());
     }
+    @Test void newerProfileDoesNotHidePhotoAnalysisFailure() {
+        var record = record(now, ImageType.AFTER, user);
+        when(analyzer.analyze(any())).thenReturn(PhotoHairEvidence.absent("UNAVAILABLE"));
+        var resolved = resolver.resolve(user, profile(HairLength.BELOW_CHIN, now.plusSeconds(60)), List.of(record));
+        assertThat(resolved.evidence().status()).isEqualTo("UNAVAILABLE");
+        assertThat(resolved.evidence().applied()).isFalse();
+    }
     @Test void neverUsesBeforePhotoOrAnotherAccountsFile() {
         var before = record(now, ImageType.BEFORE, user);
         assertThat(resolver.resolve(user, null, List.of(before)).evidence().applied()).isFalse();

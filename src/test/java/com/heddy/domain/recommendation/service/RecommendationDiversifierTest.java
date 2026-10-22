@@ -61,6 +61,27 @@ class RecommendationDiversifierTest {
         assertThat(diversifier.topThree(List.of(frequent), counts)).containsExactly(frequent);
     }
 
+    @Test
+    void preferencesSurviveRefreshAndDiversityLimits() {
+        UUID tag = UUID.randomUUID();
+        var preferred = List.of(preferredItem("A", tag, 90), preferredItem("A", tag, 80),
+                preferredItem("A", tag, 70));
+        var unrelated = item("B", UUID.randomUUID(), 100);
+        var candidates = new java.util.ArrayList<>(List.of(unrelated));
+        candidates.addAll(preferred);
+        var exposures = new java.util.HashMap<UUID, Long>();
+        preferred.forEach(item -> exposures.put(item.candidate().hairstyleId(), 5L));
+        assertThat(diversifier.topThree(candidates, exposures)).containsExactlyElementsOf(preferred);
+        assertThat(diversifier.topThree(List.of(unrelated, preferred.getFirst()), exposures))
+                .containsExactly(preferred.getFirst(), unrelated);
+    }
+
+    private ScoredRecommendation preferredItem(String category, UUID tag, double score) {
+        var original = item(category, tag, score);
+        return new ScoredRecommendation(original.candidate(),
+                new ScoreBreakdown(0, 0, 15, 0, 0, 15, 100, score), List.of(), null);
+    }
+
     private ScoredRecommendation item(String category, UUID tagId, double score) {
         HairstyleCandidate candidate = new HairstyleCandidate(UUID.randomUUID(), "style", category,
                 UUID.randomUUID(), "NONE", true, "1", Set.of(), Set.of(), Set.of(), Set.of(), Set.of(),

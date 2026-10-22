@@ -379,7 +379,28 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     @Test
+    void preferredStyleStaysFirstOnRefreshAndExclusionImmediatelyRemovesIt() throws Exception {
+        UUID preferredStyle = UUID.fromString("94000000-0000-4000-8000-000000000001");
+        generateRun();
+        mockMvc.perform(post("/recommendations/generate").with(authentication(auth(USER_ID)))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"force_refresh\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].hairstyle.hairstyle_id").value(preferredStyle.toString()));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/me/style-preferences")
+                        .with(authentication(auth(USER_ID))).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"preferred_tag_ids\":[],\"excluded_tag_ids\":[\"" + PREFERRED_TAG_ID + "\"]}"))
+                .andExpect(status().isOk());
+        String response = mockMvc.perform(get("/recommendations/latest").with(authentication(auth(USER_ID))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recommendation_basis.style_preferences.excluded_count").value(1))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(styleIdsForRun(runId(response))).doesNotContain(preferredStyle);
+    }
+
+    @Test
     void forcedRefreshExploresEligibleStylesAndLatestKeepsTheRefreshedSelection() throws Exception {
+        // Isolate this ranking signal from the explicit preference priority tested separately.
+        jdbcTemplate.update("DELETE FROM user_style_preferences WHERE user_id = ?", USER_ID);
         for (int i = 4; i <= 9; i++) {
             insertStyle("94000000-0000-4000-8000-%012d".formatted(i),
                     "추가 스타일 " + i, "MEDIUM", "OVERLAY", 10 - i, false);
@@ -444,6 +465,8 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
 
     @Test
     void cutShapeEditReranksLatestAndThenReusesItWithoutANewAccount() throws Exception {
+        // Isolate this ranking signal from the explicit preference priority tested separately.
+        jdbcTemplate.update("DELETE FROM user_style_preferences WHERE user_id = ?", USER_ID);
         jdbcTemplate.update("UPDATE treatment_records SET cut_shape = 'LAYERED' WHERE record_id = ?", treatmentRecordId);
         String oldId = generateRun();
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(
@@ -580,6 +603,8 @@ class RecommendationApiIntegrationTest extends PostgresIntegrationTest {
 
     @Test
     void replacingPhotoWithSameLengthChangesRankingAndPersistsItsEvidence() throws Exception {
+        // Isolate this ranking signal from the explicit preference priority tested separately.
+        jdbcTemplate.update("DELETE FROM user_style_preferences WHERE user_id = ?", USER_ID);
         UUID oldPhoto = attachAfterPhoto();
         jdbcTemplate.update("UPDATE files SET created_at = now() - interval '1 hour' WHERE file_id = ?", oldPhoto);
         var left = java.util.stream.IntStream.range(0, 96).mapToObj(i -> i < 48 ? 1.0 : 0.0).toList();

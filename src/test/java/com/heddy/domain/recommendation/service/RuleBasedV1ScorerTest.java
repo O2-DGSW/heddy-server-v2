@@ -75,10 +75,10 @@ class RuleBasedV1ScorerTest {
         var result = scorer.score(candidate, context).orElseThrow().scoreBreakdown();
 
         assertThat(result.savedStyleScore()).isEqualTo(15);
-        assertThat(result.preferredTagScore()).isEqualTo(7.5);
+        assertThat(result.preferredTagScore()).isEqualTo(15);
         assertThat(result.hairCompatibilityScore()).isEqualTo(20);
         assertThat(result.careTimeScore()).isEqualTo(10);
-        assertThat(result.finalScore()).isEqualTo(87.5);
+        assertThat(result.finalScore()).isEqualTo(100);
     }
 
     @Test

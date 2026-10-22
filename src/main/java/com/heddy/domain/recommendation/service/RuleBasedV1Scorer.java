@@ -51,9 +51,8 @@ public final class RuleBasedV1Scorer {
         if (context.recentTreatments().stream().anyMatch(record -> record.satisfaction() != null)) {
             availableMaximum += 40;
         }
-        if (!context.savedHairstyleIds().isEmpty() || !context.preferredTagIds().isEmpty()) {
-            availableMaximum += 30;
-        }
+        if (!context.savedHairstyleIds().isEmpty()) availableMaximum += 15;
+        if (!context.preferredTagIds().isEmpty()) availableMaximum += 15;
         availableMaximum += hair.availableMaximum();
         if (context.hairProfile() != null
                 && context.hairProfile().availableCareTimeMinutes() != null) {
@@ -197,7 +196,8 @@ public final class RuleBasedV1Scorer {
                 RecommendationReason.Code.PREFERRED_TAG_MATCH,
                 Map.of("tag_id", representative.toString(),
                         "tag_name", candidate.tags().get(representative))));
-        return 15.0 * matches.size() / candidate.tags().size();
+        // Extra catalog metadata must not dilute a user's explicit preference.
+        return 15.0 * matches.size() / context.preferredTagIds().size();
     }
 
     private HairResult hairScore(

@@ -71,9 +71,11 @@ public class AnalysisApplicationService implements RequestAnalysisUseCase, GetAn
         TreatmentRecord record = ownedRecord(command.requesterId(), command.recordId());
         TreatmentPhoto photo = selectPhoto(record, command.photoId());
         requireReadyInput(command.requesterId(), photo);
-        if (jobRepositoryPort.findInProgressByPhotoId(photo.photoId()).isPresent()) {
-            throw new ApplicationException(ErrorCode.ANALYSIS_ALREADY_IN_PROGRESS);
-        }
+        AnalysisJob inProgress = jobRepositoryPort.findInProgressByPhotoId(photo.photoId())
+                .filter(job -> command.requesterId().equals(job.userId())
+                        && record.recordId().equals(job.recordId())).orElse(null);
+        // A reload loses the client's job ID. Reattach to existing work instead of returning 409.
+        if (inProgress != null) return inProgress;
         try {
             AnalysisJob saved = jobRepositoryPort.insert(AnalysisJob.create(
                     command.requesterId(), record.recordId(), photo.photoId(), Instant.now()));

@@ -50,7 +50,8 @@ public class RecommendationPhotoResolver {
         if (profile != null && profile.hairLength() != null && profile.updatedAt() != null
                 && file.createdAt() != null && !profile.updatedAt().isBefore(file.createdAt())) {
             return new Resolved(profile, new PhotoHairEvidence(file.fileId(), evidence.modelVersion(),
-                    "NEWER_PROFILE", evidence.observedLength(), false, evidence.hairShape(), 0));
+                    evidence.observedLength() == null ? evidence.status() : "NEWER_PROFILE",
+                    evidence.observedLength(), false, evidence.hairShape(), 0));
         }
         var observed = evidence.observedLength();
         // A newer result photo updates current length in either direction. The newer-profile guard

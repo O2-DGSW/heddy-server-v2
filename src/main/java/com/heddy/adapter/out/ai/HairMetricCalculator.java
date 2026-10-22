@@ -67,7 +67,8 @@ final class HairMetricCalculator {
         Roughness roughness = roughness(parsing, hair.count);
 
         double meanHairProbability = meanHairProbability(parsing);
-        double rollDegrees = Math.toDegrees(Math.abs(Math.atan2(axis.eyeDy, axis.eyeDx)));
+        // An eye axis is an undirected line: anatomical left/right labels may reverse its direction.
+        double rollDegrees = Math.toDegrees(Math.atan2(Math.abs(axis.eyeDy), Math.abs(axis.eyeDx)));
         double frontalness = frontalness(axis, nose, rollDegrees);
         double blurVariance = laplacianVariance(parsing);
         double lightingUniformity = lightingUniformity(parsing);
@@ -91,7 +92,7 @@ final class HairMetricCalculator {
         metrics.put(MetricType.ROUGHNESS, metric(roughness.score));
 
         Map<String, Object> raw = new LinkedHashMap<>();
-        raw.put("pipeline", "segformer-plus-deterministic-metrics-v1");
+        raw.put("pipeline", "segformer-plus-deterministic-metrics-v2");
         raw.put("hair_area_ratio", round(hairAreaRatio, 4));
         raw.put("mean_hair_probability", round(meanHairProbability, 4));
         raw.put("face_roll_degrees", round(rollDegrees, 2));
@@ -540,6 +541,8 @@ final class HairMetricCalculator {
             if (Math.hypot(dx, dy) < 2) {
                 throw new IllegalArgumentException("눈 중심점을 구분할 수 없습니다");
             }
+            // Keep the same half-plane assignment when anatomical labels are reversed.
+            if (dx < 0 || (dx == 0 && dy < 0)) { dx = -dx; dy = -dy; }
             return new Axis((firstX + secondX) / 2, (firstY + secondY) / 2, dx, dy);
         }
 

@@ -310,7 +310,7 @@ public class RecommendationService implements GenerateRecommendationUseCase,
             List<HairstyleCandidate> candidates,
             TreatmentHistorySummary treatmentHistory
     ) {
-        StringBuilder value = new StringBuilder("RULE_BASED_V1:CURRENT_LENGTH_V6|");
+        StringBuilder value = new StringBuilder("RULE_BASED_V1:PREFERENCE_PRIORITY_V7|");
         value.append(explanationPort.cacheKey()).append('|');
         HairProfile profile = context.hairProfile();
         if (profile != null) {

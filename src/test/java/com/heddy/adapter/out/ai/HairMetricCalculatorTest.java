@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class HairMetricCalculatorTest {
 
     private final HairMetricCalculator calculator = new HairMetricCalculator(
-            new ObjectMapper(), "test-segformer-v1", 0);
+            new ObjectMapper(), "test-segformer-v1", 50);
 
     @Test
     void neverProducesScoresWithoutHairFromTheSegmentationModel() {
@@ -75,6 +75,15 @@ class HairMetricCalculatorTest {
 
         HairAnalysisOutcome outcome = calculator.calculate(
                 new FaceParsingOutput(width, height, rgb, labels, hairProbability));
+
+        byte[] swappedLabels = labels.clone();
+        for (int i = 0; i < swappedLabels.length; i++) {
+            if (labels[i] == HairMetricCalculator.LEFT_EYE_LABEL) swappedLabels[i] = HairMetricCalculator.RIGHT_EYE_LABEL;
+            if (labels[i] == HairMetricCalculator.RIGHT_EYE_LABEL) swappedLabels[i] = HairMetricCalculator.LEFT_EYE_LABEL;
+        }
+        HairAnalysisOutcome reversed = calculator.calculate(
+                new FaceParsingOutput(width, height, rgb, swappedLabels, hairProbability));
+        assertThat(reversed).as("anatomical eye label order must not change confidence or metrics").isEqualTo(outcome);
 
         assertThat(outcome).isInstanceOfSatisfying(HairAnalysisOutcome.Succeeded.class,
                 succeeded -> {
